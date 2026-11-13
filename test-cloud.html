@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فحص الاتصال بقاعدة البيانات</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:22px 16px 60px;font-family:-apple-system,"Segoe UI",system-ui,Tahoma,sans-serif;
+       background:#F4F7FD;color:#0B1226}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 6px}
+  .sub{color:#8A93A8;font-weight:700;font-size:12.5px;margin-bottom:18px}
+  .card{background:#fff;border:1px solid #EDF2FA;border-radius:18px;padding:16px;margin-bottom:12px;
+        box-shadow:0 2px 6px rgba(16,38,80,.04),0 14px 30px rgba(16,38,80,.05)}
+  .row{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #F1F4FA;font-size:13px}
+  .row:last-child{border-bottom:0}
+  .row b{min-width:96px;color:#39435C;font-weight:800;flex:none}
+  .row span{flex:1;word-break:break-all;font-family:ui-monospace,monospace;font-size:12px;direction:ltr;text-align:left}
+  .ok{color:#0E8A54;font-weight:800}
+  .bad{color:#D93025;font-weight:800}
+  .warn{color:#B06D00;font-weight:800}
+  .big{font-size:15px;font-weight:900;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .dot{width:11px;height:11px;border-radius:99px;background:#C9D1E0;flex:none}
+  .dot.ok{background:#22B573}.dot.bad{background:#F1433D}.dot.warn{background:#FFC53D}
+  code{background:#F2F6FD;border:1px solid #E4ECF9;padding:1px 6px;border-radius:6px;font-size:12px}
+  button{font-family:inherit;background:#0A6BFF;color:#fff;border:0;border-radius:12px;padding:11px 18px;
+         font-weight:800;font-size:13.5px;cursor:pointer}
+  ul{margin:8px 0 0;padding-inline-start:18px}
+  li{font-size:12.5px;line-height:2;color:#39435C;font-weight:600}
+  pre{background:#0B1226;color:#D7E3FF;padding:12px;border-radius:12px;overflow:auto;font-size:11.5px;direction:ltr;text-align:left}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>فحص الاتصال بقاعدة البيانات</h1>
+  <div class="sub">تفتح هذه الصفحة من الموقع نفسه، فتقرأ <code>cloud-config.js</code> وتجرّب الاتصال فعلياً.</div>
+
+  <div class="card">
+    <div class="big"><span class="dot" id="d1"></span><span id="s1">قراءة الإعدادات…</span></div>
+    <div class="row"><b>الرابط</b><span id="cfgUrl">—</span></div>
+    <div class="row"><b>المفتاح</b><span id="cfgKey">—</span></div>
+  </div>
+
+  <div class="card">
+    <div class="big"><span class="dot" id="d2"></span><span id="s2">الاتصال بالسحابة…</span></div>
+    <div class="row"><b>النتيجة</b><span id="s2res">—</span></div>
+    <div class="row"><b>الجدول kv</b><span id="s3res">—</span></div>
+    <div class="row"><b>عدد الصفوف</b><span id="s4res">—</span></div>
+  </div>
+
+  <div class="card" id="helpCard" style="display:none">
+    <div class="big"><span class="dot warn"></span><span>ماذا أفعل الآن؟</span></div>
+    <ul id="helpList"></ul>
+  </div>
+
+  <div class="card">
+    <button onclick="location.reload()">إعادة الفحص</button>
+  </div>
+</div>
+
+<script src="cloud-config.js" onerror="void 0"></script>
+<script>
+const $ = s => document.querySelector(s);
+const set = (id, txt, cls) => { const el = $(id); if (el) { el.textContent = txt; if (cls) el.className = cls; } };
+const dot = (id, cls) => { const el = $(id); if (el) el.className = 'dot ' + cls; };
+const help = [];
+
+function showHelp() {
+  if (!help.length) return;
+  $('#helpCard').style.display = 'block';
+  $('#helpList').innerHTML = help.map(h => `<li>${h}</li>`).join('');
+}
+
+(async () => {
+  const cfg = window.ALAWAEL_CLOUD || {};
+  set('#cfgUrl', cfg.url || '(فارغ)', cfg.url ? '' : 'bad');
+  set('#cfgKey', cfg.key ? cfg.key.slice(0, 18) + '… (' + cfg.key.length + ' حرفاً)' : '(فارغ)', cfg.key ? '' : 'bad');
+
+  if (!cfg.url || !cfg.key) {
+    dot('#d1', 'bad'); set('#s1', 'الإعدادات ناقصة');
+    dot('#d2', 'warn'); set('#s2', 'لا يمكن الفحص');
+    help.push('افتح ملف <code>cloud-config.js</code> على GitHub وأضف <code>url</code> و <code>key</code> ثم Commit.');
+    return showHelp();
+  }
+
+  dot('#d1', 'ok'); set('#s1', 'الإعدادات موجودة');
+
+  const url = cfg.url.replace(/\/$/, '');
+  const headers = { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key };
+
+  // اختبار 1: الوصول للجدول
+  let res, txt = '';
+  try {
+    res = await fetch(url + '/rest/v1/kv?select=key&limit=5', { headers });
+    txt = await res.text();
+  } catch (e) {
+    dot('#d2', 'bad'); set('#s2', 'فشل الاتصال بالشبكة');
+    set('#s2res', 'تعذّر الوصول إلى ' + url, 'bad');
+    help.push('هذا يعني أن <b>الرابط مكتوب خطأ</b> (حرف ناقص/زائد) أو المشروع متوقف.');
+    help.push('افتح Supabase ← صفحة <b>Data API</b> ← اضغط <b>Copy</b> بجانب الرابط، والصقه كاملاً في <code>cloud-config.js</code> بدون <code>/rest/v1/</code> في النهاية.');
+    return showHelp();
+  }
+
+  if (res.status === 200) {
+    let rows = [];
+    try { rows = JSON.parse(txt); } catch {}
+    dot('#d2', 'ok'); set('#s2', 'الاتصال ناجح ✅');
+    set('#s2res', 'HTTP 200 — المفتاح صحيح', 'ok');
+    set('#s3res', 'موجود', 'ok');
+    set('#s4res', String(rows.length) + (rows.length >= 5 ? ' (عيّنة)' : ''), 'ok');
+    if (!rows.length) help.push('الجدول موجود لكنه فارغ — طبيعي قبل أول تشغيل. افتح اللوحة وابدأ.');
+    else help.push('كل شيء سليم ✅ افتح اللوحة: <code>dashboard.html</code> وابدأ إدخال بياناتك.');
+    return showHelp();
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    dot('#d2', 'bad'); set('#s2', 'المفتاح مرفوض');
+    set('#s2res', 'HTTP ' + res.status + ' — ' + txt.slice(0, 120), 'bad');
+    help.push('المفتاح خطأ أو ليس من نفس المشروع. من Supabase ← <b>Settings ⚙️ ← API Keys</b> انسخ <b>Publishable</b> أو <b>anon</b> كاملاً.');
+    help.push('لا تستخدم <b>Secret</b> / <b>service_role</b>.');
+    return showHelp();
+  }
+
+  if (res.status === 404 || /does not exist|42P01/i.test(txt)) {
+    dot('#d2', 'warn'); set('#s2', 'الجدول kv غير موجود');
+    set('#s2res', 'HTTP ' + res.status + ' — ' + txt.slice(0, 120), 'bad');
+    set('#s3res', 'غير موجود', 'bad');
+    help.push('نفّذ أوامر SQL: Supabase ← <b>SQL Editor ← New</b> ← الصق محتوى <code>supabase-setup.sql</code> كاملاً ← <b>Run</b>.');
+    return showHelp();
+  }
+
+  if (/permission denied/i.test(txt)) {
+    dot('#d2', 'warn'); set('#s2', 'الصلاحيات ناقصة');
+    set('#s2res', txt.slice(0, 160), 'bad');
+    help.push('أعد تنفيذ <code>supabase-setup.sql</code> كاملاً (فيه أوامر <code>grant</code> و <code>policy</code>).');
+    return showHelp();
+  }
+
+  dot('#d2', 'bad'); set('#s2', 'خطأ غير متوقع');
+  set('#s2res', 'HTTP ' + res.status + ' — ' + txt.slice(0, 200), 'bad');
+  showHelp();
+})();
+</script>
+</body>
+</html>
