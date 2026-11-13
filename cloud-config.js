@@ -1,11 +1,4 @@
-/* ============================================================================
-   cloud-config.js — ربط قاعدة البيانات السحابية (Supabase)
-   املأ القيمتين من مشروعك، واحفظ الملف على GitHub. يعمل الاثنان تلقائياً:
-   لوحة التحكم (dashboard.html) والتطبيق (app.html).
-
-   إن تركت القيمتين فارغتين: يعمل كل شيء محلياً على الجهاز فقط (بلا مزامنة).
-   ========================================================================== */
 window.ALAWAEL_CLOUD = {
-  url: '',        // مثال: 'https://abcdefghijklm.supabase.co'   (بلا / في النهاية)
-  key: ''         // مفتاح anon public (الطويل المبدوء بـ eyJ...)
+  url: 'https://e1fappwepgwbsbfef1lzq.supabase.co',
+  key: 'sb_publishable_nAe447glYqdZT3vihN9Lmg_RWnmhJKN'
 };
