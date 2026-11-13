@@ -1,0 +1,23 @@
+{
+  "name": "الأوائل — تطبيق المدارس",
+  "short_name": "الأوائل",
+  "description": "تطبيق مجموعة مدارس الأوائل الأهلية — الطالب، ولي الأمر، المدرس، الاشتراك، والإدارة.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F7FD",
+  "theme_color": "#0A6BFF",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "فتح التطبيق", "url": "./app.html" },
+    { "name": "لوحة التحكم", "url": "./dashboard.html" }
+  ]
+}
