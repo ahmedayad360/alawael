@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الأوائل — نسخة التجربة</title>
+<meta name="theme-color" content="#0A6BFF">
+<style>
+  :root{
+    --blue:#0A6BFF; --blue-2:#0847BE; --blue-soft:#EAF2FF; --yellow:#FFC53D;
+    --label:#0B1226; --label-2:#39435C; --muted:#8A93A8; --line:#E9EFF8;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Tahoma,"Noto Kufi Arabic",sans-serif;
+    color:var(--label); -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(900px 460px at 82% -12%, #FFFFFF 0%, rgba(255,255,255,0) 60%),
+      radial-gradient(700px 420px at 8% 4%, #E7F0FF 0%, rgba(231,240,255,0) 65%),
+      linear-gradient(180deg,#F7FAFF 0%, #EFF4FD 100%);
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:38px 20px 60px}
+  .brand{display:flex; align-items:center; gap:14px; justify-content:center; margin-bottom:10px}
+  .logo{
+    width:64px;height:64px;border-radius:22px;display:grid;place-items:center;color:#fff;
+    background:linear-gradient(150deg,#2E86FF,#0A6BFF 55%,#0847BE);
+    box-shadow:0 18px 36px rgba(10,90,220,.28); position:relative;
+  }
+  .logo::after{content:""; position:absolute; inset:-6px; border-radius:28px; border:2px solid #FFE7B2}
+  .logo svg{width:31px;height:31px}
+  h1{margin:0; font-size:26px; letter-spacing:-.4px; text-align:center}
+  .sub{text-align:center; color:var(--muted); font-weight:700; font-size:13.5px; margin:8px 0 30px}
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  @media (max-width:680px){ .cards{grid-template-columns:1fr} }
+  a.card{
+    display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--line);
+    border-radius:26px; padding:24px 22px; position:relative; overflow:hidden;
+    box-shadow:0 2px 6px rgba(16,38,80,.04), 0 18px 40px rgba(16,38,80,.07);
+    transition:transform .18s cubic-bezier(.3,.8,.4,1), box-shadow .22s;
+  }
+  a.card:hover{transform:translateY(-3px); box-shadow:0 6px 14px rgba(16,38,80,.06), 0 26px 54px rgba(16,38,80,.12)}
+  a.card:active{transform:scale(.985)}
+  .card .ic{width:56px;height:56px;border-radius:19px;display:grid;place-items:center;margin-bottom:16px;
+    background:linear-gradient(155deg,#EAF2FF,#DCE9FF); color:var(--blue)}
+  .card .ic svg{width:27px;height:27px}
+  .card.y .ic{background:linear-gradient(155deg,#FFF7E3,#FFEFCB); color:#C98505}
+  .card h2{margin:0 0 7px; font-size:19px; letter-spacing:-.2px}
+  .card p{margin:0; font-size:13px; line-height:1.75; color:var(--label-2); font-weight:600}
+  .card .go{
+    display:inline-flex; align-items:center; gap:7px; margin-top:16px; padding:11px 18px; border-radius:15px;
+    background:linear-gradient(180deg,#2E86FF,#0A6BFF); color:#fff; font-weight:800; font-size:13.5px;
+    box-shadow:0 10px 22px rgba(10,107,255,.24);
+  }
+  .card .go svg{width:15px;height:15px}
+  .note{
+    margin-top:22px; background:#fff; border:1px solid var(--line); border-radius:22px; padding:18px 20px;
+    box-shadow:0 2px 6px rgba(16,38,80,.03), 0 14px 30px rgba(16,38,80,.05);
+  }
+  .note h3{margin:0 0 10px; font-size:14.5px; display:flex; align-items:center; gap:8px}
+  .note h3 span{width:26px;height:26px;border-radius:9px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center}
+  .note h3 span svg{width:15px;height:15px}
+  .note ul{margin:0; padding-inline-start:18px}
+  .note li{font-size:12.8px; line-height:2; color:var(--label-2); font-weight:600}
+  code{
+    background:#F2F6FD; border:1px solid #E4ECF9; padding:2px 7px; border-radius:7px;
+    font-size:12px; font-weight:800; direction:ltr; display:inline-block; color:#0A4CC4;
+  }
+  .foot{text-align:center; color:var(--muted); font-size:11.5px; font-weight:700; margin-top:26px; line-height:2}
+  .pill{display:inline-flex;align-items:center;gap:5px;background:#FFF7E3;color:#96660A;border-radius:999px;
+    padding:4px 11px;font-size:11px;font-weight:800;margin-inline-start:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3l8 4v5c0 5-3.4 8.2-8 9.5C7.4 20.2 4 17 4 12V7l8-4z"/><path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+  </div>
+  <h1>مجموعة مدارس الأوائل الأهلية</h1>
+  <div class="sub">نسخة تجربة حقيقية · لوحة التحكم وتطبيق الجوال</div>
+
+  <div class="cards">
+    <a class="card" href="dashboard.html">
+      <div class="ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/>
+          <rect x="14" y="11" width="7" height="10" rx="2"/><rect x="3" y="15" width="7" height="6" rx="2"/>
+        </svg>
+      </div>
+      <h2>لوحة التحكم <span class="pill">ويب</span></h2>
+      <p>إدارة الطلبة، الحسابات، الصفوف والشعب، الجدول الأسبوعي والشهري، الواجبات، الدرجات، الغيابات، التبليغات، الدردشة، الاشتراكات.</p>
+      <div class="go">فتح اللوحة
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </div>
+    </a>
+
+    <a class="card y" href="app.html">
+      <div class="ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="2" width="12" height="20" rx="3.2"/><path d="M10.5 18.4h3"/>
+        </svg>
+      </div>
+      <h2>تطبيق الجوال <span class="pill">جوال</span></h2>
+      <p>الطالب، ولي الأمر، المدرس، حساب الاشتراك، والإدارة — كل شاشة بدورها وصلاحياتها. افتحه من الجوال وأضِفه إلى الشاشة الرئيسية.</p>
+      <div class="go">فتح التطبيق
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </div>
+    </a>
+  </div>
+
+  <div class="note">
+    <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 8v5"/><path d="M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></span> قبل أن تجرب</h3>
+    <ul>
+      <li><b>لوحة التحكم:</b> أول فتح يطلب إنشاء كلمة مرور (شاشة الإعداد الأول) — لا كلمة مرور مضمّنة في الملفات.</li>
+      <li><b>التطبيق:</b> اضغط «دخول سريع» في أي دور. أو استخدم: طالب <code>AL7QK2</code> · ولي أمر <code>GU4421</code> · مدرس <code>TCH100</code> · اشتراك <code>SUB77A</code> — كلمة المرور <code>1234</code>. الإدارة: أي بيانات.</li>
+      <li><b>البيانات تجريبية ومحفوظة في متصفحك فقط</b> (localStorage) — لا تُرسَل إلى أي خادم. لتوليدها من جديد: <b>إعادة ضبط البيانات التجريبية</b> في شاشة الدخول.</li>
+      <li>التطبيق محسّن للجوال: أفضل تجربة من الهاتف أو مع عرض 390px من أدوات المتصفح.</li>
+    </ul>
+  </div>
+
+  <div class="foot">
+    المرحلة الأولى — نسخة تجربة · 2026<br>
+    لا بيانات حقيقية · لا كلمات مرور مضمّنة · لا مفاتيح API
+  </div>
+</div>
+</body>
+</html>
