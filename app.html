@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0A6BFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="الأوائل">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>تطبيق الأوائل</title>
 <style>
 :root{
@@ -3332,6 +3339,40 @@ function openNewHomework() {
 }
 
 /* ==========================================================================
+   17ب) تنبيه تثبيت التطبيق على آيفون (يظهر مرة واحدة فقط)
+   ========================================================================== */
+function iosInstallHint() {
+  try {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
+    const standalone = window.navigator.standalone === true ||
+                       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (!isIOS || standalone) return;
+    if (localStorage.getItem('alawael.iosHint') === 'off') return;
+    if (document.getElementById('iosHint')) return;
+    const el = document.createElement('div');
+    el.id = 'iosHint';
+    el.dir = 'rtl';
+    el.style.cssText = 'position:fixed;inset-inline:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:9999;' +
+      'background:#0B1226;color:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 18px 40px rgba(8,20,50,.35);' +
+      'font-family:inherit;font-size:13px;font-weight:700;line-height:1.9;display:flex;gap:12px;align-items:flex-start';
+    el.innerHTML = '<div style="flex:1">' +
+      '<b style="display:block;font-size:13.5px;margin-bottom:4px">ثبّت التطبيق على جوالك</b>' +
+      (isSafari
+        ? 'اضغط زر المشاركة <span style="font-size:16px">⬆️</span> أسفل الشاشة ← مرّر ← <b>إضافة إلى الشاشة الرئيسية</b>.'
+        : 'افتح هذا الرابط من <b>Safari</b> (لا من متصفح آخر) ثم: مشاركة ⬆️ ← <b>إضافة إلى الشاشة الرئيسية</b>.') +
+      '</div><button id="iosHintX" style="background:rgba(255,255,255,.14);border:0;color:#fff;width:28px;height:28px;' +
+      'border-radius:10px;font-size:15px;font-weight:800;line-height:1;cursor:pointer;flex:none">×</button>';
+    document.body.appendChild(el);
+    el.querySelector('#iosHintX').onclick = () => {
+      localStorage.setItem('alawael.iosHint', 'off');
+      el.remove();
+    };
+  } catch (e) {}
+}
+
+/* ==========================================================================
    18) التهيئة
    ========================================================================== */
 (async function boot() {
@@ -3340,6 +3381,13 @@ function openNewHomework() {
   try { if (typeof CloudApp !== 'undefined' && CloudApp.enabled) await CloudApp.boot(); } catch (e) { console.warn('[cloud]', e); }
   if (!DB.guardians) DB.guardians = DB.guardian ? [DB.guardian] : [];
   App.render();
+  setTimeout(iosInstallHint, 1200);
+  /* تسجيل عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت */
+  try {
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  } catch (e) {}
   const tick = () => {
     const d = new Date();
     const c = $('#clock'); if (c) c.textContent = `${d.getHours()}:${pad(d.getMinutes())}`;
@@ -3349,5 +3397,6 @@ function openNewHomework() {
 })();
 
 </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5a1428f9ee22e3d',t:'MTc5NDYwOTQzNg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5a1428f9ee22e3d',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
