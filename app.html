@@ -704,6 +704,8 @@ body{background:#E9EEF7}
   <div id="toasts"></div>
 </div>
 
+<script src="cloud-config.js" onerror="void 0"></script>
+<script src="cloud-app.js" onerror="void 0"></script>
 <script>
 'use strict';
 /* ==========================================================================
@@ -1338,7 +1340,13 @@ function openLogin(role) {
         enter();
       };
       $('#lgGo', ov).onclick = () => doLogin($('#lgCode', ov).value, $('#lgPw', ov).value);
-      const f = $('#lgFast', ov); if (f) f.onclick = () => doLogin(DEMO[role].code, DEMO[role].pw);
+      const f = $('#lgFast', ov);
+      if (f) f.onclick = () => {
+        if (typeof CloudApp !== 'undefined' && CloudApp.enabled) {
+          return Toast('استخدم الكود وكلمة المرور التي أنشأتها الإدارة في لوحة التحكم', 'err', 5000);
+        }
+        doLogin(DEMO[role].code, DEMO[role].pw);
+      };
       $('#lgPw', ov).onkeydown = e => { if (e.key === 'Enter') doLogin($('#lgCode', ov).value, $('#lgPw', ov).value); };
       setTimeout(() => $('#lgCode', ov)?.focus(), 320);
     }
@@ -3326,8 +3334,10 @@ function openNewHomework() {
 /* ==========================================================================
    18) التهيئة
    ========================================================================== */
-(function boot() {
+(async function boot() {
   Store.load();
+  /* إن كانت المزامنة السحابية مفعّلة: اسحب بيانات اللوحة قبل أول رسم */
+  try { if (typeof CloudApp !== 'undefined' && CloudApp.enabled) await CloudApp.boot(); } catch (e) { console.warn('[cloud]', e); }
   if (!DB.guardians) DB.guardians = DB.guardian ? [DB.guardian] : [];
   App.render();
   const tick = () => {

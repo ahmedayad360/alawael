@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إعداد الاتصال — لصق فقط</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 14px 60px;font-family:-apple-system,"Segoe UI",system-ui,Tahoma,sans-serif;background:#F4F7FD;color:#0B1226}
+  .wrap{max-width:620px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px;text-align:center}
+  .sub{color:#8A93A8;font-weight:700;font-size:12.5px;text-align:center;margin-bottom:18px}
+  .card{background:#fff;border:1px solid #EDF2FA;border-radius:18px;padding:16px;margin-bottom:12px;
+        box-shadow:0 2px 6px rgba(16,38,80,.04),0 14px 30px rgba(16,38,80,.05)}
+  label{display:block;font-size:12px;font-weight:800;color:#8A93A8;margin:0 2px 6px}
+  input,textarea{width:100%;border:1px solid #E6ECF6;border-radius:13px;padding:12px;font-size:13px;
+        font-family:ui-monospace,monospace;direction:ltr;text-align:left;background:#fff;color:#0B1226}
+  input:focus,textarea:focus{outline:none;border-color:#B9D4FF;box-shadow:0 0 0 4px rgba(10,107,255,.12)}
+  .field{margin-bottom:12px}
+  button{font-family:inherit;border:0;border-radius:13px;padding:13px 18px;font-weight:800;font-size:14px;cursor:pointer;width:100%}
+  .primary{background:linear-gradient(180deg,#2E86FF,#0A6BFF);color:#fff;box-shadow:0 10px 22px rgba(10,107,255,.24)}
+  .ghost{background:#fff;color:#0A6BFF;border:1px solid #E6EDF9;box-shadow:0 6px 16px rgba(16,38,80,.06)}
+  .ok{background:#E9F9F0;color:#0E8A54;border:1px solid #BDEBD4;border-radius:14px;padding:12px;font-weight:800;font-size:13px}
+  .bad{background:#FFEFEE;color:#C22B26;border:1px solid #FFD3D0;border-radius:14px;padding:12px;font-weight:800;font-size:13px}
+  .warn{background:#FFF7E3;color:#96660A;border:1px solid #FFE6AC;border-radius:14px;padding:12px;font-weight:800;font-size:13px}
+  .row{display:flex;gap:10px;margin-top:8px}
+  .row button{flex:1}
+  code,pre{font-family:ui-monospace,monospace}
+  pre{background:#0B1226;color:#D7E3FF;padding:12px;border-radius:12px;font-size:11.5px;direction:ltr;text-align:left;overflow:auto;margin:8px 0 0}
+  .hint{font-size:11.5px;color:#8A93A8;font-weight:700;line-height:1.9;margin-top:6px}
+  .step{background:#F2F6FD;border-radius:12px;padding:10px 12px;font-size:12.5px;font-weight:700;color:#39435C;line-height:2;margin-top:10px}
+  .step b{color:#0A4CC4}
+  ol{margin:6px 0 0;padding-inline-start:18px}
+  li{font-size:12.5px;font-weight:700;color:#39435C;line-height:2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>إعداد الاتصال — لصق فقط</h1>
+  <div class="sub">لا تكتب أي حرف يدوياً: انسخ من Supabase والصق هنا.</div>
+
+  <div class="card">
+    <div class="field">
+      <label>1) رابط المشروع (Project URL)</label>
+      <input id="url" placeholder="الصق هنا… أو الصق رابط الصفحة من شريط العنوان" autocomplete="off" spellcheck="false">
+      <div class="hint">
+        ✅ <b>أسهل طريقة:</b> وأنت داخل مشروعك في Supabase، انسخ <b>رابط شريط العنوان</b> كاملاً والصقه هنا —
+        سنستخرج منه معرّف المشروع بأنفسنا (لا حاجة لكتابة أي حرف).<br>
+        أو: صفحة <b>Data API</b> ← زر <b>Copy</b> بجانب الرابط.
+      </div>
+      <div class="hint" id="usedUrlBox" style="display:none">سنستخدم: <code id="usedUrl"></code></div>
+    </div>
+    <div class="field">
+      <label>2) المفتاح العام (Publishable / anon)</label>
+      <input id="key" placeholder="sb_publishable_... أو eyJ..." autocomplete="off" spellcheck="false">
+      <div class="hint">من Supabase ← Settings ← API Keys. ❌ ليس Secret ولا service_role.</div>
+    </div>
+    <button class="primary" id="run">فحص الاتصال وحفظه</button>
+    <div id="msg" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card" id="nextCard" style="display:none">
+    <label>الخطوة التالية</label>
+    <div class="row">
+      <button class="ghost" onclick="location.href='dashboard.html'">افتح اللوحة</button>
+      <button class="ghost" onclick="location.href='app.html'">افتح التطبيق</button>
+    </div>
+    <div class="step">
+      تم الحفظ في <b>هذا المتصفح فقط</b>. ليعمل على كل الأجهزة: انسخ النص التالي وضعه في ملف
+      <code>cloud-config.js</code> على GitHub (القلم ✏️ ← امسح الكل ← الصق ← Commit).
+    </div>
+    <pre id="fileText"></pre>
+    <div class="row"><button class="ghost" id="copyFile">نسخ نص الملف</button></div>
+  </div>
+
+  <div class="card">
+    <div class="step">
+      <b>إن لم يعمل الاتصال:</b>
+      <ol>
+        <li>تأكد أنك نسخت الرابط بـ <b>Copy</b> من صفحة <b>Data API</b> (لا تكتبه يدوياً).</li>
+        <li>نفّذ ملف <code>supabase-setup.sql</code> في <b>SQL Editor</b> ثم <b>Run</b>.</li>
+        <li>تأكد أن المشروع غير موقوف (Supabase ← إن ظهر Restore project اضغطه).</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const msg = (html, cls) => { $('#msg').innerHTML = `<div class="${cls}">${html}</div>`; };
+
+function cleanUrl(raw) {
+  let u = String(raw || '').trim().replace(/\s+/g, '');
+  u = u.replace(/\/+$/, '');
+  u = u.replace(/\/rest\/v1$/i, '');
+  u = u.replace(/\/auth\/v1$/i, '');
+  u = u.replace(/\/+$/, '');
+  return u;
+}
+
+/* يقبل: رابطًا كاملًا، أو رابط لوحة Supabase، أو معرّف المشروع فقط */
+function deriveUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+  const m = s.match(/dashboard\/project\/([a-z0-9]{16,25})/i);
+  if (m) return 'https://' + m[1] + '.supabase.co';
+  const d = s.match(/([a-z0-9]{16,25})\.supabase\.co/i);
+  if (d) return 'https://' + d[1] + '.supabase.co';
+  if (/^[a-z0-9]{16,25}$/i.test(s.replace(/\s+/g, ''))) return 'https://' + s.replace(/\s+/g, '') + '.supabase.co';
+  return cleanUrl(s);
+}
+
+async function test(url, key) {
+  const headers = { apikey: key, Authorization: 'Bearer ' + key };
+  let res;
+  try {
+    res = await fetch(url + '/rest/v1/kv?select=key&limit=3', { headers });
+  } catch (e) {
+    return { ok: false, kind: 'net', text: 'تعذّر الوصول إلى ' + url };
+  }
+  const body = await res.text();
+  if (res.status === 200) return { ok: true, rows: (() => { try { return JSON.parse(body); } catch { return []; } })() };
+  if (res.status === 401 || res.status === 403) return { ok: false, kind: 'key', text: 'HTTP ' + res.status + ' — المفتاح مرفوض' };
+  if (res.status === 404 || /does not exist|42P01/i.test(body)) return { ok: false, kind: 'table', text: 'HTTP ' + res.status + ' — الجدول kv غير موجود' };
+  if (/permission denied/i.test(body)) return { ok: false, kind: 'perm', text: 'الصلاحيات ناقصة — أعد تنفيذ supabase-setup.sql' };
+  return { ok: false, kind: 'other', text: 'HTTP ' + res.status + ' — ' + body.slice(0, 140) };
+}
+
+$('#run').onclick = async () => {
+  const url = deriveUrl($('#url').value);
+  if (url) $('#usedUrl') && ($('#usedUrl').textContent = url);
+  const key = String($('#key').value || '').trim();
+  if (!url || !key) return msg('الصق الرابط والمفتاح أولاً.', 'warn');
+  msg('جارٍ الفحص…', 'warn');
+  const r = await test(url, key);
+  if (!r.ok) {
+    const tips = {
+      net: 'الرابط غير صحيح. انسخه بزر <b>Copy</b> من صفحة Data API (لا تكتبه يدوياً).',
+      key: 'المفتاح خطأ. من Settings ← API Keys انسخ <b>Publishable</b> كاملاً.',
+      table: 'الجدول غير موجود. نفّذ <code>supabase-setup.sql</code> في SQL Editor ثم Run.',
+      perm: 'أعد تنفيذ <code>supabase-setup.sql</code> كاملاً.',
+      other: 'راجع القيمتين.'
+    };
+    return msg('<b>لم ينجح:</b><br>' + r.text + '<br><br>' + (tips[r.kind] || ''), 'bad');
+  }
+  localStorage.setItem('alawael.cloud', JSON.stringify({ url, key }));
+  const fileText = `window.ALAWAEL_CLOUD = {\n  url: '${url}',\n  key: '${key}'\n};\n`;
+  $('#fileText').textContent = fileText;
+  $('#nextCard').style.display = 'block';
+  msg('<b>نجح الاتصال ✅</b><br>الجدول موجود، وعدد الصفوف الحالية: ' + (r.rows?.length || 0) +
+      '<br>حُفظت القيم في هذا المتصفح — يمكنك فتح اللوحة الآن.', 'ok');
+};
+
+$('#copyFile').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#fileText').textContent); $('#copyFile').textContent = 'تم النسخ ✓'; }
+  catch { $('#copyFile').textContent = 'انسخ النص يدوياً من المربع الأسود'; }
+};
+
+$('#url').addEventListener('input', () => {
+  const u = deriveUrl($('#url').value);
+  const box = $('#usedUrlBox'), code = $('#usedUrl');
+  if (!u) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  code.textContent = u;
+});
+
+// تعبئة مسبقة من الإعدادات المنشورة أو المحفوظة
+(function prefill() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('alawael.cloud') || '{}'); } catch {}
+  const pub = window.ALAWAEL_CLOUD || {};
+  if (saved.url || pub.url) $('#url').value = saved.url || pub.url;
+  if (saved.key || pub.key) $('#key').value = saved.key || pub.key;
+})();
+</script>
+<script src="cloud-config.js" onerror="void 0"></script>
+</body>
+</html>

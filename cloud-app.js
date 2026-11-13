@@ -7,7 +7,15 @@
 'use strict';
 
 const CloudApp = (() => {
-  const cfg = (window.ALAWAEL_CLOUD || {});
+  const cfg = (() => {
+    const base = window.ALAWAEL_CLOUD || {};
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem('alawael.cloud') || '{}') || {}; } catch {}
+    return {
+      url: (local.url && String(local.url).trim()) ? local.url : (base.url || ''),
+      key: (local.key && String(local.key).trim()) ? local.key : (base.key || '')
+    };
+  })();
   const enabled = !!(cfg.url && cfg.key);
   let rev = 0;
   let lastPull = 0;
