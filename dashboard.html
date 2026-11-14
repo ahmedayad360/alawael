@@ -2425,7 +2425,14 @@ class LocalStorageAdapter {
     t.last_at = msg.created_at;
     t.has_auto_reply = false;
     const ar = this.db.settings.find(x => x.key === 'org')?.autoReply;
-    if (ar?.enabled && ar.text?.trim()) {
+    /* الرد الآلي: على أول رسالة فقط، ثم يُمنع لمدة ساعتين (أو المدة المحددة في الإعدادات)
+       حتى يتبادل الطالب والإدارة الكلام بحرية، وبعد انتهاء المدة يعود الرد الآلي */
+    const cooldownMs = (Number(ar?.cooldownHours) > 0 ? Number(ar.cooldownHours) : 2) * 3600e3;
+    const prior = this.db.messages.filter(m => m.thread_id === threadId);
+    const lastAuto = [...prior].reverse().find(m => m.auto);
+    const lastStudent = [...prior].reverse().find(m => m.sender !== 'admin');
+    const due = !lastAuto || (lastStudent && new Date(lastStudent.created_at).getTime() > new Date(lastAuto.created_at).getTime() + cooldownMs);
+    if (ar?.enabled && ar.text?.trim() && due) {
       const auto = this._add('messages', {
         id: uid(), thread_id: threadId, sender: 'admin', sender_name: 'الرد الآلي',
         body: ar.text.trim(), attachments: [], auto: true,
@@ -7149,7 +7156,8 @@ App.sections.chat = {
               <div class="switch ${cfg.enabled ? 'on' : ''}" id="arSwitch"></div>
             </div>
             ${field('نص الرد الآلي', `<textarea class="input" id="arText" style="min-height:110px" placeholder="مثال: تم استلام رسالتك، سيتم الرد عليك من قبل إدارة المدرسة خلال أوقات الدوام.">${esc(cfg.text || '')}</textarea>`)}
-            <div class="notice">${icon('bell')} <div>الرد الآلي <b>لا يلغي الإشعار</b>: تبقى الرسالة ظاهرة في «الإشعارات» وحالة المحادثة «جديدة» حتى يفتحها الموظف ويرد يدوياً أو يضعها كمراجَعة.</div></div>
+            ${field('مدة التوقف بعد الرد (بالساعات)', `<input class="input" id="arCooldown" type="number" min="1" max="72" step="1" value="${Number(cfg.cooldownHours) > 0 ? Number(cfg.cooldownHours) : 2}" dir="ltr" style="max-width:160px">`)}
+            <div class="notice">${icon('bell')} <div>الرد الآلي يُرسل على <b>أول رسالة فقط</b>، ثم يتوقف لمدة المحددة أعلاه (الافتراضي ساعتان) حتى يتبادل الطالب والإدارة الكلام بحرية — وبعد انتهاء المدة يعود الرد الآلي من جديد. الرد الآلي <b>لا يلغي الإشعار</b>: تبقى الرسالة ظاهرة في «الإشعارات» وحالة المحادثة «جديدة» حتى يفتحها الموظف ويرد يدوياً أو يضعها كمراجَعة.</div></div>
           </div>`,
           footer: `<button class="btn ghost" data-close>إلغاء</button><button class="btn" id="arSave">${icon('save')} حفظ</button>`,
           onMount(ov, close) {
@@ -7157,8 +7165,9 @@ App.sections.chat = {
             $('#arSwitch', ov).onclick = (e) => { enabled = !enabled; e.currentTarget.classList.toggle('on', enabled); };
             $('#arSave', ov).onclick = async () => {
               const text = $('#arText', ov).value.trim();
+              const cooldownHours = Math.min(72, Math.max(1, Number($('#arCooldown', ov).value) || 2));
               if (enabled && !text) return toast('اكتب نص الرد الآلي أولاً', 'err');
-              await DAL.saveSettings({ autoReply: { enabled, text } });
+              await DAL.saveSettings({ autoReply: { enabled, text, cooldownHours } });
               App.cache.settings = await DAL.getSettings();
               await DAL.logAudit({ action: 'إعداد الرد الآلي', detail: enabled ? 'مفعّل' : 'متوقف' });
               close(); toast(enabled ? 'تم تفعيل الرد الآلي' : 'تم إيقاف الرد الآلي', 'ok'); draw();
@@ -7550,6 +7559,9 @@ App.sections.settings = {
                 <div class="switch ${s.autoReply?.enabled ? 'on' : ''}" id="arSwitch2"></div></div>
               <div class="field mt-12"><label>نص الرد الآلي</label>
                 <textarea class="input" id="arText2" style="min-height:90px" placeholder="تم استلام رسالتك، سيتم الرد خلال أوقات الدوام.">${esc(s.autoReply?.text || '')}</textarea></div>
+              <div class="field mt-12"><label>مدة التوقف بعد الرد الآلي (بالساعات)</label>
+                <input class="input" id="arCooldown2" type="number" min="1" max="72" step="1" value="${Number(s.autoReply?.cooldownHours) > 0 ? Number(s.autoReply.cooldownHours) : 2}" dir="ltr" style="max-width:160px">
+                <div class="muted small" style="font-weight:600;margin-top:6px">يُرسل الرد على أول رسالة فقط، ثم يتوقف هذه المدة حتى يتبادل الطالب والإدارة الكلام — وبعدها يعود الرد الآلي.</div></div>
               <button class="btn sm mt-8" id="arSave2">${icon('save')} حفظ الرد الآلي</button>
             </div>
           </div>
@@ -7654,8 +7666,9 @@ App.sections.settings = {
       $('#arSwitch2', host).onclick = (e) => { arOn = !arOn; e.currentTarget.classList.toggle('on', arOn); };
       $('#arSave2', host).onclick = async () => {
         const text = $('#arText2', host).value.trim();
+        const cooldownHours = Math.min(72, Math.max(1, Number($('#arCooldown2', host).value) || 2));
         if (arOn && !text) return toast('اكتب نص الرد الآلي أولاً', 'err');
-        await DAL.saveSettings({ autoReply: { enabled: arOn, text } });
+        await DAL.saveSettings({ autoReply: { enabled: arOn, text, cooldownHours } });
         App.cache.settings = await DAL.getSettings();
         await DAL.logAudit({ action: 'إعداد الرد الآلي', detail: arOn ? 'مفعّل' : 'متوقف' });
         toast(arOn ? 'تم تفعيل الرد الآلي' : 'تم إيقاف الرد الآلي', 'ok'); draw();

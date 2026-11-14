@@ -982,6 +982,17 @@ html[data-theme="dark"] .icon-btn{
 }
 html[data-theme="dark"] .icon-btn.plain{ background:transparent; border:0; box-shadow:none }
 html[data-theme="dark"] .badge-dot{ background:#FFC53D; color:#231A00; box-shadow:0 6px 16px rgba(255,197,61,.45) }
+
+/* ---------- شارة حمراء بعدد غير المقروء (تبويب الدردشة / الأيقونات) ---------- */
+.tabbar button{position:relative}
+.tab-badge{
+  position:absolute; top:1px; inset-inline-start:calc(50% - 19px); min-width:17px; height:17px; padding:0 4px;
+  border-radius:999px; background:#F1433D; color:#fff; font-size:10px; font-weight:800; line-height:1;
+  display:grid; place-items:center; border:2px solid var(--bg); box-shadow:0 3px 8px rgba(241,67,61,.35);
+}
+.tile{position:relative}
+.tile .tab-badge{top:-5px; inset-inline-start:auto; inset-inline-end:-5px; min-width:19px; height:19px; font-size:10.5px}
+html[data-theme="dark"] .tab-badge{ background:#F1433D; color:#fff; border-color:#0A1120 }
 html[data-theme="dark"] .tabbar button.on{ background:rgba(59,130,246,.14) }
 html[data-theme="dark"] .tabbar button:active{ background:rgba(255,255,255,.06) }
 html[data-theme="dark"] .toast{ background:rgba(13,22,42,.94); color:#EAF1FF; border:1px solid rgba(255,255,255,.14) }
@@ -1259,7 +1270,8 @@ function seed() {
   const d = { schools: [], grades: [], sections: [], subjects: [], students: [], teachers: [], guardians: [], guardian: null,
     homeworks: [], dailyExams: [], dailyGrades: [], monthlyGrades: [], weekly: {}, monthlyExams: [],
     threads: [], messages: [], notifications: [], drivers: [], requests: [], about: {},
-    settings: { homeworkLock: { enabled: true, time: '20:00' }, chatLock: { enabled: false } }, audit: [] };
+    settings: { homeworkLock: { enabled: true, time: '20:00' }, chatLock: { enabled: false },
+      autoReply: { enabled: false, text: '', cooldownHours: 2 } }, audit: [] };
 
   d.schools = [
     { id: 's1', name: 'ابتدائية الأوائل', stage: 'ابتدائي' },
@@ -1539,14 +1551,15 @@ const Q = {
       DB.teachers.find(t => t.subject_id === sid && t.school_id === (sec && sec.school_id))) || null;
     const periodAt = (i) => (typeof PERIODS !== 'undefined' && PERIODS[i]) ? PERIODS[i] : { id: i + 1, label: `الحصة ${i + 1}` };
     const timeOf = (i) => { const p = periodAt(i); return p.time || p.start || `${8 + i}:30`; };
-    /* عدد الحصص: من بيانات اللوحة إن وُجدت، وإلا 7 */
+    /* عدد الحصص: من بيانات اللوحة إن وُجدت، وإلا 7
+       اللوحة تستخدم مفاتيح "يوم-حصة" بيوم 1..5 وحصة 1..7، لذلك الحصة القصوى = الرقم الثاني نفسه */
     let periodCount = 7;
     if (stored && typeof stored === 'object') {
       const cells = stored.cells && typeof stored.cells === 'object' ? stored.cells : (Array.isArray(stored) ? {} : stored);
       const keys = Object.keys(cells || {});
       if (keys.length) {
         const mx = keys.reduce((m, k) => { const p = +String(k).split('-')[1]; return Number.isFinite(p) ? Math.max(m, p) : m; }, 0);
-        periodCount = Math.min(12, Math.max(1, mx + 1));
+        periodCount = Math.min(12, Math.max(1, mx));
       }
     }
     const build = (getSubject) => DAYS.map((dn, di) => ({
@@ -1557,6 +1570,9 @@ const Q = {
         return { no: pi + 1, subject_id: sid || null, teacher_id: t ? t.id : null, time: timeOf(pi) };
       })
     }));
+    /* اللوحة تستخدم مفاتيح "يوم-حصة" بيوم 1..5 (الأحد..الخميس) وحصة 1..7 —
+       التطبيق يستخدم فهرساً 0-based، لذلك نحوّل هنا حتى لا يختفي يوم الأحد */
+    const fromDashCells = (cells) => build((di, pi) => cells[`${di + 1}-${pi + 1}`] || cells[`${di}-${pi}`] || null);
 
     /* (أ) شكل التطبيق: مصفوفة أيام */
     if (Array.isArray(stored) && stored.length) return stored;
@@ -1564,7 +1580,7 @@ const Q = {
     if (stored && typeof stored === 'object') {
       const cells = stored.cells && typeof stored.cells === 'object' ? stored.cells : stored;
       const keys = Object.keys(cells);
-      if (keys.length) return build((di, pi) => cells[`${di}-${pi}`] || cells[`${di}-${pi + 1}`] || null);
+      if (keys.length) return fromDashCells(cells);
     }
     /* (ج) لا يوجد جدول محفوظ: وضع تجريبي فقط يولّد جدولاً وهمياً */
     const cloudOn = (typeof CloudApp !== 'undefined' && CloudApp.enabled);
@@ -1604,6 +1620,18 @@ const Q = {
   },
   markRead(threadId) { const th = DB.threads.find(t => t.id === threadId); if (th) { th.unread = 0; Store.save(); } },
   unreadThreads: (list) => list.filter(t => (t.unread || 0) > 0).length,
+  /* عدد الرسائل غير المقروءة الواردة لهذا الحساب (للشارات الحمراء) */
+  unreadMsgs: () => {
+    const key = (typeof App !== 'undefined' && App.notifOwner) ? App.notifOwner() : null;
+    if (!key) return 0;
+    const me = (typeof DB !== 'undefined' && DB.viewer) || null;
+    return (DB.threads || []).filter(t => {
+      if (key === 'admin') return t.kind === 'admin';
+      if (key === 'teacher') return t.kind === 'teacher' && t.teacher_id === me;
+      if (key === 'student') return me ? (t.student_id === me) : false;
+      return false;
+    }).reduce((n, t) => n + (t.unread || 0), 0);
+  },
 
   notifFilter: (n, to) => {
     if (n.to !== to) return false;
@@ -1766,8 +1794,15 @@ const App = {
       if (latest && !latest.read) Toast(latest.title, 'ok');
     }
     this.lastNotifCount = n;
+    /* الشارة الحمراء على الجرس: عدد الإشعارات غير المقروءة — تُصفَّر عند فتح شاشة الإشعارات */
     const badge = $('#bellBadge');
     if (badge) { badge.textContent = n > 9 ? '9+' : String(n); badge.style.display = n ? 'grid' : 'none'; }
+    /* الشارة الحمراء على تبويب الدردشة: عدد الرسائل غير المقروءة — تُصفَّر عند فتح المحادثة */
+    const chatN = (typeof Q.unreadMsgs === 'function') ? Q.unreadMsgs() : 0;
+    $$('[data-badge="chat"]').forEach(el => {
+      el.textContent = chatN > 9 ? '9+' : String(chatN);
+      el.style.display = chatN ? 'grid' : 'none';
+    });
   },
 
   render() {
@@ -1810,15 +1845,21 @@ function bellBtn() {
   return `<button class="icon-btn" data-act="notifs">${ic('bell')}
     <span class="badge-dot" id="bellBadge" style="display:${n ? 'grid' : 'none'}">${n > 9 ? '9+' : n}</span></button>`;
 }
+/* شارة حمراء صغيرة على أيقونة (عدد غير المقروء) */
+function iconBadge(n) {
+  return `<span class="tab-badge" style="display:${n ? 'grid' : 'none'}">${n > 9 ? '9+' : n}</span>`;
+}
 function tabbar(items, active) {
+  /* شارة حمراء على تبويب الدردشة بعدد الرسائل غير المقروءة */
+  const chatN = (typeof Q.unreadMsgs === 'function') ? Q.unreadMsgs() : 0;
   return `<div class="tabbar">${items.map(([id, icon, label, act]) =>
-    `<button class="${active === id ? 'on' : ''}" ${act ? `data-act="${id}"` : `data-tab="${id}"`}>${ic(icon)}<span>${esc(label)}</span></button>`).join('')}</div>`;
+    `<button class="${active === id ? 'on' : ''}" ${act ? `data-act="${id}"` : `data-tab="${id}"`}>${ic(icon)}<span>${esc(label)}</span>${id === 'chat' ? `<span class="tab-badge" data-badge="chat" style="display:${chatN ? 'grid' : 'none'}">${chatN > 9 ? '9+' : chatN}</span>` : ''}</button>`).join('')}</div>`;
 }
 const empty = (icon, title, sub) =>
   `<div class="empty"><div class="ic">${ic(icon)}</div><b>${esc(title)}</b><span>${esc(sub || '')}</span></div>`;
 
-const TILE = (icon, label, tone, act) =>
-  `<button class="tile ${tone}" data-act="${act}"><div class="ti">${ic(icon)}</div><b>${esc(label)}</b></button>`;
+const TILE = (icon, label, tone, act, badge) =>
+  `<button class="tile ${tone}" data-act="${act}"><div class="ti">${ic(icon)}</div><b>${esc(label)}</b>${badge ? `<span class="tab-badge">${badge > 9 ? '9+' : badge}</span>` : ''}</button>`;
 
 function subjChip(subjectId) {
   const s = Q.subject(subjectId);
@@ -2000,14 +2041,14 @@ function studentHome(st) {
       </div>
 
       <div class="tiles mb-16">
-        ${TILE('clip','الواجبات','b','homework')}
+        ${TILE('clip','الواجبات','b','homework', Q.unread('student'))}
         ${TILE('chart','الدرجات','n','grades')}
         ${TILE('calendarGrid','الجدول اليومي','b','schedule')}
         ${TILE('calendar','الجدول الشهري','y','monthSchedule')}
-        ${TILE('chat','الدردشة','b','chat')}
+        ${TILE('chat','الدردشة','b','chat', (typeof Q.unreadMsgs === 'function' ? Q.unreadMsgs() : 0))}
         ${TILE('car','الاشتراك','y','subs')}
         ${TILE('building','عن المدرسة','n','about')}
-        ${TILE('bell','الإشعارات','b','notifs')}
+        ${TILE('bell','الإشعارات','b','notifs', Q.unread('student'))}
       </div>
 
       <div class="card">
@@ -2111,14 +2152,17 @@ function studentGrades(st) {
 function studentSchedule(st) {
   const week = Q.weeklyFor(st.section_id);
   const todayDow = new Date().getDay();
-  const defaultDay = todayDow <= 4 ? todayDow : 0;
+  /* كل الأيام الخمسة تظهر دائماً (الأحد..الخميس) كما في اللوحة — حتى لو كان اليوم فارغاً */
+  const days = week.map((w, i) => ({ w, i }));
+  const withSubjects = days.filter(d => (d.w.periods || []).some(p => p.subject_id));
+  const defaultDay = todayDow <= 4 ? todayDow : (withSubjects.length ? withSubjects[0].i : 0);
   const sel = App.params.day != null ? +App.params.day : defaultDay;
   const day = week[sel] || week[0];
   return `<div class="screen">
     ${navbar({ title: 'الجدول اليومي', sub: `${Q.label.grade(st.grade_id)} — شعبة ${Q.label.section(st.section_id)}`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="chips wrap mb-12">
-        ${week.filter(w => (w.periods || []).some(p => p.subject_id)).map(w => [w, w.day]).map(([w, i]) => `<button class="chip ${i === sel ? 'on' : ''}" data-day-tab="${i}">${w.name}
+        ${days.map(({ w, i }) => `<button class="chip ${i === sel ? 'on' : ''}" data-day-tab="${i}">${w.name}
           ${i === todayDow ? '<span class="d">اليوم</span>' : '<span class="d">&nbsp;</span>'}</button>`).join('')}
       </div>
       <div class="list">
@@ -2360,6 +2404,14 @@ function markNotifsRead() {
   const badge = document.querySelector('#bellBadge');
   const left = Q.unread(to);
   if (badge) { badge.textContent = left > 9 ? '9+' : String(left); badge.style.display = left ? 'grid' : 'none'; }
+  /* تصفير الشارات الحمراء على أيقونات الرئيسية (الإشعارات/الدردشة) */
+  $$('.tile').forEach(el => {
+    const act = el.dataset.act;
+    if (act === 'notifs' || act === 'homework') {
+      const b = el.querySelector('.tab-badge');
+      if (b) b.style.display = 'none';
+    }
+  });
   return n;
 }
 
@@ -2422,17 +2474,25 @@ function bindStudent(st) {
         else Q.push('teacher', 'message', 'رسالة من طالب', `${st.name}: ${text.slice(0, 60)}`);
         App.render();
         setTimeout(() => { const b = $('#chatBody'); if (b) b.scrollTop = b.scrollHeight; }, 40);
-        /* الرد التلقائي من الإدارة (إن كان مفعّلاً في اللوحة) */
+        /* الرد التلقائي: على أول رسالة فقط، ثم يُمنع لمدة ساعتين (أو المدة المحددة في اللوحة)
+           حتى يتبادل الطالب والإدارة الكلام بحرية، وبعد انتهاء المدة يعود الرد التلقائي */
         const ar = (DB.settings && DB.settings.autoReply) || null;
         if (th.kind === 'admin' && ar && ar.enabled && String(ar.text || '').trim()) {
-          setTimeout(() => {
-            const cur = DB.threads.find(t => t.id === th.id);
-            Q.sendMsg(th.id, 'admin', String(ar.text).trim(), { unread: cur ? (cur.unread || 0) : 0, auto: true });
-            if (App.route === 'thread' && App.params.id === th.id) {
-              App.render();
-              setTimeout(() => { const b = $('#chatBody'); if (b) b.scrollTop = b.scrollHeight; }, 40);
-            }
-          }, 1200);
+          const cooldown = (Number(ar.cooldownHours) > 0 ? Number(ar.cooldownHours) : 2) * 3600e3;
+          const msgs = Q.msgs(th.id);
+          const lastAuto = [...msgs].reverse().find(m => m.auto);
+          const lastStudent = [...msgs].reverse().find(m => m.from === 'me');
+          const due = !lastAuto || (lastStudent && new Date(lastStudent.at).getTime() > new Date(lastAuto.at).getTime() + cooldown);
+          if (due) {
+            setTimeout(() => {
+              const cur = DB.threads.find(t => t.id === th.id);
+              Q.sendMsg(th.id, 'admin', String(ar.text).trim(), { unread: cur ? (cur.unread || 0) : 0, auto: true });
+              if (App.route === 'thread' && App.params.id === th.id) {
+                App.render();
+                setTimeout(() => { const b = $('#chatBody'); if (b) b.scrollTop = b.scrollHeight; }, 40);
+              }
+            }, 1200);
+          }
         }
       };
       send.onclick = doSend;
@@ -3376,9 +3436,9 @@ function adminSchedule() {
       ${gradeSectionPicker('s', G, S)}
       <div class="tt">
         <div class="tt-head"><div>الحصة</div>${week.map(w => `<div>${w.name}</div>`).join('')}</div>
-        ${Array.from({ length: 7 }, (_, p) => `<div class="tt-row"><div class="p"><b>${p + 1}</b></div>
+        ${Array.from({ length: Math.max(7, ...week.map(w => (w.periods || []).length)) }, (_, p) => `<div class="tt-row"><div class="p"><b>${p + 1}</b></div>
           ${week.map((w, di) => {
-            const cell = w.periods[p];
+            const cell = w.periods[p] || { subject_id: null, teacher_id: null };
             return `<div class="ttc"><div class="tt-cell ${di === todayDow ? 'today' : ''} editable" data-cell="${di}-${p}">
               ${esc(Q.subject(cell.subject_id)?.name || '—')}<span>${esc(Q.teacher(cell.teacher_id)?.name?.replace('أ. ','') || '')}</span></div></div>`;
           }).join('')}
@@ -3394,7 +3454,7 @@ function adminSchedule() {
 
 function openCellEditor(sectionId, dayIdx, periodIdx) {
   const week = Q.weeklyFor(sectionId);
-  const cell = week[dayIdx].periods[periodIdx];
+  const cell = week[dayIdx].periods[periodIdx] || { subject_id: null, teacher_id: null };
   const teachers = Q.teachersOf(App.schoolId);
   Sheet.open({
     title: `الحصة ${periodIdx + 1} — ${week[dayIdx].name}`,
@@ -3409,6 +3469,7 @@ function openCellEditor(sectionId, dayIdx, periodIdx) {
     actions: `<button class="btn" id="cellSave">${ic('check')} حفظ</button>`,
     onMount(ov, close) {
       $('#cellSave', ov).onclick = () => {
+        while (week[dayIdx].periods.length <= periodIdx) week[dayIdx].periods.push({ no: week[dayIdx].periods.length + 1, subject_id: null, teacher_id: null });
         week[dayIdx].periods[periodIdx] = { ...cell, subject_id: $('#cellSub', ov).value, teacher_id: $('#cellTeacher', ov).value || null };
         DB.weekly[sectionId] = week; Store.save(); close(); Toast('حُفظ الجدول ✓', 'ok'); App.render();
       };
@@ -4149,8 +4210,19 @@ const PushSetup = (() => {
     const d = new Date();
     const c = $('#clock'); if (c) c.textContent = `${d.getHours()}:${pad(d.getMinutes())}`;
   };
-  tick(); setInterval(tick, 20000);
-  setInterval(() => { if (App.role) App.checkNotifs(); }, 4000);
+  tick(); setInterval(tick, 10000);
+  /* فحص فوري كل 10 ثوانٍ: الإشعارات والرسائل والواجبات تصل بحد أقصى 10 ثوانٍ */
+  setInterval(() => { if (App.role) App.checkNotifs(); }, 10000);
+  /* عند العودة إلى التطبيق: سحب فوري ثم تحديث الشاشة */
+  const pullNow = () => {
+    if (typeof CloudApp !== 'undefined' && CloudApp.enabled) {
+      CloudApp.tick().then(() => { try { App.render(); } catch (e) {} }).catch(() => {});
+    } else if (App.role) { try { App.render(); } catch (e) {} }
+  };
+  try {
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pullNow(); });
+    window.addEventListener('focus', pullNow);
+  } catch (e) {}
 })();
 
 </script>

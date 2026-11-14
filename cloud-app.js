@@ -186,7 +186,8 @@ const CloudApp = (() => {
         chatLock: { enabled: !!org.chatLock?.enabled, note: org.chatLock?.note || '' },
         autoReply: {
           enabled: !!(org.autoReply && org.autoReply.enabled),
-          text: (org.autoReply && org.autoReply.text) || ''
+          text: (org.autoReply && org.autoReply.text) || '',
+          cooldownHours: (org.autoReply && Number(org.autoReply.cooldownHours) > 0) ? Number(org.autoReply.cooldownHours) : 2
         },
         /* حساب الإدارة: يُستخدم للدخول إلى لوحة الإدارة من مربع الطالب */
         admin: {
@@ -224,12 +225,26 @@ const CloudApp = (() => {
       images: h.images || [], files: h.files || [], date: h.date, is_deleted: false,
       created_at: h.created_at || new Date().toISOString()
     }));
+    /* الجدول الأسبوعي: التطبيق يحفظه كمصفوفة أيام، واللوحة كمفاتيح "يوم-حصة" (يوم 1..5 = الأحد..الخميس) */
+    const weekly = Object.entries(db.weekly || {}).map(([sectionId, w]) => {
+      const cells = {};
+      if (Array.isArray(w)) {
+        w.forEach((day, di) => (day.periods || []).forEach((per, pi) => {
+          if (per && per.subject_id) cells[(di + 1) + '-' + (pi + 1)] = per.subject_id;
+        }));
+      } else if (w && typeof w === 'object') {
+        const c = w.cells && typeof w.cells === 'object' ? w.cells : w;
+        Object.assign(cells, c);
+      }
+      const stu = (db.students || []).find(x => x.section_id === sectionId) || {};
+      return { id: 'wk_' + sectionId, section_id: sectionId, school_id: stu.school_id || null, cells };
+    });
     const subLinks = (db.requests || []).map(r => ({
       id: r.id, subscription_id: r.driver_id, student_id: r.student_id,
       status: r.status || 'pending', created_at: r.at, is_deleted: false,
       responded_at: r.status && r.status !== 'pending' ? new Date().toISOString() : null
     }));
-    return { threads, messages, homeworks, subLinks };
+    return { threads, messages, homeworks, subLinks, weekly };
   }
 
   function mergeById(cloudRows, appRows) {
@@ -245,7 +260,7 @@ const CloudApp = (() => {
     try {
       const conv = toDashboard(DB);
       const ids = conv.threads.map(t => t.id);
-      const need = ids.length ? await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks'].map(k => '"' + k + '"').join(',') + ')') : [];
+      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks', 'weekly'].map(k => '"' + k + '"').join(',') + ')');
       const cur = {};
       (need || []).forEach(r => { cur[r.key] = r.value || []; });
       const revNow = Date.now();
@@ -344,7 +359,8 @@ const CloudApp = (() => {
       };
     }
     if (timer) clearInterval(timer);
-    timer = setInterval(tick, 4000);
+    /* فحص فوري كل 10 ثوانٍ: الرسائل والواجبات والإشعارات تصل بحد أقصى 10 ثوانٍ */
+    timer = setInterval(tick, 10000);
     return ok;
   }
 
