@@ -1911,6 +1911,8 @@ function openLogin(role) {
         setTimeout(() => App.render(), 120);
         setTimeout(() => Toast('أهلاً بك', 'ok'), 420);
       };
+      const cloudOff = () => (typeof CloudApp === 'undefined' || !CloudApp.enabled);
+      const loginFail = (m) => Toast(cloudOff() ? m + ' — وقاعدة البيانات غير مربوطة بهذا الجهاز' : m, 'err');
       const doLogin = (code, pw) => {
         code = (code || '').trim(); pw = (pw || '').trim();
         if (isAdmin) { if (!code || !pw) return Toast('اكتب اسم المستخدم وكلمة المرور', 'err'); App.user = { role: 'admin', name: 'مدير النظام' }; return enter(); }
@@ -1924,19 +1926,19 @@ function openLogin(role) {
         }
         if (role === 'student') {
           const st = DB.students.find(s => s.code === code.toUpperCase() && (s.password || '1234') === pw);
-          if (!st) return Toast('الكود أو كلمة المرور غير صحيحة', 'err');
+          if (!st) return loginFail('الكود أو كلمة المرور غير صحيحة');
           App.user = { role, studentId: st.id };
         } else if (role === 'guardian') {
           const gu = Q.guardians().find(g => g.code === code.toUpperCase() && (g.password || '1234') === pw);
-          if (!gu) return Toast('الكود أو كلمة المرور غير صحيحة', 'err');
+          if (!gu) return loginFail('الكود أو كلمة المرور غير صحيحة');
           App.user = { role, guardianId: gu.id };
         } else if (role === 'teacher') {
           const t = DB.teachers.find(x => x.code === code.toUpperCase() && (x.password || '1234') === pw);
-          if (!t) return Toast('كود المدرس أو كلمة المرور غير صحيحة', 'err');
+          if (!t) return loginFail('كود المدرس أو كلمة المرور غير صحيحة');
           App.user = { role, teacherId: t.id };
         } else {
           const dr = DB.drivers.find(x => x.code === code.toUpperCase() && (x.password || '1234') === pw);
-          if (!dr) return Toast('كود الاشتراك أو كلمة المرور غير صحيحة', 'err');
+          if (!dr) return loginFail('كود الاشتراك أو كلمة المرور غير صحيحة');
           App.user = { role, driverId: dr.id };
         }
         enter();

@@ -1,5 +1,5 @@
 /* عامل الخدمة — يعمل والتطبيق مغلق، ويستقبل الإشعارات الفورية */
-const VERSION = 'alawael-v3';
+const VERSION = 'alawael-v4';
 const SHELL = [
   './app.html',
   './manifest.webmanifest',
@@ -74,6 +74,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  /* إعدادات السحابة يجب أن تُقرأ من الشبكة دائماً (حتى لا تبقى نسخة قديمة فارغة) */
+  if (/cloud-config\.js$/.test(url.pathname)) return;
 
   // صفحات التنقّل: الشبكة أولاً (لتصل التحديثات فوراً)، والكاش عند انقطاع الإنترنت
   if (req.mode === 'navigate' || /\.html($|\?)/.test(url.pathname)) {
