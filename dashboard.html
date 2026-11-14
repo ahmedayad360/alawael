@@ -370,6 +370,10 @@ table.tbl tbody tr.clickable{cursor:pointer}
 .bubble.out{background:var(--blue); color:#fff; align-self:flex-end; border-end-end-radius:5px}
 .bubble.out .time{color:rgba(255,255,255,.75)}
 .bubble .att{display:flex; gap:6px; flex-wrap:wrap; margin-top:7px}
+.bubble .msg-acts{display:flex; gap:6px; margin-top:7px}
+.bubble .msg-act{display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); border-radius:9px; padding:4px 9px; font-size:10.5px; font-weight:800; font-family:inherit; cursor:pointer}
+.bubble .msg-act:hover{color:var(--blue); border-color:var(--blue)}
+.bubble .msg-act svg{width:11px; height:11px}
 .chat-input{border-top:1px solid var(--line); padding:12px 14px; display:flex; gap:9px; align-items:flex-end; background:var(--surface)}
 .chat-input textarea{flex:1; border:none; background:var(--surface-2); border-radius:13px; padding:11px 13px; resize:none; min-height:44px; max-height:120px; outline:none; font-weight:600; border:1.5px solid transparent}
 .chat-input textarea:focus{border-color:var(--blue); background:var(--surface)}
@@ -2394,7 +2398,23 @@ class LocalStorageAdapter {
       .sort((a, b) => (b.last_at || '').localeCompare(a.last_at || '')).map(t => ({ ...t }));
   }
   async listMessages(threadId) {
-    return this.db.messages.filter(m => m.thread_id === threadId).sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(m => ({ ...m }));
+    return this.db.messages.filter(m => m.thread_id === threadId && !m.is_deleted).sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(m => ({ ...m }));
+  }
+  /* تعديل رسالة (الإدارة) — يظهر التعديل للطالب فوراً */
+  async updateMessage({ id, body }) {
+    const m = this.db.messages.find(x => x.id === id && !x.is_deleted);
+    if (!m) throw new Error('الرسالة غير موجودة');
+    const t = String(body || '').trim();
+    if (!t) throw new Error('اكتب نص الرسالة');
+    m.body = t; m.edited = true; m.edited_at = new Date().toISOString();
+    this._save('messages'); return { ...m };
+  }
+  /* حذف رسالة نهائياً — تُحذف أيضاً من تطبيق الطالب */
+  async deleteMessage(id) {
+    const m = this.db.messages.find(x => x.id === id);
+    if (!m) return false;
+    m.is_deleted = true; m.deleted_at = new Date().toISOString();
+    this._save('messages'); return true;
   }
   chatLockState() {
     const c = this.db.settings.find(x => x.key === 'org')?.chatLock || {};
@@ -2571,6 +2591,7 @@ class LocalStorageAdapter {
       Object.assign(r, {
         name, email, phone, area_ids: [...(data.area_ids || [])],
         car_type: String(data.car_type ?? r.car_type ?? '').trim(),
+        car_number: String(data.car_number ?? r.car_number ?? '').trim(),
         notes: String(data.notes || '').trim(), status: data.status || r.status || 'active',
         password: data.password || r.password, updated_at: new Date().toISOString()
       });
@@ -2580,6 +2601,7 @@ class LocalStorageAdapter {
     return this._add('subscriptions', {
       id: uid(), name, email, phone, password, area_ids: [...(data.area_ids || [])],
       car_type: String(data.car_type || '').trim(),
+      car_number: String(data.car_number || '').trim(),
       notes: String(data.notes || '').trim(), status: 'active',
       created_at: new Date().toISOString(), is_deleted: false
     });
@@ -2709,7 +2731,7 @@ const DAL = (() => {
     'regeneratePassword', 'setAccountStatus', 'addGuardian', 'updateGuardian', 'deleteGuardian', 'addTeacher',
     'updateTeacher', 'deleteTeacher', 'setTeacherAssignments', 'saveWeekly', 'saveMonthly', 'deleteMonthly',
     'addHomework', 'deleteHomework', 'createExam', 'saveGrades', 'saveMonthlyGrades', 'saveStudentPeriod',
-    'saveAttendance', 'addAnnouncement', 'deleteAnnouncement', 'sendMessage', 'markThreadRead', 'markThreadReviewed', 'broadcastMessage',
+    'saveAttendance', 'addAnnouncement', 'deleteAnnouncement', 'sendMessage', 'updateMessage', 'deleteMessage', 'markThreadRead', 'markThreadReviewed', 'broadcastMessage',
     'addPermit', 'markNotificationRead', 'markAllNotificationsRead', 'logAudit', 'saveSettings',
     'deleteStudents', 'notifyStudents', 'notifyGradeStudents', 'notifyTeachers', 'addTeachersBulk', 'addTeacherAssignments',
     'removeTeacherAssignment', 'updateExam', 'publishExamGrades', 'receiveMessage', 'updateHomework', 'deleteHomeworks', 'updateAnnouncement', 'deleteAnnouncements', 'notifyTeachers', 'addTeachersBulk', 'reorderSubjects', 'updateAccount', 'resetAreas', 'reorderStudents', 'resetStudentOrder', 'saveScheduledNotice', 'setScheduledStatus', 'deleteScheduledNotice', 'runDueSchedules', 'nextRunOf']);
@@ -2722,7 +2744,7 @@ const DAL = (() => {
     'listTeachers', 'addTeacher', 'updateTeacher', 'deleteTeacher', 'setTeacherAssignments', 'getWeekly', 'saveWeekly',
     'listMonthly', 'saveMonthly', 'deleteMonthly', 'listHomeworks', 'addHomework', 'updateHomework', 'deleteHomework', 'deleteHomeworks', 'listExams',
     'createExam', 'listDailyGrades', 'saveGrades', 'listMonthlyGrades', 'listMonthlyGradesBySection', 'saveMonthlyGrades',
-    'saveStudentPeriod', 'listAbsences', 'saveAttendance', 'listAnnouncements', 'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement', 'deleteAnnouncements',
+    'saveStudentPeriod', 'listAbsences', 'saveAttendance', 'listAnnouncements', 'addAnnouncement', 'updateAnnouncement', 'deleteAnnouncement', 'deleteAnnouncements', 'updateMessage', 'deleteMessage',
     'listThreads', 'listMessages', 'sendMessage', 'markThreadRead', 'markThreadReviewed', 'broadcastMessage', 'listPermits', 'addPermit',
     'listNotifications', 'unreadNotificationsCount', 'markNotificationRead', 'markAllNotificationsRead', 'listAudit',
     'logAudit', 'getSettings', 'saveSettings', 'stats', 'deleteStudents', 'notifyStudents', 'notifyGradeStudents',
@@ -3845,7 +3867,12 @@ const Cloud = {
       const byId = (a, b) => {
         const m = new Map();
         (a || []).forEach(r => m.set(r.id, r));
-        (b || []).forEach(r => m.set(r.id, { ...(m.get(r.id) || {}), ...r }));
+        (b || []).forEach(r => {
+          const cloudRow = m.get(r.id);
+          /* ما حذفته السحابة (الجوال أو اللوحة) لا يُبعث من نسخة محلية قديمة */
+          if (cloudRow && cloudRow.is_deleted && !r.is_deleted) return;
+          m.set(r.id, { ...(cloudRow || {}), ...r });
+        });
         return [...m.values()];
       };
 
@@ -7089,7 +7116,11 @@ App.sections.chat = {
               <div style="font-size:10.5px;font-weight:800;opacity:.75;margin-bottom:3px">${esc(m.sender_name)}</div>
               ${esc(m.body)}
               ${(m.attachments || []).length ? `<div class="att">${m.attachments.map(a => `<span class="att-chip" style="background:rgba(255,255,255,.2);color:inherit">${icon(a.type === 'pdf' ? 'fileText' : 'image')} ${esc(a.name || 'مرفق')}</span>`).join('')}</div>` : ''}
-              <span class="time">${fmtTime(m.created_at)} ${m.broadcast ? '· رسالة جماعية' : ''}</span>
+              <span class="time">${fmtTime(m.created_at)} ${m.broadcast ? '· رسالة جماعية' : ''}${m.edited ? ' · عُدّلت' : ''}</span>
+              <div class="msg-acts">
+                ${m.sender === 'admin' && !m.auto ? `<button class="msg-act" data-editmsg="${m.id}" title="تعديل الرسالة">${icon('edit')} تعديل</button>` : ''}
+                <button class="msg-act" data-delmsg="${m.id}" title="حذف الرسالة">${icon('trash')} حذف</button>
+              </div>
             </div>`).join('') || emptyState('لا توجد رسائل في هذه المحادثة', 'inbox')}
           </div>
           ${chatLock.enabled ? `<div class="chat-input" style="justify-content:center;background:var(--danger-bg);border-top:1px solid var(--line)">
@@ -7138,6 +7169,31 @@ App.sections.chat = {
         $('#sendBtn', host).onclick = send;
         $('#msgBox', host).onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); };
       }
+      $$('[data-editmsg]', host).forEach(b => b.onclick = async () => {
+        const m = messages.find(x => x.id === b.dataset.editmsg); if (!m) return;
+        openModal({
+          title: 'تعديل الرسالة', size: 'narrow',
+          body: `${field('نص الرسالة', `<textarea class="input" id="emBody" style="min-height:110px">${esc(m.body)}</textarea>`)}
+                 <div class="notice">${icon('info')} سيظهر النص الجديد للطالب فوراً.</div>`,
+          footer: `<button class="btn ghost" data-no>إلغاء</button><button class="btn" id="emSave">${icon('check')} حفظ التعديل</button>`,
+          onMount(ov, close) {
+            ov.querySelector('[data-no]').onclick = close;
+            ov.querySelector('#emSave').onclick = async () => {
+              const t = ov.querySelector('#emBody').value.trim();
+              if (!t) return toast('اكتب نص الرسالة', 'warn');
+              await DAL.updateMessage({ id: m.id, body: t });
+              await DAL.logAudit({ action: 'تعديل رسالة', detail: `${current.participant_name}` });
+              toast('تم تعديل الرسالة', 'ok', 1600); close(); draw();
+            };
+          }
+        });
+      });
+      $$('[data-delmsg]', host).forEach(b => b.onclick = async () => {
+        if (!await confirmModal({ title: 'حذف الرسالة', message: 'ستُحذف الرسالة نهائياً من اللوحة ومن تطبيق الطالب.', confirmText: 'حذف نهائي' })) return;
+        await DAL.deleteMessage(b.dataset.delmsg);
+        await DAL.logAudit({ action: 'حذف رسالة', detail: `${current.participant_name}` });
+        toast('تم حذف الرسالة', 'ok', 1600); draw();
+      });
       $('[data-gotoStudent]', host)?.addEventListener('click', async () => {
         if (st.kind !== 'student') return toast('هذه محادثة مدرس — الملف الشخصي متاح من قسم المدرسين', 'info');
         const s = await DAL.getStudent(current.participant_id);
@@ -9318,7 +9374,7 @@ App.sections.subscriptions = {
   title: 'الاشتراكات', crumb: 'الاشتراكات', icon: 'idCard',
   render(host) {
     const st = {
-      name: '', email: '', password: '', phone: '', carType: '', notes: '',
+      name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '',
       areaIds: new Set(), editId: null,
       areaQ: '', manualArea: '', q: ''
     };
@@ -9365,6 +9421,7 @@ App.sections.subscriptions = {
                 <button class="btn xs ghost" id="genPw" title="توليد كلمة مرور">${icon('refresh')}</button></div>`)}
               ${field('رقم الهاتف', `<input class="input" id="subPhone" value="${esc(st.phone)}" placeholder="0770 000 0000" dir="ltr">`)}
               ${field('نوع السيارة', `<input class="input" id="subCar" value="${esc(st.carType)}" placeholder="مثال: كيا بيكانتو — بيضاء — 2022">`)}
+              ${field('رقم السيارة', `<input class="input" id="subCarNo" value="${esc(st.carNumber)}" placeholder="مثال: 12345 موصل" dir="ltr">`)}
             </div>
             ${field('ملاحظات (اختياري)', `<input class="input" id="subNotes" value="${esc(st.notes)}" placeholder="مثال: مشترك منذ 2026 — يغطي الجانب الأيمن">`)}
 
@@ -9405,7 +9462,7 @@ App.sections.subscriptions = {
                   <div class="row" style="gap:6px;flex-wrap:wrap"><b style="font-size:12.5px">${esc(x.name)}</b>
                     ${x.status === 'disabled' ? pill('موقوف', 'danger') : pill('نشط', 'ok')}</div>
                   <div class="muted" style="font-size:11.5px;font-weight:700;margin-top:2px" dir="ltr">${esc(x.email)}</div>
-                  <div class="muted" style="font-size:11.5px;font-weight:600">${esc(x.phone || 'بلا هاتف')} · كلمة المرور <span class="code pw" style="font-size:10.5px">${esc(x.password)}</span>${x.car_type ? ` · السيارة: ${esc(x.car_type)}` : ''}${x.notes ? ` · ${esc(x.notes)}` : ''}</div>
+                  <div class="muted" style="font-size:11.5px;font-weight:600">${esc(x.phone || 'بلا هاتف')} · كلمة المرور <span class="code pw" style="font-size:10.5px">${esc(x.password)}</span>${x.car_type ? ` · السيارة: ${esc(x.car_type)}` : ''}${x.car_number ? ` · رقمها: ${esc(x.car_number)}` : ''}${x.notes ? ` · ${esc(x.notes)}` : ''}</div>
                   <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:5px">
                     ${(x.area_ids || []).length ? x.area_ids.map(id => `<span class="pill blue" style="font-size:10px">${esc(areaById[id]?.name || 'منطقة محذوفة')}</span>`).join('') : '<span class="pill warn" style="font-size:10px">بلا مناطق</span>'}
                   </div>
@@ -9450,6 +9507,7 @@ App.sections.subscriptions = {
       $('#subPw', host).oninput = e => st.password = e.target.value;
       $('#subPhone', host).oninput = e => st.phone = e.target.value;
       $('#subCar', host).oninput = e => st.carType = e.target.value;
+      $('#subCarNo', host).oninput = e => st.carNumber = e.target.value;
       $('#subNotes', host).oninput = e => st.notes = e.target.value;
       $('#manualArea', host).oninput = e => st.manualArea = e.target.value;
       $('#manualArea', host).onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addArea(st.manualArea, host); } };
@@ -9496,19 +9554,19 @@ App.sections.subscriptions = {
           const rec = await DAL.saveSubscription({
             ...(st.editId ? { id: st.editId } : {}),
             name: st.name, email: st.email, password: st.password, phone: st.phone,
-            car_type: st.carType, notes: st.notes, area_ids: [...st.areaIds], status: 'active'
+            car_type: st.carType, car_number: st.carNumber, notes: st.notes, area_ids: [...st.areaIds], status: 'active'
           });
           await DAL.logAudit({
             action: st.editId ? 'تعديل حساب اشتراك' : 'إضافة حساب اشتراك',
             detail: `${rec.name} — ${rec.email} — ${(rec.area_ids || []).length} منطقة`
           });
           toast(st.editId ? 'تم حفظ التعديل' : `أُضيف حساب الاشتراك — كلمة المرور: ${rec.password}`, 'ok', 7000);
-          Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', notes: '', areaIds: new Set(), editId: null });
+          Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', areaIds: new Set(), editId: null });
           draw();
         } catch (e) { toast(e.message, 'err', 5000); }
       };
       $('#cancelSub', host)?.addEventListener('click', () => {
-        Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', notes: '', areaIds: new Set(), editId: null });
+        Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', areaIds: new Set(), editId: null });
         draw();
       });
 
@@ -9518,7 +9576,7 @@ App.sections.subscriptions = {
         if (!x) return;
         Object.assign(st, {
           editId: x.id, name: x.name, email: x.email, password: x.password || '',
-          phone: x.phone || '', carType: x.car_type || '', notes: x.notes || '', areaIds: new Set(x.area_ids || [])
+          phone: x.phone || '', carType: x.car_type || '', carNumber: x.car_number || '', notes: x.notes || '', areaIds: new Set(x.area_ids || [])
         });
         draw();
         host.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -9540,7 +9598,7 @@ App.sections.subscriptions = {
         })) return;
         await DAL.deleteSubscription(x.id);
         await DAL.logAudit({ action: 'حذف حساب اشتراك', detail: x.name });
-        if (st.editId === x.id) Object.assign(st, { editId: null, name: '', email: '', password: '', phone: '', carType: '', notes: '', areaIds: new Set() });
+        if (st.editId === x.id) Object.assign(st, { editId: null, name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', areaIds: new Set() });
         toast('تم حذف الحساب', 'ok'); draw();
       });
 
@@ -9551,6 +9609,7 @@ App.sections.subscriptions = {
         lines: [
           ['الهاتف', x.phone || '—'],
           ['نوع السيارة', x.car_type || '—'],
+          ['رقم السيارة', x.car_number || '—'],
           ['مناطق الاشتراك', (x.area_ids || []).map(areaName).join('، ')],
           ['الحالة', x.status === 'disabled' ? 'موقوف' : 'نشط']
         ]

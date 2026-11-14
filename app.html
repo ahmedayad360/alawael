@@ -313,6 +313,14 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 .driver .d-areas{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .driver .d-acts{display:flex;gap:8px;margin-top:11px}
 .driver .d-acts .btn{flex:1;padding:11px;font-size:13.5px;border-radius:13px;box-shadow:none}
+.driver .d-info{margin-top:12px;border-top:1px solid var(--sep);padding-top:10px;display:grid;gap:7px}
+.driver .d-line{display:flex;align-items:center;gap:10px;font-size:13px}
+.driver .d-k{flex:none;width:118px;color:var(--secondary);font-weight:700;font-size:12px}
+.driver .d-v{flex:1;font-weight:800;color:var(--label);line-height:1.7}
+.bubble .msg-acts{display:flex;gap:6px;margin-top:7px}
+.bubble .msg-act{display:inline-flex;align-items:center;gap:4px;border:0;border-radius:9px;padding:4px 9px;font-size:10.5px;font-weight:800;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.18);color:inherit}
+.bubble.in .msg-act{background:var(--card-2);color:var(--secondary);border:1px solid var(--sep)}
+.bubble .msg-act svg{width:11px;height:11px}
 
 /* ---------- شاشات فارغة ---------- */
 .empty{text-align:center;padding:44px 20px;color:var(--secondary)}
@@ -1626,6 +1634,27 @@ const Q = {
     if (th) { th.last_at = at; th.unread = opts.unread != null ? opts.unread : (th.unread || 0); }
     Store.save();
   },
+  /* تعديل رسالة (الإدارة) — يُرفع تلقائياً إلى اللوحة عبر الحفظ */
+  editMsg(id, text) {
+    const m = DB.messages.find(x => x.id === id); if (!m) return false;
+    m.text = String(text || '').trim(); m.edited = true; m.edited_at = new Date().toISOString();
+    Store.save(); return true;
+  },
+  /* حذف رسالة (الإدارة) — يُسجَّل كحذف نهائي حتى لا تعود من السحابة */
+  deleteMsg(id) {
+    const i = DB.messages.findIndex(x => x.id === id); if (i < 0) return false;
+    DB.messages.splice(i, 1);
+    if (!DB._deleted) DB._deleted = {};
+    if (!DB._deleted.messages) DB._deleted.messages = [];
+    if (!DB._deleted.messages.includes(id)) DB._deleted.messages.push(id);
+    Store.save(); return true;
+  },
+  /* تسجيل حذف عام (رسالة/واجب/طلب اشتراك) حتى يصل الحذف إلى اللوحة ولا يُبعث العنصر */
+  tombstone(kind, id) {
+    if (!DB._deleted) DB._deleted = {};
+    if (!DB._deleted[kind]) DB._deleted[kind] = [];
+    if (!DB._deleted[kind].includes(id)) DB._deleted[kind].push(id);
+  },
   /* آخر وقت فُتحت فيه المحادثة على هذا الجهاز — لحساب غير المقروء بدقة لكل حساب */
   threadSeen: (threadId) => {
     try { return (JSON.parse(localStorage.getItem('alawael.threadSeen') || '{}') || {})[threadId] || 0; } catch (e) { return 0; }
@@ -2348,41 +2377,76 @@ function studentSubs(st) {
   const q = App.params.q || '';
   const results = q ? Q.driversInArea(q) : [];
   const myReq = DB.requests.filter(r => r.student_id === st.id);
-  return `<div class="screen">
-    ${navbar({ title: 'الاشتراك', sub: 'ابحث بمنطقتك لتظهر السائقون', back: true, right: `${themeBtn()}${bellBtn()}` })}
-    <div class="scroll">
-      <div class="search">${ic('search')}<input id="areaQ" placeholder="اكتب اسم منطقتك… مثال: الجامعة" value="${esc(q)}"></div>
-      ${!q ? `
-        <div class="sec-title">مناطق شائعة</div>
-        <div class="chips wrap">
-          ${MOSUL_AREAS.slice(0, 10).map(a => `<button class="chip" data-area="${a}">${a}</button>`).join('')}
-        </div>
-        <div class="note yellow mt-16">${ic('info')}<div>لا يوجد دفع داخل التطبيق — تكتب منطقتك، تختار السائق، تتصل به وتتفقان، ثم يقبل طلبك.</div></div>`
-      : results.length ? results.map(d => {
+  /* سائق مقبول: تختفي شاشة البحث وتظهر بيانات السائق كاملة */
+  const accepted = myReq.find(r => r.status === 'accepted');
+  const accDriver = accepted ? Q.driver(accepted.driver_id) : null;
+  const otherReq = myReq.filter(r => r.status !== 'accepted');
+
+  let body = '';
+  if (accepted && accDriver) {
+    const accStudents = (accDriver.students || []).map(id => Q.student(id)).filter(Boolean);
+    const carNoRow = accDriver.car_number
+      ? '<div class="d-line"><span class="d-k">رقم السيارة</span><span class="d-v" dir="ltr">' + esc(accDriver.car_number) + '</span></div>'
+      : '';
+    const namesRow = accStudents.length
+      ? '<div class="d-line" style="align-items:flex-start"><span class="d-k">أسماء الطلاب</span><span class="d-v">' + accStudents.map(s => esc(s.name)).join(' · ') + '</span></div>'
+      : '';
+    body = '<div class="driver" style="border-color:var(--green)">'
+      + '<div class="d-top"><div class="d-av">' + ic('car') + '</div>'
+      + '<div class="grow"><b>' + esc(accDriver.name) + '</b><span>سائقك الحالي — تم القبول ✓</span></div>'
+      + '<span class="pill green">مقبول</span></div>'
+      + '<div class="d-info">'
+      + '<div class="d-line"><span class="d-k">اسم السائق</span><span class="d-v">' + esc(accDriver.name) + '</span></div>'
+      + '<div class="d-line"><span class="d-k">رقم السائق</span><span class="d-v" dir="ltr">' + esc(accDriver.phone) + '</span></div>'
+      + '<div class="d-line"><span class="d-k">السيارة</span><span class="d-v">' + esc(accDriver.car_type || '—') + '</span></div>'
+      + carNoRow
+      + '<div class="d-line"><span class="d-k">عدد الطلاب لديه</span><span class="d-v">' + accStudents.length + ' طالب</span></div>'
+      + namesRow
+      + '<div class="d-line"><span class="d-k">رقمك للتواصل مع السائق</span><span class="d-v" dir="ltr">' + esc(accepted.guardian_phone || '') + '</span></div>'
+      + '</div>'
+      + '<div class="d-acts">'
+      + '<a class="btn ghost" href="tel:' + accDriver.phone.replace(/\s/g, '') + '">' + ic('phone') + ' اتصال بالسائق</a>'
+      + '<button class="btn ghost" data-leave-driver="' + accepted.id + '" style="color:var(--red)">' + ic('x') + ' إنهاء الاشتراك</button>'
+      + '</div></div>'
+      + '<div class="note blue">' + ic('info') + '<div>لديك سائق مشترك — لا حاجة للبحث عن سائق آخر. لإنهاء الاشتراك اضغط الزر أعلاه.</div></div>';
+  } else {
+    body = '<div class="search">' + ic('search') + '<input id="areaQ" placeholder="اكتب اسم منطقتك… مثال: الجامعة" value="' + esc(q) + '"></div>';
+    if (!q) {
+      body += '<div class="sec-title">مناطق شائعة</div><div class="chips wrap">'
+        + MOSUL_AREAS.slice(0, 10).map(a => '<button class="chip" data-area="' + a + '">' + a + '</button>').join('')
+        + '</div>'
+        + '<div class="note yellow mt-16">' + ic('info') + '<div>لا يوجد دفع داخل التطبيق — تكتب منطقتك، تختار السائق، تتصل به وتتفقان، ثم يقبل طلبك.</div></div>';
+    } else if (results.length) {
+      body += results.map(d => {
         const done = myReq.some(r => r.driver_id === d.id && r.status !== 'rejected');
-        return `<div class="driver">
-          <div class="d-top">
-            <div class="d-av">${ic('car')}</div>
-            <div class="grow"><b>${esc(d.name)}</b><span>${esc(d.car_type)}</span></div>
-            <span class="pill yellow">${d.seats} مقعداً</span>
-          </div>
-          <div class="d-areas">${d.areas.map(a => `<span class="pill ${arMatch(a, q) ? 'blue' : 'gray'}">${esc(a)}</span>`).join('')}</div>
-          <div class="d-acts">
-            <a class="btn ghost" href="tel:${d.phone.replace(/\s/g,'')}">${ic('phone')} اتصال</a>
-            <button class="btn ${done ? 'ghost' : ''}" data-add-driver="${d.id}" ${done ? 'disabled' : ''}>${ic(done ? 'check' : 'plus')} ${done ? 'تم الإرسال' : 'إضافة'}</button>
-          </div>
-        </div>`;
-      }).join('') : empty('search', 'لا يوجد سائق في هذه المنطقة', 'جرّب منطقة قريبة أو اسماً آخر')}
-      ${myReq.length ? `<div class="sec-title">طلباتي</div><div class="list">
-        ${myReq.map(r => {
-          const d = Q.driver(r.driver_id);
-          return `<div class="row"><div class="ri y">${ic('car')}</div><div class="rt"><b>${esc(d?.name || '—')}</b>
-            <span>رقم ولي الأمر: ${esc(r.guardian_phone)}</span></div>
-            <span class="pill ${r.status === 'pending' ? 'yellow' : r.status === 'accepted' ? 'green' : 'red'}">${r.status === 'pending' ? 'بانتظار الموافقة' : r.status === 'accepted' ? 'تم القبول' : 'مرفوض'}</span></div>`;
-        }).join('')}</div>` : ''}
-    </div>
-    ${tabbar(STUDENT_TABS, 'home')}
-  </div>`;
+        const areas = d.areas.map(a => '<span class="pill ' + (arMatch(a, q) ? 'blue' : 'gray') + '">' + esc(a) + '</span>').join('');
+        return '<div class="driver"><div class="d-top"><div class="d-av">' + ic('car') + '</div>'
+          + '<div class="grow"><b>' + esc(d.name) + '</b><span>' + esc(d.car_type) + '</span></div>'
+          + '<span class="pill yellow">' + d.seats + ' مقعداً</span></div>'
+          + '<div class="d-areas">' + areas + '</div>'
+          + '<div class="d-acts"><a class="btn ghost" href="tel:' + d.phone.replace(/\s/g, '') + '">' + ic('phone') + ' اتصال</a>'
+          + '<button class="btn ' + (done ? 'ghost' : '') + '" data-add-driver="' + d.id + '"' + (done ? ' disabled' : '') + '>' + ic(done ? 'check' : 'plus') + ' ' + (done ? 'تم الإرسال' : 'إضافة') + '</button></div></div>';
+      }).join('');
+    } else {
+      body += empty('search', 'لا يوجد سائق في هذه المنطقة', 'جرّب منطقة قريبة أو اسماً آخر');
+    }
+  }
+  if (otherReq.length) {
+    body += '<div class="sec-title">طلباتي</div><div class="list">'
+      + otherReq.map(r => {
+        const d = Q.driver(r.driver_id);
+        const pill = r.status === 'pending' ? 'yellow' : 'red';
+        const pillTxt = r.status === 'pending' ? 'بانتظار الموافقة' : 'مرفوض';
+        return '<div class="row"><div class="ri y">' + ic('car') + '</div><div class="rt"><b>' + esc(d?.name || '—') + '</b>'
+          + '<span>رقمك للتواصل مع السائق: ' + esc(r.guardian_phone) + '</span></div>'
+          + '<span class="pill ' + pill + '">' + pillTxt + '</span></div>';
+      }).join('') + '</div>';
+  }
+  return '<div class="screen">'
+    + navbar({ title: 'الاشتراك', sub: accepted ? 'سائقك الحالي' : 'ابحث بمنطقتك لتظهر السائقون', back: true, right: themeBtn() + bellBtn() })
+    + '<div class="scroll">' + body + '</div>'
+    + tabbar(STUDENT_TABS, 'home')
+    + '</div>';
 }
 
 /* ---------- عن المدرسة ---------- */
@@ -2520,6 +2584,7 @@ function bindStudent(st) {
     setTimeout(() => { const el = $('#areaQ'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 30);
   }, 320);
   $$('[data-add-driver]').forEach(b => b.onclick = () => addDriverRequest(st, b.dataset.addDriver));
+  $$('[data-leave-driver]').forEach(b => b.onclick = () => leaveDriver(st, b.dataset.leaveDriver));
   const out = $('#logoutBtn'); if (out) out.onclick = () => App.logout();
   if (App.route === 'thread') {
     const box = $('#msgBox'), send = $('#sendMsg');
@@ -2561,19 +2626,31 @@ function bindStudent(st) {
   }
 }
 
+function leaveDriver(st, reqId) {
+  const r = DB.requests.find(x => x.id === reqId); if (!r) return;
+  const d = Q.driver(r.driver_id);
+  Confirm({ title: 'إنهاء الاشتراك', message: `سيتم إنهاء اشتراكك مع «${esc(d?.name || 'السائق')}» وستعود شاشة البحث عن سائق.`, confirmText: 'إنهاء الاشتراك', danger: true, onYes: () => {
+    DB.requests = DB.requests.filter(x => x.id !== reqId);
+    if (d) d.students = (d.students || []).filter(x => x !== st.id);
+    Q.tombstone('subLinks', reqId);
+    Store.save(); Toast('تم إنهاء الاشتراك', 'ok'); App.render();
+  } });
+}
+
 function addDriverRequest(st, driverId) {
   const d = Q.driver(driverId);
   Sheet.open({
-    title: 'إضافة إلى الاشتراك',
+    title: 'طلب الاشتراك مع السائق',
     sub: `${d.name} · ${d.car_type}`,
-    body: `<div class="field"><label>رقم تلفون ولي الأمر (للتواصل)</label>
-        <input class="input" id="gPhone" type="tel" inputmode="numeric" placeholder="07700000000" value="${esc(st.guardian_phone || '')}" dir="ltr"></div>
-      <div class="note blue">${ic('info')}<div>يصل طلبك إلى السائق، وعند موافقته تظهر بياناته لك ويتم التواصل بينكما مباشرة.</div></div>`,
+    body: `<div class="field"><label>اكتب رقمك للتواصل مع السائق</label>
+        <input class="input" id="gPhone" type="tel" inputmode="numeric" placeholder="07700000000" value="${esc(st.guardian_phone || '')}" dir="ltr">
+        <div class="hint">هذا الرقم يظهر للسائق فقط ليتواصل معك ويحدد موعد الرحلة.</div></div>
+      <div class="note blue">${ic('info')}<div>يصل طلبك إلى السائق، وعند موافقته تظهر بياناته لك كاملة ويتم التواصل بينكما مباشرة.</div></div>`,
     actions: `<button class="btn" id="sendReq">${ic('send')} إرسال الطلب</button>`,
     onMount(ov, close) {
       $('#sendReq', ov).onclick = () => {
         const ph = $('#gPhone', ov).value.replace(/\s/g, '');
-        if (ph.length < 10) return Toast('أدخل رقم ولي أمر صحيحاً', 'err');
+        if (ph.length < 10) return Toast('اكتب رقمك للتواصل مع السائق (10 أرقام على الأقل)', 'err');
         DB.requests.push({ id: uid('rq'), driver_id: driverId, student_id: st.id, guardian_phone: ph, status: 'pending', at: new Date().toISOString() });
         Q.push('driver', 'request', 'طلب إضافة جديد', `${st.name} طلب الاشتراك معك — ${ph}`);
         Store.save(); close(); Toast('أُرسل الطلب إلى السائق ✓', 'ok'); App.render();
@@ -3022,16 +3099,20 @@ function driverHome(d) {
 
 function reqRow(r) {
   const s = Q.student(r.student_id);
+  const ph = (r.guardian_phone || '').replace(/\s/g, '');
   return `<div class="row" style="padding:11px 0;border-bottom:1px solid var(--sep);align-items:flex-start">
     <div class="ri y">${ic('student')}</div>
     <div class="rt"><b>${esc(s?.name || 'طالب')}</b>
       <span>${esc(Q.label.grade(s?.grade_id))} — شعبة ${esc(Q.label.section(s?.section_id))}</span>
       <span style="color:var(--blue);font-weight:800" dir="ltr">${esc(r.guardian_phone)}</span>
       <span style="font-size:10.5px">${rel(r.at)}</span></div>
-    ${r.status === 'pending' ? `<div style="display:grid;gap:6px">
+    <div style="display:grid;gap:6px;flex:none">
+      ${ph ? `<a class="pill blue" href="tel:${ph}" style="border:0;padding:8px 11px;text-decoration:none;text-align:center">${ic('phone','svg-i')} اتصال بولي الأمر</a>` : ''}
+      ${r.status === 'pending' ? `
       <button class="pill green" data-req="${r.id}" data-dec="accepted" style="border:0;padding:8px 11px">${ic('check','svg-i')} قبول</button>
-      <button class="pill red" data-req="${r.id}" data-dec="rejected" style="border:0;padding:8px 11px">${ic('x','svg-i')} رفض</button></div>`
+      <button class="pill red" data-req="${r.id}" data-dec="rejected" style="border:0;padding:8px 11px">${ic('x','svg-i')} رفض</button>`
       : `<span class="pill ${r.status === 'accepted' ? 'green' : 'red'}">${r.status === 'accepted' ? 'مقبول' : 'مرفوض'}</span>`}
+    </div>
   </div>`;
 }
 
@@ -3055,9 +3136,11 @@ function driverStudents(d) {
     <div class="scroll">
       ${mine.length ? `<div class="list">${mine.map(s => {
         const ph = DB.requests.find(r => r.student_id === s.id && r.driver_id === d.id && r.status === 'accepted')?.guardian_phone;
+        const phClean = (ph || '').replace(/\s/g, '');
         return `<div class="row"><div class="ri y">${ic('student')}</div>
           <div class="rt"><b>${esc(s.name)}</b><span>${esc(Q.label.school(s.school_id))} · ${esc(Q.label.grade(s.grade_id))}</span>
-            ${ph ? `<span style="color:var(--blue);font-weight:800" dir="ltr">${esc(ph)}</span>` : ''}</div></div>`;
+            ${ph ? `<span style="color:var(--blue);font-weight:800" dir="ltr">${esc(ph)}</span>` : ''}</div>
+          ${phClean ? `<a class="pill blue" href="tel:${phClean}" style="border:0;padding:8px 11px;text-decoration:none;flex:none">${ic('phone','svg-i')} اتصال بولي الأمر</a>` : ''}</div>`;
       }).join('')}</div>` : empty('student','لا طلبة','اقبل الطلبات لتظهر هنا')}
     </div>
     ${tabbar(DRIVER_TABS, 'students')}
@@ -3661,7 +3744,14 @@ function adminThread() {
     ${navbar({ title: st?.name || 'طالب', sub: `${Q.label.grade(st?.grade_id)} · شعبة ${Q.label.section(st?.section_id)}`, back: true })}
     <div class="chat-wrap">
       <div class="chat-body" id="chatBody">
-        ${msgs.map(m => `<div class="bubble ${(m.from === 'staff' || m.from === 'admin') ? 'out' : 'in'}">${esc(m.text)}<span class="t">${fmtTime(m.at)}</span></div>`).join('')
+        ${msgs.map(m => {
+          const mine = (m.from === 'staff' || m.from === 'admin');
+          return `<div class="bubble ${mine ? 'out' : 'in'}">${esc(m.text)}<span class="t">${fmtTime(m.at)}${m.edited ? ' · عُدّلت' : ''}</span>
+            <span class="msg-acts">
+              ${mine ? `<button class="msg-act" data-edit-msg="${m.id}" title="تعديل الرسالة">${ic('edit','svg-i')} تعديل</button>` : ''}
+              <button class="msg-act" data-del-msg="${m.id}" title="حذف الرسالة">${ic('trash','svg-i')} حذف</button>
+            </span></div>`;
+        }).join('')
           || `<div class="center small muted bold" style="padding:30px 0">لا رسائل بعد</div>`}
       </div>
       <div class="chat-input">
@@ -3670,6 +3760,31 @@ function adminThread() {
       </div>
     </div>
   </div>`;
+}
+
+function editAdminMsg(id) {
+  const m = DB.messages.find(x => x.id === id); if (!m) return;
+  Sheet.open({
+    title: 'تعديل الرسالة',
+    sub: 'سيظهر النص الجديد للطالب فوراً',
+    body: `<div class="field"><label>نص الرسالة</label><textarea class="input" id="emText" style="min-height:110px">${esc(m.text)}</textarea></div>`,
+    actions: `<button class="btn" id="emSave">${ic('check')} حفظ التعديل</button>`,
+    onMount(ov, close) {
+      $('#emSave', ov).onclick = () => {
+        const t = $('#emText', ov).value.trim();
+        if (t.length < 1) return Toast('اكتب نص الرسالة', 'err');
+        Q.editMsg(id, t); close(); Toast('تم تعديل الرسالة ✓', 'ok'); App.render();
+        setTimeout(() => { const b = $('#chatBody'); if (b) b.scrollTop = b.scrollHeight; }, 40);
+      };
+    }
+  });
+}
+
+function deleteAdminMsg(id) {
+  const m = DB.messages.find(x => x.id === id); if (!m) return;
+  Confirm({ title: 'حذف الرسالة', message: 'ستُحذف الرسالة نهائياً من عندك وعند الطالب ومن اللوحة.', confirmText: 'حذف نهائي', danger: true, onYes: () => {
+    Q.deleteMsg(id); Toast('تم حذف الرسالة', 'ok'); App.render();
+  } });
 }
 
 const adminNotifs = () => notifsScreen(Q.notifs('admin'), ADMIN_TABS, 'home');
@@ -4008,6 +4123,8 @@ bindAdmin = function () {
   if (rst) rst.onclick = () => Confirm({ title: 'إعادة الضبط', message: 'ستُحذف كل التعديلات التجريبية.', confirmText: 'إعادة الضبط', danger: true, onYes: () => Store.reset() });
 
   /* محادثة الإدارة */
+  $$('[data-edit-msg]').forEach(b => b.onclick = () => editAdminMsg(b.dataset.editMsg));
+  $$('[data-del-msg]').forEach(b => b.onclick = () => deleteAdminMsg(b.dataset.delMsg));
   if (App.route === 'thread') {
     const th = DB.threads.find(t => t.id === App.params.id);
     const box = $('#msgBox'), send = $('#sendMsg');

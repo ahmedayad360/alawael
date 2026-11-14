@@ -90,11 +90,11 @@ const CloudApp = (() => {
       date: (e.date || e.created_at || '').slice(0, 10),
       max: +e.max_mark || +e.max || 100
     }));
-    const dailyGrades = g('dailyGrades').map(x => ({
+    const dailyGrades = live(g('dailyGrades')).map(x => ({
       id: x.id, exam_id: x.exam_id, student_id: x.student_id,
       value: (x.value !== undefined && x.value !== null) ? +x.value : (x.mark !== undefined ? +x.mark : null)
     }));
-    const monthlyGrades = g('monthlyGrades').map(x => ({ id: x.id, student_id: x.student_id, subject_id: x.subject_id, period: x.period, value: x.value, max: x.max || 100 }));
+    const monthlyGrades = live(g('monthlyGrades')).map(x => ({ id: x.id, student_id: x.student_id, subject_id: x.subject_id, period: x.period, value: x.value, max: x.max || 100 }));
 
     /* الجدول الأسبوعي (خريطة لكل شعبة) */
     const weekly = {};
@@ -124,11 +124,12 @@ const CloudApp = (() => {
     });
     const thMap = {};
     live(g('threads')).forEach(t => { if (t.kind === 'student' || t.kind === 'admin') thMap[t.id] = 'th_a_' + t.participant_id; });
-    g('messages').forEach(m => {
+    live(g('messages')).forEach(m => {
       const thId = thMap[m.thread_id] || m.thread_id;
       messages.push({
         id: m.id, thread_id: thId, from: m.sender === 'student' ? 'me' : 'staff',
-        text: m.body || '', at: m.created_at, sender_name: m.sender_name || ''
+        text: m.body || '', at: m.created_at, sender_name: m.sender_name || '',
+        ...(m.edited ? { edited: true } : {})
       });
     });
 
@@ -173,6 +174,7 @@ const CloudApp = (() => {
     const links = live(g('subLinks'));
     const drivers = live(g('subscriptions')).map(x => ({
       id: x.id, name: x.name, phone: x.phone || '', car_type: x.car_type || '',
+      car_number: x.car_number || x.plate || x.car_no || '',
       areas: (x.area_ids || []).map(id => (live(g('subAreas')).find(a => a.id === id) || {}).name).filter(Boolean),
       seats: x.seats || 0,
       /* كود السائق قد يكون بريده الإلكتروني (email) — نستخدمه ككود دخول */
@@ -216,6 +218,12 @@ const CloudApp = (() => {
 
   /* ---------------- رفع تعديلات التطبيق ← اللوحة ---------------- */
   function toDashboard(db, current) {
+    /* ما حذفته اللوحة (is_deleted) لا يُبعث أبداً — حتى لو كان ما يزال في نسخة التطبيق المحلية */
+    const cloudDeleted = (key) => new Set(((current && current[key]) || []).filter(r => r && r.is_deleted).map(r => r.id));
+    const delHw = cloudDeleted('homeworks'), delMsg = cloudDeleted('messages'), delLink = cloudDeleted('subLinks');
+    /* ما حذفه التطبيق (رسالة/واجب/طلب) يُرفع كحذف نهائي إلى اللوحة */
+    const tomb = (db._deleted && db._deleted) || {};
+    const tombMsg = new Set(tomb.messages || []), tombHw = new Set(tomb.homeworks || []), tombLink = new Set(tomb.subLinks || []);
     const thId = (t) => t.kind === 'admin' ? ('th_a_' + t.student_id) : t.id;
     const threads = (db.threads || []).filter(t => t.kind === 'admin').map(t => {
       const stu = (db.students || []).find(s => s.id === t.student_id) || {};
@@ -228,18 +236,25 @@ const CloudApp = (() => {
         last_at: last?.at || t.last_at, created_at: t.last_at
       };
     });
-    const messages = (db.messages || []).filter(m => String(m.thread_id).startsWith('th_a_')).map(m => ({
-      id: m.id, thread_id: m.thread_id,
-      sender: m.from === 'me' ? 'student' : 'admin',
-      sender_name: m.from === 'me' ? ((db.students.find(s => 'th_a_' + s.id === m.thread_id) || {}).name || 'طالب') : 'إدارة المدرسة',
-      body: m.text || '', attachments: [], created_at: m.at, read_at: null
-    }));
-    const homeworks = (db.homeworks || []).map(h => ({
-      id: h.id, school_id: h.school_id, section_id: h.section_id, section_ids: h.section_ids || [h.section_id],
-      subject_id: h.subject_id, teacher_id: h.teacher_id, text: h.text || '', link: h.link || '',
-      images: h.images || [], files: h.files || [], date: h.date, is_deleted: false,
-      created_at: h.created_at || new Date().toISOString()
-    }));
+    const messages = (db.messages || [])
+      .filter(m => String(m.thread_id).startsWith('th_a_') && !delMsg.has(m.id) && !tombMsg.has(m.id))
+      .map(m => ({
+        id: m.id, thread_id: m.thread_id,
+        sender: m.from === 'me' ? 'student' : 'admin',
+        sender_name: m.from === 'me' ? ((db.students.find(s => 'th_a_' + s.id === m.thread_id) || {}).name || 'طالب') : 'إدارة المدرسة',
+        body: m.text || '', attachments: [], created_at: m.at, read_at: null,
+        ...(m.edited ? { edited: true, edited_at: m.edited_at || m.at } : {})
+      }))
+      .concat([...tombMsg].filter(id => !delMsg.has(id)).map(id => ({ id, is_deleted: true, deleted_at: new Date().toISOString() })));
+    const homeworks = (db.homeworks || [])
+      .filter(h => !delHw.has(h.id) && !tombHw.has(h.id))
+      .map(h => ({
+        id: h.id, school_id: h.school_id, section_id: h.section_id, section_ids: h.section_ids || [h.section_id],
+        subject_id: h.subject_id, teacher_id: h.teacher_id, text: h.text || '', link: h.link || '',
+        images: h.images || [], files: h.files || [], date: h.date, is_deleted: false,
+        created_at: h.created_at || new Date().toISOString()
+      }))
+      .concat([...tombHw].filter(id => !delHw.has(id)).map(id => ({ id, is_deleted: true, deleted_at: new Date().toISOString() })));
     /* الجدول الأسبوعي: التطبيق يحفظه كمصفوفة أيام، واللوحة كمفاتيح "يوم-حصة" (يوم 1..5 = الأحد..الخميس) */
     const weekly = Object.entries(db.weekly || {}).map(([sectionId, w]) => {
       const cells = {};
@@ -265,11 +280,14 @@ const CloudApp = (() => {
         recipients: n.owner ? [n.owner] : (n.to === 'admin' ? ['admin'] : []),
         school_id: (n.owner && (db.students || []).find(x => x.id === n.owner)?.school_id) || null
       }));
-    const subLinks = (db.requests || []).map(r => ({
-      id: r.id, subscription_id: r.driver_id, student_id: r.student_id,
-      status: r.status || 'pending', created_at: r.at, is_deleted: false,
-      responded_at: r.status && r.status !== 'pending' ? new Date().toISOString() : null
-    }));
+    const subLinks = (db.requests || [])
+      .filter(r => !delLink.has(r.id) && !tombLink.has(r.id))
+      .map(r => ({
+        id: r.id, subscription_id: r.driver_id, student_id: r.student_id,
+        status: r.status || 'pending', created_at: r.at, is_deleted: false,
+        responded_at: r.status && r.status !== 'pending' ? new Date().toISOString() : null
+      }))
+      .concat([...tombLink].filter(id => !delLink.has(id)).map(id => ({ id, is_deleted: true, deleted_at: new Date().toISOString() })));
     /* إعدادات القفل (الدردشة والواجبات): تُرفع إلى اللوحة حتى تصل كل الأجهزة.
        ندمجها مع نسخة السحابة الحالية حتى لا نمسح باقي إعدادات اللوحة (الرد الآلي، الإدارة…) */
     const curOrg = (current && Array.isArray(current.settings) && current.settings.find(x => x.key === 'org')) || {};
@@ -338,15 +356,27 @@ const CloudApp = (() => {
       if (firstSync) {
         /* أول سحب: بيانات السحابة هي المصدر — نتخلص من بيانات العرض التجريبية */
         next.notifications = next.notifications || [];
+        const tomb0 = (DB._deleted && DB._deleted) || {};
+        const deadMsg0 = new Set(tomb0.messages || []), deadHw0 = new Set(tomb0.homeworks || []), deadLink0 = new Set(tomb0.subLinks || []);
+        if (deadMsg0.size) next.messages = (next.messages || []).filter(m => !deadMsg0.has(m.id));
+        if (deadHw0.size) next.homeworks = (next.homeworks || []).filter(h => !deadHw0.has(h.id));
+        if (deadLink0.size) next.requests = (next.requests || []).filter(r => !deadLink0.has(r.id));
       } else {
-        /* (أ) حافظ على حالة القراءة، وعلى الإشعارات المحلية التي لم تُرفع بعد */
+        /* ما حذفته اللوحة أو حذفه التطبيق لا يعود أبداً عند الدمج */
+        const cloudDel = (key) => new Set(((kv[key] || []).filter(r => r && r.is_deleted).map(r => r.id)));
+        const tomb = (DB._deleted && DB._deleted) || {};
+        const deadMsg = new Set([...cloudDel('messages'), ...(tomb.messages || [])]);
+        const deadTh = cloudDel('threads');
+        const deadHw = new Set([...cloudDel('homeworks'), ...(tomb.homeworks || [])]);
+        const deadLink = new Set([...cloudDel('subLinks'), ...(tomb.subLinks || [])]);
+        /* (أ) حافظ على حالة القراءة، وعلى الإشعارات المحلية التي لم تُرفع بعد فقط */
         const localNotifs = new Map((DB.notifications || []).map(n => [n.id, n]));
         next.notifications = (next.notifications || []).map(n => {
           const old = localNotifs.get(n.id);
           return old && old.read ? { ...n, read: true } : n;
         });
         (DB.notifications || []).forEach(n => {
-          if (n.owner && !next.notifications.some(x => x.id === n.id)) next.notifications.push(n);
+          if (n._local && !next.notifications.some(x => x.id === n.id)) next.notifications.push(n);
         });
 
         /* (ب) الرسائل والمحادثات: دمج لا استبدال (حتى لا تضيع رسالة أُرسلت للتو) */
@@ -365,8 +395,11 @@ const CloudApp = (() => {
             if ((c.last_at || '') > (t.last_at || '')) t.last_at = c.last_at;
           }
           return t;
-        });
-        next.messages = mergeRows(next.messages, DB.messages);
+        }).filter(t => !deadTh.has(t.id));
+        next.messages = mergeRows(next.messages, DB.messages).filter(m => !deadMsg.has(m.id));
+        /* الواجبات وطلبات الاشتراك: تُستبدل من السحابة، مع احترام الحذف المحلي */
+        next.homeworks = (next.homeworks || []).filter(h => !deadHw.has(h.id));
+        next.requests = (next.requests || []).filter(r => !deadLink.has(r.id));
       }
 
       Object.assign(DB, next);
