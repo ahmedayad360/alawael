@@ -94,7 +94,7 @@ const CloudApp = (() => {
       id: x.id, exam_id: x.exam_id, student_id: x.student_id,
       value: (x.value !== undefined && x.value !== null) ? +x.value : (x.mark !== undefined ? +x.mark : null)
     }));
-    const monthlyGrades = g('monthlyGrades').map(x => ({ id: x.id, student_id: x.student_id, subject_id: x.subject_id, period: x.period, value: x.value }));
+    const monthlyGrades = g('monthlyGrades').map(x => ({ id: x.id, student_id: x.student_id, subject_id: x.subject_id, period: x.period, value: x.value, max: x.max || 100 }));
 
     /* الجدول الأسبوعي (خريطة لكل شعبة) */
     const weekly = {};
@@ -127,7 +127,7 @@ const CloudApp = (() => {
     g('messages').forEach(m => {
       const thId = thMap[m.thread_id] || m.thread_id;
       messages.push({
-        id: m.id, thread_id: thId, from: m.sender === 'student' ? 'me' : 'admin',
+        id: m.id, thread_id: thId, from: m.sender === 'student' ? 'me' : 'staff',
         text: m.body || '', at: m.created_at, sender_name: m.sender_name || ''
       });
     });
@@ -174,7 +174,10 @@ const CloudApp = (() => {
     const drivers = live(g('subscriptions')).map(x => ({
       id: x.id, name: x.name, phone: x.phone || '', car_type: x.car_type || '',
       areas: (x.area_ids || []).map(id => (live(g('subAreas')).find(a => a.id === id) || {}).name).filter(Boolean),
-      seats: x.seats || 0, code: x.code, password: x.pw_plain || x.password || '',
+      seats: x.seats || 0,
+      /* كود السائق قد يكون بريده الإلكتروني (email) — نستخدمه ككود دخول */
+      code: x.code || x.email || '', email: x.email || '',
+      password: x.pw_plain || x.password || '',
       students: links.filter(l => l.subscription_id === x.id && l.status === 'accepted').map(l => l.student_id)
     }));
     const requests = links.map(l => ({
@@ -267,7 +270,21 @@ const CloudApp = (() => {
       status: r.status || 'pending', created_at: r.at, is_deleted: false,
       responded_at: r.status && r.status !== 'pending' ? new Date().toISOString() : null
     }));
-    return { threads, messages, homeworks, subLinks, weekly, notifications };
+    /* إعدادات القفل (الدردشة والواجبات): تُرفع إلى اللوحة حتى تصل كل الأجهزة.
+       ندمجها مع نسخة السحابة الحالية حتى لا نمسح باقي إعدادات اللوحة (الرد الآلي، الإدارة…) */
+    const curOrg = (current && Array.isArray(current.settings) && current.settings.find(x => x.key === 'org')) || {};
+    const settings = [{
+      ...curOrg,
+      id: curOrg.id || 'org',
+      key: 'org',
+      chatLock: { ...(curOrg.chatLock || {}),
+        enabled: !!(db.settings && db.settings.chatLock && db.settings.chatLock.enabled),
+        note: (db.settings && db.settings.chatLock && db.settings.chatLock.note) || (curOrg.chatLock && curOrg.chatLock.note) || 'الدردشة موقوفة مؤقتاً من الإدارة.' },
+      homeworkLock: { ...(curOrg.homeworkLock || {}),
+        enabled: !!(db.settings && db.settings.homeworkLock && db.settings.homeworkLock.enabled),
+        time: (db.settings && db.settings.homeworkLock && db.settings.homeworkLock.time) || (curOrg.homeworkLock && curOrg.homeworkLock.time) || '20:00' }
+    }];
+    return { threads, messages, homeworks, subLinks, weekly, notifications, settings };
   }
 
   function mergeById(cloudRows, appRows) {
@@ -281,11 +298,10 @@ const CloudApp = (() => {
     if (!enabled || pushing || typeof DB === 'undefined' || !DB.ready) return;
     pushing = true;
     try {
-      const conv = toDashboard(DB);
-      const ids = conv.threads.map(t => t.id);
-      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks', 'weekly', 'notifications'].map(k => '"' + k + '"').join(',') + ')');
+      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks', 'weekly', 'notifications', 'settings'].map(k => '"' + k + '"').join(',') + ')');
       const cur = {};
       (need || []).forEach(r => { cur[r.key] = r.value || []; });
+      const conv = toDashboard(DB, cur);
       const revNow = Date.now();
       const batch = Object.entries(conv).map(([k, rows]) => ({
         key: k, value: mergeById(cur[k], rows), rev: revNow

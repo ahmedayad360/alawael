@@ -2019,7 +2019,8 @@ function openLogin(role) {
           if (!t) return loginFail('كود المدرس أو كلمة المرور غير صحيحة');
           App.user = { role, teacherId: t.id };
         } else {
-          const dr = DB.drivers.find(x => x.code === code.toUpperCase() && (x.password || '1234') === pw);
+          /* كود السائق قد يكون بريداً إلكترونياً — المقارنة غير حساسة لحالة الأحرف */
+          const dr = DB.drivers.find(x => String(x.code || '').toLowerCase() === code.toLowerCase() && (x.password || '1234') === pw);
           if (!dr) return loginFail('كود الاشتراك أو كلمة المرور غير صحيحة');
           App.user = { role, driverId: dr.id };
         }
@@ -2170,9 +2171,23 @@ function studentGrades(st) {
     .map(e => ({ ...e, value: Q.examGrade(e.id, st.id) }))
     .filter(e => e.value != null)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  /* الدرجات الشهرية: لكل فترة (الشهر الأول، الثاني، نصف السنة، آخر السنة) */
+  const monthly = PERIODS
+    .map(per => ({ per, rows: DB.monthlyGrades.filter(g => g.student_id === st.id && g.period === per.id) }))
+    .filter(x => x.rows.length);
   return `<div class="screen">
-    ${navbar({ title: 'الدرجات', sub: 'درجاتي اليومية', right: `${themeBtn()}${bellBtn()}` })}
+    ${navbar({ title: 'الدرجات', sub: 'درجاتي اليومية والشهرية', right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
+      ${monthly.length ? `<div class="sec-title">الدرجات الشهرية</div>
+      ${monthly.map(({ per, rows }) => `<div class="card">
+        <div class="card-head"><h3>${ic('chart')} ${esc(per.label)}</h3></div>
+        ${rows.map(g => {
+          const v = +g.value || 0, max = +g.max || 100, ratio = max ? v / max : 0;
+          return `<div class="g-line"><span class="gn">${esc(Q.subject(g.subject_id)?.name || '—')}</span>
+            <span class="gv" style="color:${ratio >= .85 ? 'var(--green)' : ratio >= .6 ? 'var(--blue)' : 'var(--red)'}">${v}<span class="small muted"> / ${max}</span></span></div>`;
+        }).join('')}
+      </div>`).join('')}` : ''}
+      ${daily.length ? `<div class="sec-title">الدرجات اليومية</div>` : ''}
       ${daily.length ? daily.map(e => {
         const max = +e.max || 100;
         const v = e.value, ratio = v / max;
@@ -2801,7 +2816,7 @@ function teacherThread(t) {
     ${navbar({ title: st?.name || 'طالب', sub: `${Q.label.grade(st?.grade_id)} · شعبة ${Q.label.section(st?.section_id)}`, back: true })}
     <div class="chat-wrap">
       <div class="chat-body" id="chatBody">
-        ${msgs.map(m => `<div class="bubble ${m.from === 'staff' ? 'out' : 'in'}">${esc(m.text)}<span class="t">${fmtTime(m.at)}</span></div>`).join('')
+        ${msgs.map(m => `<div class="bubble ${(m.from === 'staff' || m.from === 'admin') ? 'out' : 'in'}">${esc(m.text)}<span class="t">${fmtTime(m.at)}</span></div>`).join('')
           || `<div class="center small muted bold" style="padding:30px 0">لا رسائل بعد</div>`}
       </div>
       <div class="chat-input">
@@ -3646,7 +3661,7 @@ function adminThread() {
     ${navbar({ title: st?.name || 'طالب', sub: `${Q.label.grade(st?.grade_id)} · شعبة ${Q.label.section(st?.section_id)}`, back: true })}
     <div class="chat-wrap">
       <div class="chat-body" id="chatBody">
-        ${msgs.map(m => `<div class="bubble ${m.from === 'staff' ? 'out' : 'in'}">${esc(m.text)}<span class="t">${fmtTime(m.at)}</span></div>`).join('')
+        ${msgs.map(m => `<div class="bubble ${(m.from === 'staff' || m.from === 'admin') ? 'out' : 'in'}">${esc(m.text)}<span class="t">${fmtTime(m.at)}</span></div>`).join('')
           || `<div class="center small muted bold" style="padding:30px 0">لا رسائل بعد</div>`}
       </div>
       <div class="chat-input">
