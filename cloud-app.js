@@ -81,15 +81,22 @@ const CloudApp = (() => {
 
     /* الامتحانات والدرجات */
     const dailyExams = live(g('exams')).map(e => ({
-      id: e.id, school_id: e.school_id, section_id: e.section_id, subject_id: e.subject_id,
-      name: e.name || 'امتحان', date: (e.date || e.created_at || '').slice(0, 10)
+      id: e.id, school_id: e.school_id, grade_id: e.grade_id || null,
+      section_id: e.section_id || null,
+      section_ids: Array.isArray(e.section_ids) && e.section_ids.length ? e.section_ids : (e.section_id ? [e.section_id] : []),
+      subject_id: e.subject_id, name: e.name || 'امتحان',
+      date: (e.date || e.created_at || '').slice(0, 10),
+      max: +e.max_mark || +e.max || 100
     }));
-    const dailyGrades = g('dailyGrades').map(x => ({ id: x.id, exam_id: x.exam_id, student_id: x.student_id, value: x.value }));
+    const dailyGrades = g('dailyGrades').map(x => ({
+      id: x.id, exam_id: x.exam_id, student_id: x.student_id,
+      value: (x.value !== undefined && x.value !== null) ? +x.value : (x.mark !== undefined ? +x.mark : null)
+    }));
     const monthlyGrades = g('monthlyGrades').map(x => ({ id: x.id, student_id: x.student_id, subject_id: x.subject_id, period: x.period, value: x.value }));
 
     /* الجدول الأسبوعي (خريطة لكل شعبة) */
     const weekly = {};
-    live(g('weekly')).forEach(w => { if (w.section_id) weekly[w.section_id] = w.cells || {}; });
+    live(g('weekly')).forEach(w => { if (w.section_id) weekly[w.section_id] = { cells: w.cells || {} }; });
 
     const monthlyExams = live(g('monthly')).map(m => ({
       id: m.id, school_id: m.school_id, section_id: m.section_id, grade_id: m.grade_id || null,
@@ -180,6 +187,11 @@ const CloudApp = (() => {
         autoReply: {
           enabled: !!(org.autoReply && org.autoReply.enabled),
           text: (org.autoReply && org.autoReply.text) || ''
+        },
+        /* حساب الإدارة: يُستخدم للدخول إلى لوحة الإدارة من مربع الطالب */
+        admin: {
+          username: (org.admin && org.admin.username) || 'admin',
+          password: (org.admin && org.admin.password) || ''
         }
       },
       audit: []
@@ -336,5 +348,5 @@ const CloudApp = (() => {
     return ok;
   }
 
-  return { enabled, boot, pull, push, tick, adapt, get rev() { return rev; } };
+  return { enabled, boot, pull, push, tick, adapt, get rev() { return rev; }, get cfg() { return cfg; } };
 })();

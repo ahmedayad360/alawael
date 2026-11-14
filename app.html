@@ -742,6 +742,14 @@ button,.tabbar button,.chip,.btn{ -webkit-user-select:none; user-select:none; -w
 @media (max-width:519px) and (display-mode: browser){
   #phone{ padding-top:var(--safe-t); }
 }
+
+/* على الجوال (متصفح أو تطبيق): لا شريط حالة مزيّف — شريط الجهاز الحقيقي هو المعتمد */
+@media (max-width:519px){
+  .statusbar{ display:none !important; }
+  #phone{ padding-top:var(--safe-t); }
+  .screen{ padding-top:0; }
+  #phone.entry-mode .statusbar{ display:none !important; }
+}
 /* آيفون صغير: لا تُقصّ العناصر */
 @media (max-height:700px){
   .entry{ padding-bottom:calc(12px + var(--safe-b)) !important; }
@@ -885,21 +893,20 @@ html[data-theme="dark"] .tile.y .ti{ background:rgba(255,197,61,.18); color:#FFD
 html[data-theme="dark"] .tile.n .ti{ background:rgba(255,255,255,.10); color:#C7D6F2 }
 
 /* ---- الشريط السفلي العائم ---- */
-html[data-theme="dark"] .tabbar,
-html[data-theme="dark"] .tabbar.float{
-  position:fixed; left:12px; right:12px; bottom:calc(10px + var(--safe-b));
-  z-index:120; margin:0; padding:8px 10px;
+html[data-theme="dark"] .tabbar{
+  position:relative; z-index:30; flex:none;
+  margin:6px 12px calc(8px + var(--safe-b)); padding:8px 10px;
   border-radius:26px; border:1px solid rgba(255,255,255,.12);
-  background:rgba(10,17,32,.74);
+  background:rgba(10,17,32,.78);
   -webkit-backdrop-filter:blur(26px) saturate(160%); backdrop-filter:blur(26px) saturate(160%);
-  box-shadow:0 20px 50px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.08);
+  box-shadow:0 18px 44px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,255,255,.08);
 }
 html[data-theme="dark"] .tabbar button{ color:#7F8FB4; border-radius:20px; padding:7px 2px 5px }
 html[data-theme="dark"] .tabbar button svg{ color:inherit }
 html[data-theme="dark"] .tabbar button.on{ color:#7FB4FF }
 html[data-theme="dark"] .tabbar button.on::after{ background:linear-gradient(90deg,#3B82F6,#7CC0FF) !important }
 html[data-theme="dark"] .tabbar button.on svg{ filter:drop-shadow(0 6px 14px rgba(59,130,246,.55)) }
-html[data-theme="dark"] .screen .scroll{ padding-bottom:104px !important }
+html[data-theme="dark"] .screen .scroll{ padding-bottom:18px !important }
 
 /* ---- الحقول والأزرار ---- */
 html[data-theme="dark"] .input,
@@ -1024,6 +1031,91 @@ html[data-theme="dark"] .tabbar button.on svg{
   background-image:none !important; color:#BFDBFF !important;
   filter:drop-shadow(0 4px 12px rgba(70,140,255,.55)) !important;
 }
+
+
+/* ==================================================================
+   الاستجابة لكل الأجهزة: عرض مرن + حدّ أقصى على الشاشات الكبيرة
+   ================================================================== */
+html,body{ height:100%; }
+body{ display:flex; align-items:stretch; justify-content:center }
+#phone{
+  width:100%; max-width:100%; flex:1 1 auto;
+  height:100vh; height:100dvh; min-height:0;
+}
+/* الأجهزة اللوحية والحاسوب: نُبقي التطبيق بعرض مريح في الوسط */
+@media (min-width:640px){
+  body{ background:#05080F }
+  html[data-theme="light"] body{ background:#E7ECF5 }
+  #phone{
+    max-width:460px; height:min(940px, 100dvh); margin:auto;
+    border-radius:34px; overflow:hidden;
+    box-shadow:0 40px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
+  }
+}
+/* آيفون صغير جداً: تصغير بسيط للخطوط والمسافات */
+@media (max-height:700px){
+  .screen .scroll{ padding-bottom:14px !important }
+  .tile{ padding:9px 4px 7px }
+  .tile b{ font-size:11px }
+  .tabbar button span{ font-size:9.5px }
+}
+/* أفقياً: نحافظ على التخطيط ولا نسمح بالتمرير الأفقي */
+html,body,#phone{ overflow-x:hidden }
+
+
+/* ---- تناسق كامل للنمط الداكن: لا مساحات فاتحة أو نص غير مرئي ---- */
+html[data-theme="dark"] .seg,
+html[data-theme="dark"] .seg{ background:rgba(255,255,255,.07) !important }
+html[data-theme="dark"] .seg button{ color:#9FB2D4 }
+html[data-theme="dark"] .seg button.on{ background:rgba(59,130,246,.24) !important; color:#CFE2FF !important; box-shadow:none !important }
+html[data-theme="dark"] .bar{ background:rgba(255,255,255,.10) !important }
+html[data-theme="dark"] .g-card,
+html[data-theme="dark"] .g-card *{ color:var(--label) }
+html[data-theme="dark"] .g-card .small.muted,
+html[data-theme="dark"] .muted{ color:#8DA0C6 !important }
+html[data-theme="dark"] .g-head .pill{ background:rgba(255,255,255,.10) }
+html[data-theme="dark"] .per-no{ border:1px solid rgba(255,255,255,.10) }
+html[data-theme="dark"] .school-card{ background:rgba(255,255,255,.055) !important }
+html[data-theme="dark"] .school-card b{ color:var(--label) }
+html[data-theme="dark"] .field label{ color:#9FB2D4 }
+html[data-theme="dark"] .divider{ background:rgba(255,255,255,.10) }
+html[data-theme="dark"] .empty b{ color:var(--label) }
+html[data-theme="dark"] .empty span{ color:#8DA0C6 }
+html[data-theme="dark"] b, html[data-theme="dark"] strong{ color:inherit }
+html[data-theme="dark"] .sheet .sheet-title, html[data-theme="dark"] .sheet h3{ color:var(--label) }
+html[data-theme="dark"] .btn:disabled{ background:rgba(255,255,255,.08); color:#7F8FB4 }
+html[data-theme="dark"] .badge{ background:rgba(59,130,246,.25); color:#CFE2FF }
+html[data-theme="dark"] .gv{ color:inherit }
+html[data-theme="dark"] ::selection{ background:rgba(59,130,246,.4) }
+
+/* ---- شاشة الدخول بالنمط الداكن: تدرّج كحلي متّسق ---- */
+html[data-theme="dark"] #phone.entry-mode{
+  background:
+    radial-gradient(90% 50% at 50% -6%, #123A86 0%, rgba(6,12,26,0) 60%),
+    radial-gradient(120% 70% at 50% 108%, #0A1B3E 0%, rgba(4,8,16,0) 62%),
+    linear-gradient(180deg,#081122 0%, #050A14 60%, #03060C 100%);
+}
+html[data-theme="dark"] #phone.entry-mode .statusbar{ color:#DCE7FF }
+html[data-theme="dark"] #phone.entry-mode .entry{
+  background-image:
+    linear-gradient(180deg, rgba(6,14,32,.72) 0%, rgba(5,11,24,.82) 45%, rgba(3,6,12,.96) 100%),
+    var(--bg-login) !important;
+}
+html[data-theme="dark"] #phone.entry-mode .entry .role{
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(140%); backdrop-filter:blur(22px) saturate(140%);
+  box-shadow:0 16px 40px rgba(0,0,0,.45) !important;
+}
+html[data-theme="dark"] #phone.entry-mode .entry .role b{ color:#F2F6FF !important }
+html[data-theme="dark"] #phone.entry-mode .entry .role span{ color:#9FB2D4 !important }
+html[data-theme="dark"] #phone.entry-mode .entry .role .ri{ background:rgba(59,130,246,.22) !important; color:#9CC4FF !important }
+html[data-theme="dark"] #phone.entry-mode .entry h1{ color:#FFFFFF }
+html[data-theme="dark"] #phone.entry-mode .entry .lead{ color:rgba(206,222,248,.78) }
+html[data-theme="dark"] #phone.entry-mode .entry .center.small.muted{ color:rgba(160,180,215,.65) }
+html[data-theme="dark"] #phone.entry-mode .entry .btn.ghost{ color:#B9CBE8; border-color:rgba(255,255,255,.16) !important }
+/* الشعار داخل السبلاش والدخول يبقى كما هو */
+html[data-theme="light"] #phone{ background:var(--bg) }
 
 /* ---- النمط الفاتح: يبقى كما هو مع لمسات زجاجية خفيفة ---- */
 html[data-theme="light"]{
@@ -1426,7 +1518,13 @@ const Q = {
   ).sort((a, b) => b.date.localeCompare(a.date)),
   hwOfTeacher: (teacherId) => DB.homeworks.filter(h => h.teacher_id === teacherId).sort((a, b) => b.date.localeCompare(a.date)),
 
-  dailyExamsFor: (student) => DB.dailyExams.filter(e => (e.section_ids || []).includes(student.section_id)),
+  dailyExamsFor: (student) => DB.dailyExams.filter(e => {
+    const secs = e.section_ids && e.section_ids.length ? e.section_ids : (e.section_id ? [e.section_id] : []);
+    if (!secs.includes(student.section_id)) return false;
+    if (e.grade_id && e.grade_id !== student.grade_id) return false;
+    if (e.school_id && e.school_id !== student.school_id) return false;
+    return true;
+  }),
   examGrade: (examId, studentId) => DB.dailyGrades.find(g => g.exam_id === examId && g.student_id === studentId)?.value ?? null,
   monthGrade: (studentId, subjectId, period) => DB.monthlyGrades.find(g => g.student_id === studentId && g.subject_id === subjectId && g.period === period)?.value ?? null,
 
@@ -1441,9 +1539,19 @@ const Q = {
       DB.teachers.find(t => t.subject_id === sid && t.school_id === (sec && sec.school_id))) || null;
     const periodAt = (i) => (typeof PERIODS !== 'undefined' && PERIODS[i]) ? PERIODS[i] : { id: i + 1, label: `الحصة ${i + 1}` };
     const timeOf = (i) => { const p = periodAt(i); return p.time || p.start || `${8 + i}:30`; };
+    /* عدد الحصص: من بيانات اللوحة إن وُجدت، وإلا 7 */
+    let periodCount = 7;
+    if (stored && typeof stored === 'object') {
+      const cells = stored.cells && typeof stored.cells === 'object' ? stored.cells : (Array.isArray(stored) ? {} : stored);
+      const keys = Object.keys(cells || {});
+      if (keys.length) {
+        const mx = keys.reduce((m, k) => { const p = +String(k).split('-')[1]; return Number.isFinite(p) ? Math.max(m, p) : m; }, 0);
+        periodCount = Math.min(12, Math.max(1, mx + 1));
+      }
+    }
     const build = (getSubject) => DAYS.map((dn, di) => ({
       day: di, name: dn,
-      periods: Array.from({ length: 7 }, (_, pi) => {
+      periods: Array.from({ length: periodCount }, (_, pi) => {
         const sid = getSubject(di, pi);
         const t = sid ? teacherOf(sid) : null;
         return { no: pi + 1, subject_id: sid || null, teacher_id: t ? t.id : null, time: timeOf(pi) };
@@ -1497,7 +1605,18 @@ const Q = {
   markRead(threadId) { const th = DB.threads.find(t => t.id === threadId); if (th) { th.unread = 0; Store.save(); } },
   unreadThreads: (list) => list.filter(t => (t.unread || 0) > 0).length,
 
-  notifFilter: (n, to) => n.to === to && (!n.owner || !DB.viewer || n.owner === DB.viewer),
+  notifFilter: (n, to) => {
+    if (n.to !== to) return false;
+    if (n.owner && DB.viewer && n.owner !== DB.viewer) return false;
+    /* ما فُتح سابقاً على هذا الجهاز يبقى مقروءاً */
+    if (!n.read) {
+      try {
+        const seen = JSON.parse(localStorage.getItem('alawael.readNotifs') || '[]');
+        if (seen.includes(n.id)) { n.read = true; return true; }
+      } catch (e) {}
+    }
+    return true;
+  },
   notifs: (to) => DB.notifications.filter(n => Q.notifFilter(n, to)).sort((a, b) => b.at.localeCompare(a.at)),
   unread: (to) => DB.notifications.filter(n => Q.notifFilter(n, to) && !n.read).length,
   push(to, type, title, body, extra = {}) {
@@ -1601,9 +1720,38 @@ const App = {
     } catch (e) {}
   },
 
+  /* ---------- الجلسة: تبقى محفوظة بعد إغلاق التطبيق ---------- */
+  SESSION_KEY: 'alawael.session',
+  saveSession() {
+    try {
+      if (this.role && this.user) localStorage.setItem(this.SESSION_KEY, JSON.stringify({ role: this.role, user: this.user }));
+    } catch (e) {}
+  },
+  restoreSession() {
+    try {
+      const raw = localStorage.getItem(this.SESSION_KEY);
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      if (!s || !s.role || !s.user) return false;
+      /* تحقّق أن الحساب ما زال موجوداً */
+      const ok = s.role === 'admin' ? true
+        : s.role === 'student' ? !!Q.student(s.user.studentId)
+        : s.role === 'guardian' ? !!Q.guardians().find(g => g.id === s.user.guardianId)
+        : s.role === 'teacher' ? !!Q.teacher(s.user.teacherId)
+        : s.role === 'driver' ? !!Q.driver(s.user.driverId) : false;
+      if (!ok) { localStorage.removeItem(this.SESSION_KEY); return false; }
+      this.role = s.role; this.user = s.user; this.asStudent = null;
+      this.route = s.role === 'admin' ? 'schools' : 'home'; this.params = {}; this.stack = [];
+      return true;
+    } catch (e) { return false; }
+  },
+
   logout() {
     Confirm({ title: 'تسجيل الخروج', message: 'هل تريد الخروج من الحساب؟', confirmText: 'خروج', danger: true,
-      onYes: () => { this.role = null; this.user = null; this.asStudent = null; this.schoolId = null; this.stack = []; this.route = 'home'; this.render(); } });
+      onYes: () => {
+        try { localStorage.removeItem(this.SESSION_KEY); } catch (e) {}
+        this.role = null; this.user = null; this.asStudent = null; this.schoolId = null; this.stack = []; this.route = 'home'; this.render();
+      } });
   },
 
   notifOwner() {
@@ -1652,6 +1800,10 @@ function navbar({ title, sub, back = false, right = '' }) {
     <div class="nb-title"><h1 style="font-size:${back ? 18 : 24}px">${esc(title)}</h1>${sub ? `<span>${esc(sub)}</span>` : ''}</div>
     ${right}
   </div>`;
+}
+function themeBtn() {
+  const dark = currentTheme() === 'dark';
+  return `<button class="icon-btn plain theme-btn" data-theme-toggle="1" aria-label="نمط العرض">${ic(dark ? 'sun' : 'moon')}</button>`;
 }
 function bellBtn() {
   const n = Q.unread(App.notifOwner());
@@ -1703,13 +1855,12 @@ function renderEntry() {
   $('#app').innerHTML = `<div class="screen"><div class="entry">
     <div class="logo">${ic('shield')}</div>
     <h1>مجموعة مدارس الأوائل</h1>
-    <p class="lead">اختر نوع حسابك للدخول<br>لكل حساب شاشته الخاصة، ولا يرى أحد بيانات غيره</p>
+    <p class="lead">اختر نوع حسابك للدخول</p>
     <div class="roles">
       ${roles.map(([id, label, sub, icon, color, bg]) => `<button class="role" data-role="${id}">
         <div class="ri" style="background:${bg};color:${color}">${ic(icon)}</div>
         <b>${label}</b><span>${sub}</span></button>`).join('')}
     </div>
-    <button class="admin-link" data-role="admin">${ic('lock')}<span>دخول الإدارة</span><span class="chev"></span></button>
     ${(typeof CloudApp !== 'undefined' && CloudApp.enabled)
       ? `<div class="center small muted mt-12" style="font-weight:700">الإصدار 2.0 · متصل بقاعدة بيانات المدرسة</div>`
       : `<div class="center small muted mt-12" style="font-weight:700">الإصدار التجريبي 2.0 · البيانات محفوظة على جهازك</div>
@@ -1732,18 +1883,22 @@ function openLogin(role) {
   const label = { student: 'طالب', guardian: 'ولي أمر', teacher: 'مدرس', driver: 'اشتراك', admin: 'الإدارة' }[role];
   Sheet.open({
     title: `دخول ${label}`,
-    sub: isAdmin ? 'أدخل أي كود وكلمة مرور للدخول إلى الإدارة' : 'أدخل الكود وكلمة المرور الخاصة بك',
+    sub: 'أدخل الكود وكلمة المرور الخاصة بك',
     body: `
       <div class="field"><label>${isAdmin ? 'اسم المستخدم' : 'الكود'}</label><input class="input" id="lgCode" placeholder="${isAdmin ? 'admin' : 'مثال: AL7QK2'}" autocomplete="off"></div>
       <div class="field"><label>كلمة المرور</label><input class="input" id="lgPw" type="password" placeholder="••••" autocomplete="off"></div>
-      ${isAdmin
-        ? `<div class="note yellow">${ic('lock')}<div>صفحة الإدارة مخفية عن الطلبة — أي بيانات تكتبها في هذين الحقلين تُدخلك إلى لوحة الإدارة.</div></div>`
-        : `<div class="note blue">${ic('info')}<div>نسخة تجريبية: اضغط «دخول سريع» للدخول بحساب تجريبي (${DEMO[role].code}).</div></div>`}
-      <div class="btn-row mt-12">
-        ${isAdmin ? '' : `<button class="btn ghost" id="lgFast">دخول سريع</button>`}
-        <button class="btn" id="lgGo">دخول</button>
-      </div>`,
+      <div class="btn-row mt-12"><button class="btn" id="lgGo">دخول</button></div>`,
     onMount(ov, close) {
+      const enterAsAdmin = () => {
+        close();
+        App.role = 'admin';
+        if (!App.user || App.user.role !== 'admin') App.user = { role: 'admin', name: 'مدير النظام' };
+        App.stack = []; App.params = {}; App.asStudent = null; App.schoolId = null;
+        App.route = 'schools'; App.lastNotifCount = 0;
+        try { App.saveSession(); } catch (e) {}
+        setTimeout(() => App.render(), 120);
+        setTimeout(() => Toast('أهلاً بك في الإدارة', 'ok'), 420);
+      };
       const enter = () => {
         close();
         App.role = role;
@@ -1751,14 +1906,22 @@ function openLogin(role) {
         App.stack = []; App.params = {}; App.asStudent = null;
         App.schoolId = isAdmin ? null : App.schoolId;
         App.route = isAdmin ? 'schools' : 'home';
-        App.lastNotifCount = role === 'admin' ? 0 : 0;
+        App.lastNotifCount = 0;
+        try { App.saveSession(); } catch (e) {}
         setTimeout(() => App.render(), 120);
         setTimeout(() => Toast('أهلاً بك', 'ok'), 420);
       };
       const doLogin = (code, pw) => {
         code = (code || '').trim(); pw = (pw || '').trim();
-        if (isAdmin) { if (!code || !pw) return Toast('اكتب أي بيانات للدخول', 'err'); App.user = { role: 'admin', name: 'مدير النظام' }; return enter(); }
+        if (isAdmin) { if (!code || !pw) return Toast('اكتب اسم المستخدم وكلمة المرور', 'err'); App.user = { role: 'admin', name: 'مدير النظام' }; return enter(); }
         if (!code || !pw) return Toast('أكمل الكود وكلمة المرور', 'err');
+        /* حساب الإدارة يُدخَل من مربع الطالب: اسم المستخدم admin + كلمة مروره */
+        const adminCfg = (DB.settings && DB.settings.admin) || {};
+        if (role === 'student' && adminCfg.username && code.toLowerCase() === String(adminCfg.username).toLowerCase()
+            && pw === String(adminCfg.password || '')) {
+          App.role = 'admin'; App.user = { role: 'admin', name: adminCfg.name || 'مدير النظام' };
+          return enterAsAdmin();
+        }
         if (role === 'student') {
           const st = DB.students.find(s => s.code === code.toUpperCase() && (s.password || '1234') === pw);
           if (!st) return Toast('الكود أو كلمة المرور غير صحيحة', 'err');
@@ -1779,13 +1942,6 @@ function openLogin(role) {
         enter();
       };
       $('#lgGo', ov).onclick = () => doLogin($('#lgCode', ov).value, $('#lgPw', ov).value);
-      const f = $('#lgFast', ov);
-      if (f) f.onclick = () => {
-        if (typeof CloudApp !== 'undefined' && CloudApp.enabled) {
-          return Toast('استخدم الكود وكلمة المرور التي أنشأتها الإدارة في لوحة التحكم', 'err', 5000);
-        }
-        doLogin(DEMO[role].code, DEMO[role].pw);
-      };
       $('#lgPw', ov).onkeydown = e => { if (e.key === 'Enter') doLogin($('#lgCode', ov).value, $('#lgPw', ov).value); };
       setTimeout(() => $('#lgCode', ov)?.focus(), 320);
     }
@@ -1812,7 +1968,8 @@ function renderStudentApp() {
     subs: studentSubs, about: studentAbout, notifs: studentNotifs, more: studentMore };
   $('#app').innerHTML = (map[r] || studentHome)(st);
   bindStudent(st);
-  if (App.role === 'guardian') {
+  /* زر «العودة إلى قائمة أبنائك» يظهر في الرئيسية فقط */
+  if (App.role === 'guardian' && App.route === 'home') {
     const sc = $('#app .scroll');
     if (sc) {
       sc.insertAdjacentHTML('afterbegin', `<button class="note yellow" id="backKids" style="width:100%;text-align:start;border:0;margin-bottom:10px">
@@ -1827,7 +1984,7 @@ function studentHome(st) {
   const hw = Q.hwFor(st, isoDay());
   const notifs = Q.notifs('student').slice(0, 3);
   return `<div class="screen">
-    ${navbar({ title: `أهلاً ${st.name.split(' ')[0]}`, sub: Q.label.school(st.school_id), right: bellBtn() })}
+    ${navbar({ title: `أهلاً ${st.name.split(' ')[0]}`, sub: Q.label.school(st.school_id), right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="hero">
         <div class="h-top">
@@ -1907,7 +2064,7 @@ function studentHomework(st) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(isoDay(), -i));
   const list = DB.homeworks.filter(h => h.date === sel && (h.section_ids || []).includes(st.section_id));
   return `<div class="screen">
-    ${navbar({ title: 'الواجبات', sub: `${Q.label.grade(st.grade_id)} — شعبة ${Q.label.section(st.section_id)}`, right: bellBtn() })}
+    ${navbar({ title: 'الواجبات', sub: `${Q.label.grade(st.grade_id)} — شعبة ${Q.label.section(st.section_id)}`, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="chips mb-12">
         ${days.map(d => `<button class="chip ${d === sel ? 'on' : ''}" data-day="${d}">
@@ -1922,67 +2079,29 @@ function studentHomework(st) {
 
 /* ---------- الدرجات ---------- */
 function studentGrades(st) {
-  const tab = App.params.tab || 'daily';
-  if (tab === 'monthly') {
-    const periods = PERIODS;
-    const avgAll = Q.avg(st.id);
-    return `<div class="screen">
-      ${navbar({ title: 'الدرجات', sub: 'اليومية والشهرية', right: bellBtn() })}
-      <div class="scroll">
-        <div class="seg">
-          <button data-gtab="daily">الدرجات اليومية</button>
-          <button class="on">الدرجات الشهرية</button>
-        </div>
-        <div class="hero yellow" style="margin-bottom:14px">
-          <div class="between" style="position:relative;z-index:1">
-            <div><div style="font-size:12px;font-weight:800;opacity:.8">المعدل العام</div>
-              <div style="font-size:34px;font-weight:800;letter-spacing:-1px">${avgAll ?? '—'}</div></div>
-            <div style="text-align:end;font-size:12px;font-weight:800">من 100<br>${Q.gradeLetter(avgAll)}</div>
-          </div>
-        </div>
-        ${periods.map(p => {
-          const rows = DB.subjects.map(s => ({ s, v: Q.monthGrade(st.id, s.id, p.id) }));
-          const have = rows.filter(r => r.v != null);
-          if (!have.length) return '';
-          const avg = Math.round(have.reduce((a, r) => a + r.v, 0) / have.length);
-          return `<div class="g-card">
-            <div class="g-head"><div class="gi">${ic('calendar')}</div>
-              <b>${p.label}</b><span class="pill ${avg >= 85 ? 'green' : avg >= 60 ? 'blue' : 'red'}">${avg}</span></div>
-            ${rows.filter(r => r.v != null).map(r => `<div class="g-line">
-              <span class="gn">${esc(r.s.name)}</span>
-              <div class="bar"><i class="${r.v >= 85 ? 'ok' : r.v >= 60 ? '' : 'bad'}" style="width:${r.v}%"></i></div>
-              <span class="gv" style="color:${r.v >= 85 ? 'var(--green)' : r.v >= 60 ? 'var(--label)' : 'var(--red)'}">${r.v}</span>
-              <span class="gm">/100</span></div>`).join('')}
-          </div>`;
-        }).join('')}
-      </div>
-      ${tabbar(STUDENT_TABS, 'grades')}
-    </div>`;
-  }
-  const daily = Q.dailyExamsFor(st).map(e => ({ ...e, value: Q.examGrade(e.id, st.id) }))
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const daily = Q.dailyExamsFor(st)
+    .map(e => ({ ...e, value: Q.examGrade(e.id, st.id) }))
+    .filter(e => e.value != null)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   return `<div class="screen">
-    ${navbar({ title: 'الدرجات', sub: 'اليومية والشهرية', right: bellBtn() })}
+    ${navbar({ title: 'الدرجات', sub: 'درجاتي اليومية', right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
-      <div class="seg">
-        <button class="on">الدرجات اليومية</button>
-        <button data-gtab="monthly">الدرجات الشهرية</button>
-      </div>
       ${daily.length ? daily.map(e => {
-        const v = e.value, ratio = v != null ? v / e.max : 0;
+        const max = +e.max || 100;
+        const v = e.value, ratio = v / max;
         return `<div class="g-card">
           <div class="g-head">
             <div class="gi">${ic('book')}</div>
-            <div class="grow"><b>${esc(Q.subject(e.subject_id)?.name)}</b>
-              <div class="small muted" style="font-weight:700;margin-top:2px">${esc(e.name)} · ${fmtDate(e.date)}</div></div>
-            <div style="text-align:end"><div style="font-size:19px;font-weight:800;color:${ratio >= .85 ? 'var(--green)' : ratio >= .6 ? 'var(--blue)' : 'var(--red)'}">${v ?? '—'}</div>
-              <div class="small muted" style="font-weight:800">من ${e.max}</div></div>
+            <div class="grow"><b>${esc(Q.subject(e.subject_id)?.name || '—')}</b>
+              <div class="small muted" style="font-weight:700;margin-top:2px">${esc(e.name || 'امتحان')} · ${fmtDate(e.date)}</div></div>
+            <div style="text-align:end"><div style="font-size:19px;font-weight:800;color:${ratio >= .85 ? 'var(--green)' : ratio >= .6 ? 'var(--blue)' : 'var(--red)'}">${v}</div>
+              <div class="small muted" style="font-weight:800">من ${max}</div></div>
           </div>
-          <div class="bar" style="width:100%"><i class="${ratio >= .85 ? 'ok' : ratio >= .6 ? '' : 'bad'}" style="width:${Math.round(ratio * 100)}%"></i></div>
+          <div class="bar" style="width:100%"><i class="${ratio >= .85 ? 'ok' : ratio >= .6 ? '' : 'bad'}" style="width:${Math.max(4, Math.round(ratio * 100))}%"></i></div>
         </div>`;
       }).join('') : empty('chart', 'لا توجد درجات يومية', 'ستظهر هنا بعد إدخالها من الإدارة')}
     </div>
-    ${tabbar(STUDENT_TABS, 'grades')}
+    ${tabbar(STUDENT_TABS, 'home')}
   </div>`;
 }
 
@@ -1994,23 +2113,22 @@ function studentSchedule(st) {
   const sel = App.params.day != null ? +App.params.day : defaultDay;
   const day = week[sel] || week[0];
   return `<div class="screen">
-    ${navbar({ title: 'الجدول اليومي', sub: `${Q.label.grade(st.grade_id)} — شعبة ${Q.label.section(st.section_id)}`, back: true, right: bellBtn() })}
+    ${navbar({ title: 'الجدول اليومي', sub: `${Q.label.grade(st.grade_id)} — شعبة ${Q.label.section(st.section_id)}`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
-      <div class="chips mb-12">
-        ${week.map((w, i) => `<button class="chip ${i === sel ? 'on' : ''}" data-day-tab="${i}">${w.name}
+      <div class="chips wrap mb-12">
+        ${week.filter(w => (w.periods || []).some(p => p.subject_id)).map(w => [w, w.day]).map(([w, i]) => `<button class="chip ${i === sel ? 'on' : ''}" data-day-tab="${i}">${w.name}
           ${i === todayDow ? '<span class="d">اليوم</span>' : '<span class="d">&nbsp;</span>'}</button>`).join('')}
       </div>
       <div class="list">
         ${(day.periods || []).map((p, i) => `<div class="per-row">
           <div class="per-no ${i % 2 ? 'y' : ''}">${p.no}</div>
           <div class="per-t"><b>${esc(p.subject_id ? (Q.subject(p.subject_id)?.name || '—') : 'لا توجد حصة')}</b>
-            <span>${esc(p.teacher_id ? (Q.teacher(p.teacher_id)?.name || '') : '—')}</span></div>
-          <div class="per-time">${esc(p.time || `${8 + i}:30`)}</div>
+            ${p.teacher_id ? `<span>${esc(Q.teacher(p.teacher_id)?.name || '')}</span>` : ''}</div>
         </div>`).join('')}
       </div>
       <div class="note blue mt-12">${ic('info')}<div>جدول شعبتك كما هو مضاف من المدرسة — اختر اليوم من الأعلى.</div></div>
     </div>
-    ${tabbar(STUDENT_TABS, 'more')}
+    ${tabbar(STUDENT_TABS, 'home')}
   </div>`;
 }
 
@@ -2021,7 +2139,7 @@ function studentMonthSchedule(st) {
   const sel = App.params.period;
   if (!sel) {
     return `<div class="screen">
-      ${navbar({ title: 'الجدول الشهري', sub: 'اختر الامتحان أولاً', back: true, right: bellBtn() })}
+      ${navbar({ title: 'الجدول الشهري', sub: 'اختر الامتحان أولاً', back: true, right: `${themeBtn()}${bellBtn()}` })}
       <div class="scroll">
         <div class="note yellow">${ic('calendar')}<div>اختر الامتحان (الشهر الأول، الثاني، نصف السنة، آخر السنة) لتظهر مواعيد المواد والمواد الداخلة في الامتحان.</div></div>
         ${periods.map(p => {
@@ -2032,12 +2150,12 @@ function studentMonthSchedule(st) {
             <span class="chev"></span></button>`;
         }).join('') || empty('calendar','لا يوجد جدول امتحانات','لم تُضف امتحانات لهذه المدرسة بعد')}
       </div>
-      ${tabbar(STUDENT_TABS, 'more')}
+      ${tabbar(STUDENT_TABS, 'home')}
     </div>`;
   }
   const list = schoolExams.filter(e => e.period === sel);
   return `<div class="screen">
-    ${navbar({ title: PERIOD_LABEL(sel), sub: 'جدول الامتحانات', back: true, right: bellBtn() })}
+    ${navbar({ title: PERIOD_LABEL(sel), sub: 'جدول الامتحانات', back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="list">
         ${list.map(e => `<div class="row" style="align-items:flex-start">
@@ -2055,7 +2173,7 @@ function studentMonthSchedule(st) {
       </div>
       <button class="btn ghost mt-12" data-act="monthSchedule" style="width:100%">${ic('back')} اختيار امتحان آخر</button>
     </div>
-    ${tabbar(STUDENT_TABS, 'more')}
+    ${tabbar(STUDENT_TABS, 'home')}
   </div>`;
 }
 
@@ -2069,7 +2187,7 @@ function studentChat(st) {
   const teacherThreads = teachers.map(t => Q.threadTeacher(t.id, st.id));
   const lastAdmin = Q.msgs(thAdmin.id).slice(-1)[0];
   return `<div class="screen">
-    ${navbar({ title: 'الدردشة', sub: DB.settings.chatLock.enabled ? 'الدردشة موقوفة مؤقتاً' : 'الإدارة ومدرسوك', right: bellBtn() })}
+    ${navbar({ title: 'الدردشة', sub: DB.settings.chatLock.enabled ? 'الدردشة موقوفة مؤقتاً' : 'الإدارة ومدرسوك', right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${DB.settings.chatLock.enabled ? `<div class="note red">${ic('lock')}<div>الدردشة موقوفة حالياً من الإدارة — يمكنك القراءة فقط.</div></div>` : ''}
       <div class="sec-title">الإدارة</div>
@@ -2126,7 +2244,7 @@ function studentSubs(st) {
   const results = q ? Q.driversInArea(q) : [];
   const myReq = DB.requests.filter(r => r.student_id === st.id);
   return `<div class="screen">
-    ${navbar({ title: 'الاشتراك', sub: 'ابحث بمنطقتك لتظهر السائقون', back: true, right: bellBtn() })}
+    ${navbar({ title: 'الاشتراك', sub: 'ابحث بمنطقتك لتظهر السائقون', back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="search">${ic('search')}<input id="areaQ" placeholder="اكتب اسم منطقتك… مثال: الجامعة" value="${esc(q)}"></div>
       ${!q ? `
@@ -2158,7 +2276,7 @@ function studentSubs(st) {
             <span class="pill ${r.status === 'pending' ? 'yellow' : r.status === 'accepted' ? 'green' : 'red'}">${r.status === 'pending' ? 'بانتظار الموافقة' : r.status === 'accepted' ? 'تم القبول' : 'مرفوض'}</span></div>`;
         }).join('')}</div>` : ''}
     </div>
-    ${tabbar(STUDENT_TABS, 'more')}
+    ${tabbar(STUDENT_TABS, 'home')}
   </div>`;
 }
 
@@ -2189,7 +2307,7 @@ function studentAbout(st) {
       </div>
       ${a.note ? `<div class="note yellow mt-12">${ic('megaphone')}<div>${esc(a.note)}</div></div>` : ''}
     </div>
-    ${tabbar(STUDENT_TABS, 'more')}
+    ${tabbar(STUDENT_TABS, 'home')}
   </div>`;
 }
 
@@ -2209,13 +2327,33 @@ function notifsScreen(list, tabs, active) {
 const studentNotifs = () => notifsScreen(Q.notifs('student'), STUDENT_TABS, 'home');
 
 /* تعليم كل إشعارات هذا الحساب كمقروءة (يُستدعى عند فتح شاشة الإشعارات) */
+/* الإشعارات المقروءة تُحفظ في الجهاز حتى لا تعود «جديدة» بعد إعادة الدخول */
+const ReadStore = {
+  KEY: 'alawael.readNotifs',
+  get() { try { return JSON.parse(localStorage.getItem(this.KEY) || '[]'); } catch (e) { return []; } },
+  add(ids) {
+    try {
+      const cur = new Set(this.get());
+      ids.forEach(i => cur.add(i));
+      localStorage.setItem(this.KEY, JSON.stringify([...cur].slice(-600)));
+    } catch (e) {}
+  },
+  apply(list) {
+    const set = new Set(this.get());
+    list.forEach(n => { if (set.has(n.id)) n.read = true; });
+    return list;
+  }
+};
+
 function markNotifsRead() {
   const to = App.notifOwner();
   if (!to) return 0;
   let n = 0;
+  const ids = [];
   DB.notifications.forEach(x => {
-    if (x.to === to && !x.read && (!x.owner || !DB.viewer || x.owner === DB.viewer)) { x.read = true; n++; }
+    if (x.to === to && !x.read && (!x.owner || !DB.viewer || x.owner === DB.viewer)) { x.read = true; n++; ids.push(x.id); }
   });
+  if (ids.length) ReadStore.add(ids);
   if (n) { Store.save(); App.lastNotifCount = Q.unread(to); }
   const badge = document.querySelector('#bellBadge');
   const left = Q.unread(to);
@@ -2226,7 +2364,7 @@ function markNotifsRead() {
 /* ---------- المزيد ---------- */
 function studentMore(st) {
   return `<div class="screen">
-    ${navbar({ title: 'المزيد', sub: Q.label.school(st.school_id), right: bellBtn() })}
+    ${navbar({ title: 'المزيد', sub: Q.label.school(st.school_id), right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="list">
         <button class="row" data-act="schedule"><div class="ri">${ic('calendarGrid')}</div>
@@ -2239,6 +2377,9 @@ function studentMore(st) {
           <div class="rt"><b>عن المدرسة</b><span>العنوان والهاتف والروابط</span></div><span class="chev"></span></button>
         <button class="row" data-act="notifs"><div class="ri y">${ic('bell')}</div>
           <div class="rt"><b>الإشعارات</b><span>${Q.unread('student')} غير مقروء</span></div><span class="chev"></span></button>
+        ${typeof PushSetup !== 'undefined' ? `<button class="row" id="pushOn"><div class="ri">${ic('bell')}</div>
+          <div class="rt"><b>إشعارات الجوال</b><span>${PushSetup.state() === 'on' ? 'مفعّلة — تصلك حتى لو كان التطبيق مغلقاً' : 'اضغط للتفعيل'}</span></div>
+          <span class="pill ${PushSetup.state() === 'on' ? 'green' : ''}">${PushSetup.state() === 'on' ? 'مفعّلة' : 'تفعيل'}</span></button>` : ''}
         ${themeRow()}
       </div>
       <div class="list mt-16">
@@ -2335,6 +2476,13 @@ function bindCommon(ctx) {
     e.preventDefault(); e.stopPropagation();
     App.tab(b.dataset.tab);
   });
+  /* تشغيل إشعارات الجوال */
+  const pbtn = $('#pushOn');
+  if (pbtn) pbtn.onclick = async (e) => {
+    e.preventDefault();
+    try { await PushSetup.enable(); } catch (err) { Toast('تعذّر تفعيل الإشعارات', 'err'); }
+    App.render();
+  };
   /* تبديل نمط العرض (داكن/فاتح) */
   $$('[data-theme-toggle]').forEach(b => b.onclick = (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -2379,7 +2527,7 @@ function renderGuardianHome() {
   const g = Q.guardians().find(x => x.id === App.user?.guardianId) || Q.guardians()[0];
   const kids = (g?.student_ids || []).map(id => Q.student(id)).filter(Boolean);
   $('#app').innerHTML = `<div class="screen">
-    ${navbar({ title: 'أبنائي', sub: `${g?.name || ''} · ${g?.relation || 'ولي أمر'}`, right: bellBtn() })}
+    ${navbar({ title: 'أبنائي', sub: `${g?.name || ''} · ${g?.relation || 'ولي أمر'}`, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="hero">
         <div class="h-top"><div class="av">${ic('guardian')}</div>
@@ -2397,7 +2545,6 @@ function renderGuardianHome() {
             <span>${esc(Q.label.school(st.school_id))} · ${esc(Q.label.grade(st.grade_id))} — شعبة ${esc(Q.label.section(st.section_id))}</span></div>
           <span class="chev"></span></button>`).join('') || empty('users','لا يوجد أبناء مرتبطون','راجع الإدارة لربط حسابك')}
       </div>
-      <div class="note blue mt-16">${ic('info')}<div>كل ما تراه داخل حساب ابنك هو بياناته الحقيقية: الواجبات، الدرجات، الجداول، والدردشة — دون أي تعديل منك.</div></div>
       <div class="list mt-16">
         <button class="row" id="gLogout"><div class="ri" style="background:var(--red-soft);color:#C22B26">${ic('logout')}</div>
           <div class="rt"><b style="color:var(--red)">تسجيل الخروج</b><span>العودة إلى شاشة الدخول</span></div></button>
@@ -2448,7 +2595,7 @@ function teacherHome(t) {
   const secs = teacherSections(t);
   const sts = teacherStudents(t);
   return `<div class="screen">
-    ${navbar({ title: `أهلاً ${t.name.replace('أ. ','')}`, sub: `${Q.subject(t.subject_id)?.name} · ${Q.label.grade(t.grade_id)}`, right: bellBtn() })}
+    ${navbar({ title: `أهلاً ${t.name.replace('أ. ','')}`, sub: `${Q.subject(t.subject_id)?.name} · ${Q.label.grade(t.grade_id)}`, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="hero">
         <div class="h-top"><div class="av">${ic('teacher')}</div>
@@ -2498,7 +2645,7 @@ function teacherHW(t) {
 function teacherStudentsScreen(t) {
   const secs = teacherSections(t);
   return `<div class="screen">
-    ${navbar({ title: 'الطلبة', sub: `${Q.label.grade(t.grade_id)} — ${secs.length} شعبة`, back: true, right: bellBtn() })}
+    ${navbar({ title: 'الطلبة', sub: `${Q.label.grade(t.grade_id)} — ${secs.length} شعبة`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${secs.map(sec => {
         const sts = Q.studentsOf(sec.id);
@@ -2518,7 +2665,7 @@ function teacherStudentsScreen(t) {
 function teacherChat(t) {
   const threads = Q.teacherThreads(t.id);
   return `<div class="screen">
-    ${navbar({ title: 'الدردشة', sub: 'رسائل طلبتك', back: true, right: bellBtn() })}
+    ${navbar({ title: 'الدردشة', sub: 'رسائل طلبتك', back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${threads.length ? `<div class="list">
         ${threads.map(th => {
@@ -2717,7 +2864,7 @@ function driverHome(d) {
   const pend = Q.requestsFor(d.id).filter(r => r.status === 'pending');
   const mine = (d.students || []).map(id => Q.student(id)).filter(Boolean);
   return `<div class="screen">
-    ${navbar({ title: `أهلاً ${d.name.split(' ').slice(0,2).join(' ')}`, sub: 'حساب اشتراك', right: bellBtn() })}
+    ${navbar({ title: `أهلاً ${d.name.split(' ').slice(0,2).join(' ')}`, sub: 'حساب اشتراك', right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="hero">
         <div class="h-top"><div class="av">${ic('car')}</div>
@@ -2771,7 +2918,7 @@ function driverRequests(d) {
   const all = Q.requestsFor(d.id).sort((a, b) => b.at.localeCompare(a.at));
   const pend = all.filter(r => r.status === 'pending');
   return `<div class="screen">
-    ${navbar({ title: 'الطلبات', sub: `${pend.length} بانتظار قرارك`, back: true, right: bellBtn() })}
+    ${navbar({ title: 'الطلبات', sub: `${pend.length} بانتظار قرارك`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${all.length ? `<div class="list">${all.map(r => reqRow(r)).join('')}</div>` : empty('users','لا طلبات','ستصلك هنا طلبات الطلبة في مناطقك')}
       <div class="note blue mt-12">${ic('info')}<div>القبول يعني أن الطالب أصبح مشتركاً معك. رقم ولي الأمر يظهر لك للتواصل وتحديد موعد الرحلة.</div></div>
@@ -2783,7 +2930,7 @@ function driverRequests(d) {
 function driverStudents(d) {
   const mine = (d.students || []).map(id => Q.student(id)).filter(Boolean);
   return `<div class="screen">
-    ${navbar({ title: 'طلبتي', sub: `${mine.length} طالباً مشتركاً`, back: true, right: bellBtn() })}
+    ${navbar({ title: 'طلبتي', sub: `${mine.length} طالباً مشتركاً`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${mine.length ? `<div class="list">${mine.map(s => {
         const ph = DB.requests.find(r => r.student_id === s.id && r.driver_id === d.id && r.status === 'accepted')?.guardian_phone;
@@ -2886,7 +3033,7 @@ function adminHome() {
   const secs = DB.sections.filter(s => s.school_id === App.schoolId);
   const todayHW = DB.homeworks.filter(h => h.school_id === App.schoolId && h.date === isoDay());
   return `<div class="screen">
-    ${navbar({ title: 'لوحة الإدارة', sub: sch?.name, right: bellBtn() })}
+    ${navbar({ title: 'لوحة الإدارة', sub: sch?.name, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="hero">
         <div class="h-top"><div class="av">${ic('school')}</div>
@@ -2931,7 +3078,7 @@ function adminClasses() {
   const sid = App.params.section;
   if (!gid) {
     return `<div class="screen">
-      ${navbar({ title: 'الصفوف', sub: 'اختر الصف لعرض شعبه', back: true, right: bellBtn() })}
+      ${navbar({ title: 'الصفوف', sub: 'اختر الصف لعرض شعبه', back: true, right: `${themeBtn()}${bellBtn()}` })}
       <div class="scroll">
         <div class="list">
           ${grades.map(g => {
@@ -2950,7 +3097,7 @@ function adminClasses() {
   const grade = Q.grade(gid);
   if (!sid) {
     return `<div class="screen">
-      ${navbar({ title: grade?.name || 'الصف', sub: 'اختر الشعبة', back: true, right: bellBtn() })}
+      ${navbar({ title: grade?.name || 'الصف', sub: 'اختر الشعبة', back: true, right: `${themeBtn()}${bellBtn()}` })}
       <div class="scroll">
         <div class="list">
           ${Q.sectionsOf(gid).map(s => {
@@ -2969,7 +3116,7 @@ function adminClasses() {
   const sts = Q.studentsOf(sid);
   const sel = new Set(App.params.sel || []);
   return `<div class="screen">
-    ${navbar({ title: `شعبة ${sec?.name}`, sub: `${grade?.name} · ${sts.length} طالب`, back: true, right: bellBtn() })}
+    ${navbar({ title: `شعبة ${sec?.name}`, sub: `${grade?.name} · ${sts.length} طالب`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="between mb-8">
         <span class="chk-count">${sel.size} طالب محدد</span>
@@ -3148,7 +3295,7 @@ function adminGrades() {
     </div>`;
 
   return `<div class="screen">
-    ${navbar({ title: 'الدرجات', sub: 'كما في الداشبورد', back: true, right: bellBtn() })}
+    ${navbar({ title: 'الدرجات', sub: 'كما في الداشبورد', back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${gradeSectionPicker('g', G, S)}
       <div class="seg">
@@ -3222,7 +3369,7 @@ function adminSchedule() {
   const week = Q.weeklyFor(S);
   const todayDow = new Date().getDay();
   return `<div class="screen">
-    ${navbar({ title: 'الجداول', sub: 'جدول الصف والشعبة', back: true, right: bellBtn() })}
+    ${navbar({ title: 'الجداول', sub: 'جدول الصف والشعبة', back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${gradeSectionPicker('s', G, S)}
       <div class="tt">
@@ -3324,7 +3471,7 @@ function openExamEditor() {
 /* ---------------- التبليغ ---------------- */
 function adminAnnounce() {
   return `<div class="screen">
-    ${navbar({ title: 'إرسال تبليغ', sub: 'إشعار فوري للطلبة', back: true, right: bellBtn() })}
+    ${navbar({ title: 'إرسال تبليغ', sub: 'إشعار فوري للطلبة', back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="card">
         <div class="field"><label>الجهة</label><select class="input" id="anScope">
@@ -3359,7 +3506,7 @@ function adminAnnounce() {
 function adminChat() {
   const threads = Q.adminThreads();
   return `<div class="screen">
-    ${navbar({ title: 'الدردشة', sub: 'رسائل الطلبة', right: bellBtn() })}
+    ${navbar({ title: 'الدردشة', sub: 'رسائل الطلبة', right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="note yellow">${ic('alert')}<div>كل رسالة يرسلها طالب تصل إليك كإشعار فوري.</div></div>
       ${threads.length ? `<div class="list">${threads.map(th => {
@@ -3405,7 +3552,7 @@ const adminNotifs = () => notifsScreen(Q.notifs('admin'), ADMIN_TABS, 'home');
 /* ---------------- المزيد ---------------- */
 function adminMore() {
   return `<div class="screen">
-    ${navbar({ title: 'المزيد', sub: Q.school(App.schoolId)?.name, right: bellBtn() })}
+    ${navbar({ title: 'المزيد', sub: Q.school(App.schoolId)?.name, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="list">
         <button class="row" data-act="announce"><div class="ri">${ic('megaphone')}</div>
@@ -3864,6 +4011,101 @@ function iosInstallHint() {
 }
 
 /* ==========================================================================
+   19) الإشعارات الفورية (Web Push) — تصل حتى لو كان التطبيق مغلقاً
+   ========================================================================== */
+const PushSetup = (() => {
+  const PUBLIC_KEY = 'BLwHuskjhG82l_K_GXIcQS05t-sCbF42lrS_Am7juhrEIcvzIVvFPyd0r0KlDgMaq1g1JeOXriwxvg1Tg7CkvwI';
+  const KEY = 'alawael.push';
+  const urlB64ToUint8Array = (b64) => {
+    const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  };
+  const supported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const state = () => {
+    try { return localStorage.getItem(KEY) || 'off'; } catch (e) { return 'off'; }
+  };
+  const setState = (v) => { try { localStorage.setItem(KEY, v); } catch (e) {} };
+
+  /* ربط الاشتراك بصاحب الحساب ليصل كل إشعار لصاحبه فقط */
+  function ownerInfo() {
+    if (!App.role) return null;
+    const map = { student: 'student', guardian: 'student', teacher: 'teacher', driver: 'driver', admin: 'admin' };
+    const owner = App.role === 'student' ? App.user?.studentId
+      : App.role === 'teacher' ? App.user?.teacherId
+      : App.role === 'driver' ? App.user?.driverId
+      : App.role === 'guardian' ? (App.asStudent || (Q.guardians().find(g => g.id === App.user?.guardianId)?.student_ids || [])[0])
+      : null;
+    return { to: map[App.role] || 'student', owner: owner || null, role: App.role };
+  }
+
+  async function saveSub(sub) {
+    if (typeof CloudApp === 'undefined' || !CloudApp.enabled) return false;
+    const info = ownerInfo();
+    if (!info) return false;
+    const cfg = CloudApp.cfg || {};
+    const base = String(cfg.url || '').replace(/\/$/, '');
+    const headers = { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' };
+    const rec = {
+      id: 'ps_' + (info.owner || 'x') + '_' + Math.random().toString(36).slice(2, 8),
+      owner: info.owner, to: info.to, role: info.role,
+      endpoint: sub.endpoint, keys: sub.toJSON ? sub.toJSON().keys : sub.keys,
+      created_at: new Date().toISOString()
+    };
+    /* لا نمسح اشتراكات الأجهزة الأخرى: نقرأ القائمة ثم نضيف/نحدّث اشتراك هذا الجهاز فقط */
+    let list = [];
+    try {
+      const r = await fetch(base + '/rest/v1/kv?select=value&key=eq.pushSubs', { headers });
+      const rows = await r.json();
+      if (rows && rows[0] && Array.isArray(rows[0].value)) list = rows[0].value;
+    } catch (e) {}
+    list = list.filter(x => x && x.endpoint !== rec.endpoint);
+    rec.owner = info.owner;
+    list.push(rec);
+    if (list.length > 500) list = list.slice(-500);
+    await fetch(base + '/rest/v1/kv?on_conflict=key', {
+      method: 'POST', headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{ key: 'pushSubs', value: list, rev: Date.now() }])
+    });
+    return true;
+  }
+
+  async function enable() {
+    if (!supported()) {
+      Toast('جهازك لا يدعم الإشعارات — على الآيفون: أضف التطبيق إلى الشاشة الرئيسية أولاً', 'err', 5000);
+      return false;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { Toast('لم تُمنح صلاحية الإشعارات', 'err'); return false; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(PUBLIC_KEY)
+      });
+    }
+    const ok = await saveSub(sub);
+    setState('on');
+    Toast(ok ? 'تم تشغيل الإشعارات ✓' : 'تم التشغيل محلياً — ستُزامن عند الاتصال', 'ok');
+    return true;
+  }
+
+  function init() {
+    if (!supported()) return;
+    /* إن كان الاشتراك قائماً من قبل: أعِد ربطه بالحساب الحالي (لمنع وصول إشعارات حساب لآخر) */
+    if (state() === 'on' && Notification.permission === 'granted' && App.role) {
+      navigator.serviceWorker.ready
+        .then(r => r.pushManager.getSubscription())
+        .then(sub => { if (sub) return saveSub(sub); })
+        .catch(() => {});
+    }
+  }
+
+  return { init, enable, state, supported, PUBLIC_KEY };
+})();
+
+/* ==========================================================================
    18) التهيئة
    ========================================================================== */
 (async function boot() {
@@ -3871,6 +4113,8 @@ function iosInstallHint() {
   /* إن كانت المزامنة السحابية مفعّلة: اسحب بيانات اللوحة قبل أول رسم */
   try { if (typeof CloudApp !== 'undefined' && CloudApp.enabled) await CloudApp.boot(); } catch (e) { console.warn('[cloud]', e); }
   if (!DB.guardians) DB.guardians = DB.guardian ? [DB.guardian] : [];
+  /* استعادة الجلسة: لا نطلب الدخول من جديد بعد إغلاق التطبيق */
+  try { if (App.restoreSession) App.restoreSession(); } catch (e) {}
   App.render();
 
 
@@ -3891,6 +4135,8 @@ function iosInstallHint() {
       });
     }
   } catch (e) {}
+  /* إشعارات تصل حتى لو كان التطبيق مغلقاً (Web Push) */
+  try { if (typeof PushSetup !== 'undefined') setTimeout(() => PushSetup.init(), 2500); } catch (e) {}
   /* تسجيل عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت */
   try {
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
