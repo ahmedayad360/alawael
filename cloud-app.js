@@ -76,6 +76,8 @@ const CloudApp = (() => {
       section_ids: Array.isArray(h.section_ids) && h.section_ids.length ? h.section_ids : (h.section_id ? [h.section_id] : []),
       subject_id: h.subject_id, teacher_id: h.teacher_id, text: h.text || '', link: h.link || '',
       images: h.images || [], files: h.files || [],
+      /* اسم المدرس أو الإدارة: من teacher_name أو sender_name أو اسم المدرس المرتبط */
+      teacher_name: h.teacher_name || h.sender_name || (h.teacher_id ? ((teachers.find(t => t.id === h.teacher_id) || {}).name || '') : '') || null,
       date: (h.date || h.created_at || '').slice(0, 10), created_at: h.created_at
     }));
 
@@ -111,7 +113,9 @@ const CloudApp = (() => {
     const threads = [], messages = [];
     live(g('threads')).filter(t => t.kind === 'student' || t.kind === 'admin').forEach(t => {
       const thId = 'th_a_' + t.participant_id;
-      threads.push({ id: thId, kind: 'admin', student_id: t.participant_id, last_at: t.last_at || t.created_at, unread: 0 });
+      /* unread من اللوحة: رسالة طالب جديدة = محادثة «جديدة» غير مقروءة */
+      threads.push({ id: thId, kind: 'admin', student_id: t.participant_id, last_at: t.last_at || t.created_at,
+        unread: (t.unread || 0) > 0 || t.status === 'new' ? Math.max(1, t.unread || 0) : 0 });
     });
     students.forEach(s => {
       if (!threads.some(t => t.student_id === s.id)) {
@@ -132,6 +136,14 @@ const CloudApp = (() => {
     const notifications = [];
     live(g('notifications')).forEach(n => {
       (n.recipients || []).forEach(rid => {
+        if (rid === 'admin') {
+          notifications.push({
+            id: n.id + '_admin', to: 'admin', type: n.type || 'message',
+            title: n.title || 'إشعار', body: n.body || '',
+            at: n.created_at || new Date().toISOString(), read: !!n.is_read
+          });
+          return;
+        }
         const isStudent = students.some(s => s.id === rid);
         const isTeacher = teachers.some(t => t.id === rid);
         notifications.push({
@@ -246,7 +258,8 @@ const CloudApp = (() => {
       .map(n => ({
         id: n.id, type: n.type || 'admin_note', title: n.title || 'إشعار', body: n.body || '',
         is_read: false, created_at: n.at || new Date().toISOString(),
-        recipients: n.owner ? [n.owner] : [],
+        /* إشعارات الإدارة (رسالة طالب) تُوجَّه إلى «admin» حتى تصل حساب الإدارة في التطبيق */
+        recipients: n.owner ? [n.owner] : (n.to === 'admin' ? ['admin'] : []),
         school_id: (n.owner && (db.students || []).find(x => x.id === n.owner)?.school_id) || null
       }));
     const subLinks = (db.requests || []).map(r => ({
@@ -327,7 +340,16 @@ const CloudApp = (() => {
           (b || []).forEach(r => map.set(r.id, { ...(map.get(r.id) || {}), ...r }));
           return [...map.values()];
         };
-        next.threads = mergeRows(next.threads, DB.threads);
+        /* المحادثات: نأخذ أكبر عدد غير مقروء بين السحابة والمحلي حتى لا تضيع رسالة جديدة */
+        const cloudTh = new Map((next.threads || []).map(t => [t.id, t]));
+        next.threads = mergeRows(next.threads, DB.threads).map(t => {
+          const c = cloudTh.get(t.id);
+          if (c) {
+            t.unread = Math.max(c.unread || 0, t.unread || 0);
+            if ((c.last_at || '') > (t.last_at || '')) t.last_at = c.last_at;
+          }
+          return t;
+        });
         next.messages = mergeRows(next.messages, DB.messages);
       }
 

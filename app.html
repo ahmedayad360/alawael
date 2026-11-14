@@ -993,6 +993,14 @@ html[data-theme="dark"] .badge-dot{ background:#FFC53D; color:#231A00; box-shado
 .tile{position:relative}
 .tile .tab-badge{top:-5px; inset-inline-start:auto; inset-inline-end:-5px; min-width:19px; height:19px; font-size:10.5px}
 html[data-theme="dark"] .tab-badge{ background:#F1433D; color:#fff; border-color:#0A1120 }
+
+/* ---------- واجب المدرس بلون مختلف عن واجب الإدارة ---------- */
+.hw.t{border-color:rgba(16,185,129,.35)}
+.hw.t::before{background:#10B981}
+.hw.t .hw-top .ri{background:rgba(16,185,129,.14); color:#10B981}
+.hw.t .pill{border-color:rgba(16,185,129,.4); color:#10B981}
+.hw.a::before{background:var(--blue)}
+.hw.a .pill{border-color:var(--sep)}
 html[data-theme="dark"] .tabbar button.on{ background:rgba(59,130,246,.14) }
 html[data-theme="dark"] .tabbar button:active{ background:rgba(255,255,255,.06) }
 html[data-theme="dark"] .toast{ background:rgba(13,22,42,.94); color:#EAF1FF; border:1px solid rgba(255,255,255,.14) }
@@ -1618,8 +1626,32 @@ const Q = {
     if (th) { th.last_at = at; th.unread = opts.unread != null ? opts.unread : (th.unread || 0); }
     Store.save();
   },
-  markRead(threadId) { const th = DB.threads.find(t => t.id === threadId); if (th) { th.unread = 0; Store.save(); } },
-  unreadThreads: (list) => list.filter(t => (t.unread || 0) > 0).length,
+  /* آخر وقت فُتحت فيه المحادثة على هذا الجهاز — لحساب غير المقروء بدقة لكل حساب */
+  threadSeen: (threadId) => {
+    try { return (JSON.parse(localStorage.getItem('alawael.threadSeen') || '{}') || {})[threadId] || 0; } catch (e) { return 0; }
+  },
+  markRead(threadId) {
+    const th = DB.threads.find(t => t.id === threadId);
+    if (th) { th.unread = 0; }
+    try {
+      const m = JSON.parse(localStorage.getItem('alawael.threadSeen') || '{}') || {};
+      m[threadId] = Date.now();
+      localStorage.setItem('alawael.threadSeen', JSON.stringify(m));
+    } catch (e) {}
+    Store.save();
+  },
+  /* هل الرسالة واردة إلى الحساب الحالي؟ (الطالب: كل ما ليس منه · الإدارة/المدرس: رسائل الطالب) */
+  isIncoming: (m) => {
+    const role = (typeof App !== 'undefined') ? App.role : null;
+    if (role === 'student' || role === 'guardian') return m.from !== 'me';
+    return m.from === 'me';
+  },
+  /* عدد الرسائل الواردة غير المقروءة في محادثة واحدة */
+  threadUnread: (threadId) => {
+    const seen = Q.threadSeen(threadId);
+    return Q.msgs(threadId).filter(m => Q.isIncoming(m) && new Date(m.at).getTime() > seen).length;
+  },
+  unreadThreads: (list) => list.filter(t => Q.threadUnread(t.id) > 0).length,
   /* عدد الرسائل غير المقروءة الواردة لهذا الحساب (للشارات الحمراء) */
   unreadMsgs: () => {
     const key = (typeof App !== 'undefined' && App.notifOwner) ? App.notifOwner() : null;
@@ -1630,7 +1662,7 @@ const Q = {
       if (key === 'teacher') return t.kind === 'teacher' && t.teacher_id === me;
       if (key === 'student') return me ? (t.student_id === me) : false;
       return false;
-    }).reduce((n, t) => n + (t.unread || 0), 0);
+    }).reduce((n, t) => n + Q.threadUnread(t.id), 0);
   },
 
   notifFilter: (n, to) => {
@@ -2093,7 +2125,10 @@ function notifRow(n, compact) {
 
 /* ---------- الواجبات ---------- */
 function hwCard(h, opts = {}) {
-  return `<div class="hw ${opts.yellow ? 'y' : ''}">
+  /* واجب المدرس بلون أخضر واسم المدرس · واجب الإدارة بالأزرق واسم الإدارة */
+  const fromTeacher = !!(h.teacher_id || (h.teacher_name && h.teacher_name !== 'الإدارة'));
+  const senderName = fromTeacher ? (h.teacher_name || Q.teacher(h.teacher_id)?.name || 'المدرس') : 'الإدارة';
+  return `<div class="hw ${fromTeacher ? 't' : 'a'} ${opts.yellow ? 'y' : ''}">
     <div class="hw-top">
       <div class="ri" style="width:32px;height:32px;border-radius:10px;background:var(--blue-soft);color:var(--blue)">${ic('book')}</div>
       <b>${esc(Q.subject(h.subject_id)?.name || '—')}</b>
@@ -2104,7 +2139,7 @@ function hwCard(h, opts = {}) {
       ${h.images ? `<span class="attach">${ic('image')} ${h.images} صورة</span>` : ''}
       ${h.link ? `<a class="attach" href="${esc(h.link)}" target="_blank">${ic('link')} رابط</a>` : ''}
       ${h.pdf ? `<span class="attach y">${ic('file')} ${esc(h.pdf)}</span>` : ''}
-      ${opts.showMeta === false ? '' : `<span class="pill">${esc(h.teacher_name || 'الإدارة')}</span>
+      ${opts.showMeta === false ? '' : `<span class="pill">${esc(senderName)}</span>
       <span class="pill">${dayName(h.date)} · ${fmtDate(h.date)}</span>`}
       ${opts.showSections ? `<span class="pill blue">${(h.section_ids || []).map(s => 'شعبة ' + esc(Q.label.section(s))).join(' · ')}</span>` : ''}
     </div>
@@ -2250,7 +2285,7 @@ function studentChat(st) {
         <button class="thread" data-thread="${thAdmin.id}">
           <div class="tx"><b>إدارة المدارس</b><span>${esc(lastAdmin?.text || 'ابدأ المحادثة مع الإدارة…')}</span></div>
           <div class="tm">${lastAdmin ? rel(lastAdmin.at) : ''}</div>
-          ${(thAdmin.unread || 0) > 0 ? '<div class="udot"></div>' : ''}
+          ${Q.threadUnread(thAdmin.id) > 0 ? '<div class="udot"></div>' : ''}
         </button>
       </div>
       <div class="sec-title">مدرسو شعبتي</div>
@@ -2261,7 +2296,7 @@ function studentChat(st) {
           return `<button class="thread" data-thread="${th.id}">
             <div class="tx"><b>${esc(t.name)}</b><span>${esc(Q.subject(t.subject_id)?.name)} — ${esc(last?.text || 'ابدأ المحادثة…')}</span></div>
             <div class="tm">${last ? rel(last.at) : ''}</div>
-            ${(th.unread || 0) > 0 ? '<div class="udot"></div>' : ''}
+            ${Q.threadUnread(th.id) > 0 ? '<div class="udot"></div>' : ''}
           </button>`;
         }).join('') : `<div style="padding:14px" class="small muted bold center">لا يوجد مدرسون مرتبطون بشعبتك</div>`}
       </div>
@@ -2746,7 +2781,7 @@ function teacherChat(t) {
             <div class="tx"><b>${esc(st?.name || 'طالب')}</b>
               <span>${esc(Q.label.grade(st?.grade_id))} · شعبة ${esc(Q.label.section(st?.section_id))} — ${esc(last?.text || '')}</span></div>
             <div class="tm">${last ? rel(last.at) : ''}</div>
-            ${(th.unread || 0) > 0 ? '<div class="udot"></div>' : ''}
+            ${Q.threadUnread(th.id) > 0 ? '<div class="udot"></div>' : ''}
           </button>`;
         }).join('')}</div>`
         : empty('chat', 'لا محادثات بعد', 'افتح صفحة الطلبة واضغط «مراسلة» على أي طالب')}
@@ -3593,7 +3628,7 @@ function adminChat() {
             <span style="margin-top:3px">${esc(last?.text || '')}</span>
             <span style="margin-top:4px;font-size:10.5px;color:var(--tertiary)">${esc(Q.label.grade(st?.grade_id))} · شعبة ${esc(Q.label.section(st?.section_id))}</span>
           </div>
-          ${(th.unread || 0) > 0 ? '<div class="udot"></div>' : ''}
+          ${Q.threadUnread(th.id) > 0 ? '<div class="udot"></div>' : ''}
         </button>`;
       }).join('')}</div>` : empty('chat', 'لا رسائل', 'ستظهر هنا رسائل الطلبة')}
     </div>
