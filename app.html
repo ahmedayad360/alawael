@@ -1647,8 +1647,17 @@ const Q = {
   },
   notifs: (to) => DB.notifications.filter(n => Q.notifFilter(n, to)).sort((a, b) => b.at.localeCompare(a.at)),
   unread: (to) => DB.notifications.filter(n => Q.notifFilter(n, to) && !n.read).length,
+  /* عدد إشعارات نوع معيّن غير المقروءة (الواجبات مثلاً) — حتى لا تظهر شارة الواجبات عند إشعار عام */
+  unreadOfType: (to, type) => DB.notifications.filter(n => Q.notifFilter(n, to) && !n.read && n.type === type).length,
+  /* عدد محادثات الطلبة التي لم يُرد عليها بعد (آخر رسالة من الطالب) */
+  unansweredThreads: () => (DB.threads || []).filter(t => {
+    if (t.kind !== 'admin') return false;
+    const msgs = Q.msgs(t.id);
+    return msgs.length && msgs[msgs.length - 1].from === 'me';
+  }).length,
   push(to, type, title, body, extra = {}) {
-    DB.notifications.unshift({ id: uid('n'), to, type, title, body, at: new Date().toISOString(), read: false, ...extra });
+    /* _local: إشعار أنشأه هذا التطبيق — يُرفع إلى اللوحة ليظهر في جرسها */
+    DB.notifications.unshift({ id: uid('n'), to, type, title, body, at: new Date().toISOString(), read: false, _local: true, ...extra });
     Store.save();
     setTimeout(() => { if (window.App && App.role) App.checkNotifs(); }, 80);
   },
@@ -2041,7 +2050,7 @@ function studentHome(st) {
       </div>
 
       <div class="tiles mb-16">
-        ${TILE('clip','الواجبات','b','homework', Q.unread('student'))}
+        ${TILE('clip','الواجبات','b','homework', (typeof Q.unreadOfType === 'function' ? Q.unreadOfType('student','homework') : Q.unread('student')))}
         ${TILE('chart','الدرجات','n','grades')}
         ${TILE('calendarGrid','الجدول اليومي','b','schedule')}
         ${TILE('calendar','الجدول الشهري','y','monthSchedule')}
@@ -3124,7 +3133,7 @@ function adminHome() {
       <div class="card">
         <div class="card-head"><h3>${ic('chart')} ملخص سريع</h3></div>
         <div class="g-line"><span class="gn">واجبات اليوم</span><span class="gv">${todayHW.length}</span></div>
-        <div class="g-line"><span class="gn">رسائل الطلبة غير المقروءة</span><span class="gv">${Q.unreadThreads(Q.adminThreads())}</span></div>
+        <div class="g-line"><span class="gn">رسائل بانتظار الرد</span><span class="gv">${(typeof Q.unansweredThreads === 'function' ? Q.unansweredThreads() : Q.unreadThreads(Q.adminThreads()))}</span></div>
         <div class="g-line"><span class="gn">إجمالي الدرجات المسجّلة</span><span class="gv">${DB.monthlyGrades.filter(g => Q.student(g.student_id)?.school_id === App.schoolId).length}</span></div>
       </div>
       <button class="btn ghost" data-act="schools" style="width:100%">${ic('school')} تغيير المدرسة</button>
@@ -3568,10 +3577,13 @@ function adminAnnounce() {
 /* ---------------- الدردشة ---------------- */
 function adminChat() {
   const threads = Q.adminThreads();
+  /* عدد الرسائل التي لم يُرد عليها بعد (آخر رسالة من الطالب) */
+  const unanswered = (typeof Q.unansweredThreads === 'function') ? Q.unansweredThreads() : Q.unreadThreads(threads);
   return `<div class="screen">
     ${navbar({ title: 'الدردشة', sub: 'رسائل الطلبة', right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
-      <div class="note yellow">${ic('alert')}<div>كل رسالة يرسلها طالب تصل إليك كإشعار فوري.</div></div>
+      ${unanswered ? `<div class="note yellow">${ic('alert')}<div><b>${unanswered} ${unanswered === 1 ? 'رسالة' : 'رسائل'} بانتظار الرد</b> — افتح المحادثة للرد على الطالب.</div></div>`
+        : `<div class="note yellow">${ic('alert')}<div>كل رسالة يرسلها طالب تصل إليك كإشعار فوري.</div></div>`}
       ${threads.length ? `<div class="list">${threads.map(th => {
         const st = Q.student(th.student_id);
         const last = Q.msgs(th.id).slice(-1)[0];

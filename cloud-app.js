@@ -239,12 +239,22 @@ const CloudApp = (() => {
       const stu = (db.students || []).find(x => x.section_id === sectionId) || {};
       return { id: 'wk_' + sectionId, section_id: sectionId, school_id: stu.school_id || null, cells };
     });
+    /* الإشعارات التي أنشأها التطبيق (رسالة طالب للإدارة، واجب، درجة…) → صيغة اللوحة
+       حتى تظهر في جرس اللوحة كإشعار جديد. لا نُعيد رفع ما جاء من السحابة أصلاً */
+    const notifications = (db.notifications || [])
+      .filter(n => n && n._local)
+      .map(n => ({
+        id: n.id, type: n.type || 'admin_note', title: n.title || 'إشعار', body: n.body || '',
+        is_read: false, created_at: n.at || new Date().toISOString(),
+        recipients: n.owner ? [n.owner] : [],
+        school_id: (n.owner && (db.students || []).find(x => x.id === n.owner)?.school_id) || null
+      }));
     const subLinks = (db.requests || []).map(r => ({
       id: r.id, subscription_id: r.driver_id, student_id: r.student_id,
       status: r.status || 'pending', created_at: r.at, is_deleted: false,
       responded_at: r.status && r.status !== 'pending' ? new Date().toISOString() : null
     }));
-    return { threads, messages, homeworks, subLinks, weekly };
+    return { threads, messages, homeworks, subLinks, weekly, notifications };
   }
 
   function mergeById(cloudRows, appRows) {
@@ -260,7 +270,7 @@ const CloudApp = (() => {
     try {
       const conv = toDashboard(DB);
       const ids = conv.threads.map(t => t.id);
-      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks', 'weekly'].map(k => '"' + k + '"').join(',') + ')');
+      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks', 'weekly', 'notifications'].map(k => '"' + k + '"').join(',') + ')');
       const cur = {};
       (need || []).forEach(r => { cur[r.key] = r.value || []; });
       const revNow = Date.now();
