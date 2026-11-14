@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A6BFF">
+<title>فحص نسخة الموقع</title>
+<style>
+  :root{--blue:#0A6BFF;--bg:#F4F7FD;--card:#fff;--label:#0B1226;--muted:#6B7A99;--green:#22B573;--red:#F1433D;--line:#E3EAF6}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--label);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,Tahoma,sans-serif;padding:18px}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:20px;margin:6px 0 4px}
+  p.sub{color:var(--muted);font-size:13px;font-weight:700;margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px;margin-bottom:12px}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;font-weight:800}
+  .row:last-child{border:0}
+  .row .nm{flex:1}
+  .row .sz{color:var(--muted);font-weight:700;font-size:12px;direction:ltr}
+  .ok{color:var(--green)} .bad{color:var(--red)}
+  .dot{width:22px;height:22px;border-radius:8px;display:grid;place-items:center;font-size:13px;color:#fff;flex:none}
+  .dot.g{background:var(--green)} .dot.r{background:var(--red)} .dot.n{background:#C6D2E6}
+  .btn{width:100%;background:var(--blue);color:#fff;border:0;border-radius:16px;padding:15px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:4px}
+  .verdict{border-radius:18px;padding:14px;font-size:14px;font-weight:800;line-height:1.9;margin-bottom:12px}
+  .verdict.g{background:#E9F9F0;color:#137A4C;border:1px solid #BFEBD5}
+  .verdict.r{background:#FFEFEE;color:#B4271F;border:1px solid #FFD3D0}
+  .verdict.y{background:#FFF6DF;color:#8A5A00;border:1px solid #FFE6AC}
+  code{background:#EEF3FB;padding:2px 6px;border-radius:6px;direction:ltr;display:inline-block;font-size:12px}
+  .small{font-size:12px;color:var(--muted);font-weight:700;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>فحص نسخة الموقع</h1>
+  <p class="sub">يقارن الملفات المنشورة على GitHub بالنسخة الصحيحة</p>
+  <div id="verdict" class="verdict y">جارٍ الفحص…</div>
+  <div class="card" id="list"></div>
+  <button class="btn" onclick="run()">إعادة الفحص</button>
+  <p class="small" style="margin-top:14px">إن ظهر أي ملف بالأحمر: ارفعه من الحزمة الجديدة عبر GitHub ← Add file ← Upload files، ثم أعد الفحص.</p>
+</div>
+<script>
+const EXPECT = {
+  'app.html': 219074,
+  'cloud-app.js': 16521,
+  'sw.js': 2324,
+  'dashboard.html': 1907296,
+  'cloud-config.js': 795,
+  'manifest.webmanifest': 1002
+};
+const TOL = 40;
+
+async function head(url) {
+  try {
+    const r = await fetch(url + '?v=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return { status: r.status, size: 0 };
+    const t = await r.text();
+    return { status: r.status, size: new Blob([t]).size };
+  } catch (e) { return { status: 0, size: 0 }; }
+}
+
+async function run() {
+  const list = document.getElementById('list');
+  const v = document.getElementById('verdict');
+  list.innerHTML = '';
+  v.className = 'verdict y'; v.textContent = 'جارٍ الفحص…';
+  let bad = 0, okCount = 0;
+  for (const [name, exp] of Object.entries(EXPECT)) {
+    const res = await head(name);
+    const ok = res.status === 200 && Math.abs(res.size - exp) <= TOL;
+    if (ok) okCount++; else bad++;
+    const d = document.createElement('div');
+    d.className = 'row';
+    d.innerHTML = `<div class="dot ${ok ? 'g' : 'r'}">${ok ? '✓' : '!'}</div>
+      <div class="nm">${name}<div class="sz">${res.status || 'خطأ'} · ${res.size} بايت ${ok ? '' : '(المطلوب ' + exp + ')'}</div></div>
+      <div class="${ok ? 'ok' : 'bad'}">${ok ? 'محدّث' : 'قديم'}</div>`;
+    list.appendChild(d);
+  }
+  if (!bad) {
+    v.className = 'verdict g';
+    v.innerHTML = '✅ كل شيء محدّث — الموقع يعمل بالنسخة الأخيرة.<br>افتح التطبيق الآن من <code>app.html</code>';
+  } else if (okCount >= 4) {
+    v.className = 'verdict y';
+    v.innerHTML = `⚠️ التطبيق محدّث، لكن ${bad} ملف ناقص أو قديم — ارفع الملفات الحمراء.`;
+  } else {
+    v.className = 'verdict r';
+    v.innerHTML = `❌ ${bad} ملف من 6 غير محدّث.<br>ارفع ملفات الحزمة الجديدة (app.html · cloud-app.js · sw.js · dashboard.html) ثم أعد الفحص.`;
+  }
+}
+run();
+</script>
+</body>
+</html>

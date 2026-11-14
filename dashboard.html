@@ -1293,18 +1293,47 @@ const SEED = {
     { name: 'ثنائية اللغة بنين/بنات', stage: 'ثنائي اللغة', address: 'الموصل', color: '#6C4DE0', grades: 'bilingual' },
     { name: 'الأوائل البريطانية الدولية', stage: 'دولي', address: 'الموصل', color: '#C77A08', grades: 'international' }
   ],
+  gradeSets: {
+    primary: ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
+    middle: ['الأول المتوسط', 'الثاني المتوسط', 'الثالث المتوسط'],
+    high: ['الرابع الإعدادي', 'الخامس الإعدادي', 'السادس الإعدادي'],
+    bilingual: ['الأول الابتدائي', 'الثاني الابتدائي', 'الثالث الابتدائي', 'الرابع الابتدائي', 'الخامس الابتدائي', 'السادس الابتدائي'],
+    international: ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6']
+  },
+  subjects: ['القرآن الكريم', 'التربية الإسلامية', 'اللغة العربية', 'الرياضيات', 'العلوم', 'اللغة الإنجليزية',
+    'الاجتماعيات', 'الحاسوب', 'التربية الفنية', 'التربية الرياضية', 'اللغة الكردية', 'الفيزياء', 'الكيمياء', 'الأحياء'],
+  male: ['أحمد', 'محمد', 'علي', 'عمر', 'يوسف', 'حسن', 'حسين', 'مصطفى', 'زيد', 'كرم', 'عبدالله', 'سيف',
+    'أنس', 'بشار', 'مهند', 'رياض', 'طه', 'ياسين', 'مروان', 'ليث', 'حمزة', 'إبراهيم', 'خالد', 'نور الدين'],
+  female: ['مريم', 'فاطمة', 'زينب', 'نور', 'هدى', 'رقية', 'سارة', 'آية', 'رنا', 'ليلى', 'شهد', 'تبارك',
+    'حوراء', 'دعاء', 'أميرة', 'بيداء', 'غفران', 'صفا', 'تقى', 'ملاك', 'رهف', 'جنى', 'سجى', 'إسراء'],
+  middle: ['عبد الرحمن', 'محمد أمين', 'خليل', 'سعد', 'ثامر', 'جاسم', 'عثمان', 'نايف', 'عدنان', 'سامر', 'قتيبة', 'أوس'],
+  family: ['الجبوري', 'العبيدي', 'الحمداني', 'السعدي', 'الموسوي', 'الشمري', 'الدليمي', 'الخفاجي', 'البياتي', 'العزاوي',
+    'الحديدي', 'الطائي', 'الكبيسي', 'الراشدي', 'النجار', 'المقدادي', 'الزبيدي', 'الحسيني', 'السامرائي', 'الجرجيس'],
+  teachers: ['سعاد العبيدي', 'نبيل الحمداني', 'زينة السعدي', 'فارس الجبوري', 'منى الموسوي', 'مازن الشمري',
+    'هالة الدليمي', 'سامي الخفاجي', 'رغد البياتي', 'عادل العزاوي', 'نسرين الحديدي', 'علاء الطائي',
+    'براء الكبيسي', 'إيمان الراشدي', 'حيدر النجار', 'لمياء المقدادي', 'سيف الزبيدي', 'رنا الحسيني']
 };
 
+function pick(arr, rnd = Math.random) { return arr[Math.floor(rnd() * arr.length)]; }
+function pickMany(arr, n, rnd = Math.random) {
+  const copy = [...arr]; const out = [];
+  while (out.length < n && copy.length) out.push(copy.splice(Math.floor(rnd() * copy.length), 1)[0]);
+  return out;
+}
+const isoDaysAgo = (d, hour) => {
+  const t = new Date(); t.setDate(t.getDate() - d);
+  if (hour != null) { t.setHours(hour, Math.floor(Math.random() * 59), 0, 0); }
+  return t.toISOString();
+};
 
 /* ============================================================================
    buildSeed — الحالة الافتراضية عند أول تشغيل: 5 مدارس فقط وباقي الأقسام فارغة
    (المستخدم يبدأ من الصفر ويضيف الصفوف والمواد والطلبة بنفسه).
-   (مولّد البيانات التجريبية أُزيل من هذه الحزمة — انظر SECURITY.md)
+   buildDemoSeed — بيانات تجريبية كاملة تُحمَّل عند الطلب من الإعدادات.
    ========================================================================== */
-async function buildSeed() {
-  const db = {};
-  COLLECTIONS.forEach(c => db[c] = []);
-  db.settings.push({
+/* سجل إعدادات افتراضي — يُستخدم لإكمال الناقص دون مسح أي بيانات */
+function defaultSettingsRecord() {
+  const rec = {
     id: uid(), key: 'org',
     orgName: 'مجموعة مدارس الأوائل الأهلية',
     academicYear: '2026 – 2027',
@@ -1319,14 +1348,22 @@ async function buildSeed() {
     },
     fileRules: { maxPdfMB: 10, maxImageMB: 4, maxPdfs: 5, maxImages: 20 },
     login: { maxAttempts: 5, lockMinutes: 10, passwordLength: 4 },
-    /* لا كلمة مرور في الشيفرة — تُضبط عند أول تشغيل من شاشة «الإعداد الأول» */
-    admin: { username: 'admin', password: '', name: 'مدير النظام' },
+    admin: { username: 'admin', password: '489275620', name: 'مدير النظام' },
     theme: { accent: 'blue', mode: 'light' },
     autoReply: { enabled: false, text: 'شكراً لتواصلك مع إدارة المدرسة، تم استلام رسالتك وسيتم الرد عليك من قبل الإدارة في أقرب وقت.' },
     homeworkLock: { enabled: false, time: '20:00', applyToAdmin: false },
     chatLock: { enabled: false, note: 'الدردشة موقوفة مؤقتاً من الإدارة. يمكنك مراجعة الإدارة في أوقات الدوام.' },
     createdAt: new Date().toISOString()
-  });
+  };
+  if (!rec.id) rec.id = uid();
+  if (!rec.createdAt) rec.createdAt = new Date().toISOString();
+  return rec;
+}
+
+async function buildSeed() {
+  const db = {};
+  COLLECTIONS.forEach(c => db[c] = []);
+  db.settings.push(defaultSettingsRecord());
   SEED.schools.forEach((s, i) => db.schools.push({
     id: uid(), name: s.name, stage: s.stage, address: s.address, color: s.color,
     order: i, is_active: true, created_at: new Date().toISOString()
@@ -1336,6 +1373,285 @@ async function buildSeed() {
   return db;
 }
 
+async function buildDemoSeed() {
+  const db = {};
+  COLLECTIONS.forEach(c => db[c] = []);
+  const usedCodes = new Set();
+  const newCode = () => { let c; do { c = randomCode(6); } while (usedCodes.has(c)); usedCodes.add(c); return c; };
+  const account = async (scope, id) => {
+    const code = newCode(); const pw = randomPin(4);
+    return { code, password_hash: await hashPassword(pw, id), pw_plain: pw, temp_password: false };
+  };
+
+  db.settings.push({
+    id: uid(), key: 'org',
+    orgName: 'مجموعة مدارس الأوائل الأهلية',
+    academicYear: '2026 – 2027',
+    currentUser: { name: 'مدير النظام', role: 'super_admin', title: 'المدير العام' },
+    grading: {
+      maxMark: 100,
+      s1: { mode: 'average', of: ['m1', 'm2', 'm3'] },
+      s2: { mode: 'average', of: ['m5', 'm6', 'm7'] },
+      final: { mode: 'manual' },
+      avg: { mode: 'average', of: ['s1', 'mid', 's2', 'final'] },
+      locked: false
+    },
+    fileRules: { maxPdfMB: 10, maxImageMB: 4, maxPdfs: 5, maxImages: 20 },
+    login: { maxAttempts: 5, lockMinutes: 10, passwordLength: 4 },
+    admin: { username: 'admin', password: '489275620', name: 'مدير النظام' },
+    theme: { accent: 'blue', mode: 'light' },
+    autoReply: { enabled: false, text: 'شكراً لتواصلك مع إدارة المدرسة، تم استلام رسالتك وسيتم الرد عليك من قبل الإدارة في أقرب وقت.' },
+    homeworkLock: { enabled: false, time: '20:00', applyToAdmin: false },
+    chatLock: { enabled: false, note: 'الدردشة موقوفة مؤقتاً من الإدارة. يمكنك مراجعة الإدارة في أوقات الدوام.' },
+    seededAt: new Date().toISOString()
+  });
+
+  // المدارس والصفوف والشعب والمواد
+  SEED.schools.forEach((s, si) => {
+    const schoolId = uid();
+    db.schools.push({ id: schoolId, name: s.name, stage: s.stage, address: s.address, color: s.color, order: si, is_active: true, created_at: isoDaysAgo(400) });
+    let gradeNames = [];
+    if (s.grades === 'primary') gradeNames = SEED.gradeSets.primary.slice();
+    else if (s.grades === 'high') gradeNames = SEED.gradeSets.high.slice();
+    else if (s.grades === 'international') gradeNames = SEED.gradeSets.international.slice();
+    else gradeNames = SEED.gradeSets.primary.slice();
+    const secLetters = s.stage === 'ابتدائي ومتوسط' ? ['أ', 'ب', 'ج'] : ['أ', 'ب', 'ج', 'د'];
+    const nSec = si === 4 ? 2 : secLetters.length;
+    gradeNames.forEach((gn, gi) => {
+      const gradeId = uid();
+      db.grades.push({ id: gradeId, school_id: schoolId, name: gn, order: gi, is_deleted: false, created_at: isoDaysAgo(390) });
+      for (let k = 0; k < nSec; k++) {
+        db.sections.push({ id: uid(), school_id: schoolId, grade_id: gradeId, name: secLetters[k], order: k, capacity: 30, room: `${gi + 1}0${k + 1}`, is_deleted: false, created_at: isoDaysAgo(390) });
+      }
+    });
+    SEED.subjects.slice(0, s.stage === 'ابتدائي' ? 10 : 12).forEach((sub, k) => {
+      db.subjects.push({ id: uid(), school_id: schoolId, name: sub, order: k, is_deleted: false, created_at: isoDaysAgo(380) });
+    });
+  });
+
+  // الطلبة
+  const gradesBySchool = {};
+  db.grades.forEach(g => (gradesBySchool[g.school_id] ||= []).push(g));
+  for (const school of db.schools) {
+    const secs = db.sections.filter(s => s.school_id === school.id);
+    for (const sec of secs) {
+      const n = 14 + Math.floor(Math.random() * 7);
+      for (let i = 0; i < n; i++) {
+        const gender = Math.random() > .5 ? 'male' : 'female';
+        const name = `${pick(SEED[gender])} ${pick(SEED.middle)} ${pick(SEED.family)}`;
+        const id = uid();
+        const loggedIn = Math.random() < .62;
+        const acc = await account('student', id);
+        db.students.push({
+          id, school_id: school.id, grade_id: sec.grade_id, section_id: sec.id, name, gender,
+          code: acc.code, password_hash: acc.password_hash, pw_plain: acc.pw_plain, temp_password: false,
+          status: Math.random() < .03 ? 'disabled' : 'active',
+          last_login: loggedIn ? isoDaysAgo(Math.floor(Math.random() * 14), 7 + Math.floor(Math.random() * 8)) : null,
+          login_count: loggedIn ? 1 + Math.floor(Math.random() * 30) : 0,
+          guardian_phone: '0770' + Math.floor(1000000 + Math.random() * 8999999),
+          birth_year: 2010 + Math.floor(Math.random() * 8),
+          is_deleted: false, created_at: isoDaysAgo(120 + Math.floor(Math.random() * 200))
+        });
+      }
+    }
+  }
+
+  // المدرسون + الإسنادات
+  for (const school of db.schools) {
+    const subs = db.subjects.filter(s => s.school_id === school.id);
+    const grades = gradesBySchool[school.id] || [];
+    for (const tname of pickMany(SEED.teachers, 12)) {
+      const id = uid(); const acc = await account('teacher', id);
+      db.teachers.push({
+        id, school_id: school.id, name: tname, code: acc.code, password_hash: acc.password_hash, pw_plain: acc.pw_plain,
+        temp_password: false, status: 'active', phone: '0771' + Math.floor(1000000 + Math.random() * 8999999),
+        is_deleted: false, created_at: isoDaysAgo(300)
+      });
+      const mySubs = pickMany(subs, 1 + Math.floor(Math.random() * 2));
+      const myGrades = pickMany(grades, 1 + Math.floor(Math.random() * 3));
+      mySubs.forEach(sub => myGrades.forEach(g => {
+        const secs = db.sections.filter(x => x.grade_id === g.id);
+        pickMany(secs, 1 + Math.floor(Math.random() * secs.length)).forEach(sec => {
+          db.teacherAssignments.push({ id: uid(), teacher_id: id, subject_id: sub.id, grade_id: g.id, section_id: sec.id, school_id: school.id });
+        });
+      }));
+    }
+  }
+
+  // أولياء الأمور (ربط متعدد لمتعدد)
+  for (const school of db.schools) {
+    const studs = db.students.filter(s => s.school_id === school.id);
+    for (let i = 0; i < Math.floor(studs.length * 0.22); i++) {
+      const id = uid(); const acc = await account('guardian', id);
+      const family = pick(SEED.family);
+      db.guardians.push({
+        id, school_id: school.id, name: `${pick(SEED.middle)} ${family}`, relation: pick(['الأب', 'الأم', 'ولي أمر']),
+        code: acc.code, password_hash: acc.password_hash, pw_plain: acc.pw_plain, temp_password: false,
+        status: 'active', phone: '0770' + Math.floor(1000000 + Math.random() * 8999999),
+        is_deleted: false, created_at: isoDaysAgo(200)
+      });
+      pickMany(studs, 1 + Math.floor(Math.random() * 3)).forEach(st => {
+        db.guardianStudents.push({ id: uid(), guardian_id: id, student_id: st.id });
+      });
+    }
+  }
+
+  // الجدول الأسبوعي (5 أيام × 7 دروس) لكل شعبة
+  for (const sec of db.sections) {
+    const schoolSubs = db.subjects.filter(s => s.school_id === sec.school_id);
+    const cells = {};
+    for (let d = 1; d <= 5; d++) for (let p = 1; p <= 7; p++) {
+      if (Math.random() < .12) continue;
+      cells[`${d}-${p}`] = schoolSubs[(d * 3 + p * 2) % schoolSubs.length].id;
+    }
+    db.weekly.push({ id: uid(), section_id: sec.id, school_id: sec.school_id, cells, updated_at: isoDaysAgo(20) });
+  }
+
+  // المناهج: امتحانات ودرجات يومية
+  const schoolSubs = {};
+  db.subjects.forEach(s => (schoolSubs[s.school_id] ||= []).push(s));
+  for (const sec of db.sections.slice(0, 62)) {
+    const subs = schoolSubs[sec.school_id];
+    for (let e = 0; e < 2; e++) {
+      const sub = pick(subs);
+      const examId = uid();
+      db.exams.push({
+        id: examId, school_id: sec.school_id, section_id: sec.id, subject_id: sub.id,
+        name: e === 0 ? 'امتحان يومي' : 'امتحان قصير', date: isoDaysAgo(3 + e * 4), created_at: isoDaysAgo(6)
+      });
+      db.students.filter(s => s.section_id === sec.id).forEach(st => {
+        const r = Math.random();
+        db.dailyGrades.push({
+          id: uid(), exam_id: examId, student_id: st.id,
+          value: r < .07 ? 'غائب' : r > .93 ? 'ممتاز' : String(10 + Math.floor(Math.random() * 11))
+        });
+      });
+    }
+  }
+
+  // الدرجات الشهرية لبعض الشعب
+  for (const sec of db.sections.slice(0, 18)) {
+    const subs = schoolSubs[sec.school_id].slice(0, 4);
+    db.students.filter(s => s.section_id === sec.id).forEach(st => {
+      ['m1', 'm2'].forEach(period => {
+        subs.forEach(sub => {
+          db.monthlyGrades.push({ id: uid(), student_id: st.id, subject_id: sub.id, period, value: String(55 + Math.floor(Math.random() * 45)), school_id: sec.school_id, entered_at: isoDaysAgo(30) });
+        });
+      });
+    });
+  }
+
+  // الغيابات — آخر 10 أيام
+  for (let d = 0; d <= 12; d++) {
+    const date = todayISO(new Date(Date.now() - d * 86400000));
+    if (new Date(date).getDay() === 5 || new Date(date).getDay() === 6) continue;
+    for (const school of db.schools) {
+      const studs = db.students.filter(s => s.school_id === school.id);
+      pickMany(studs, Math.floor(studs.length * 0.06)).forEach(st => {
+        db.absences.push({ id: uid(), student_id: st.id, school_id: school.id, section_id: st.section_id, date, type: Math.random() < .8 ? 'absent' : 'excused', recorded_at: date + 'T08:10:00.000Z', recorded_by: 'النظام' });
+      });
+    }
+  }
+
+  // الواجبات
+  for (let i = 0; i < 24; i++) {
+    const sec = pick(db.sections);
+    const sub = pick(schoolSubs[sec.school_id]);
+    const assign = db.teacherAssignments.find(a => a.section_id === sec.id && a.subject_id === sub.id);
+    db.homeworks.push({
+      id: uid(), school_id: sec.school_id, text: pick([
+        'حل تمارين الفصل الثاني من الكتاب المقرر، مع كتابة الخطوات كاملة.',
+        'كتابة موضوع إنشائي عن أهمية التعاون في المدرسة (۲۰۰ كلمة).',
+        'حفظ سورة الملك من الآية ۱ إلى ۱۰ مع التسميع الشفهي.',
+        'إنجاز ورقة العمل المرفقة وحل المسائل من ۱ إلى ۸.',
+        'قراءة الدرس الثالث وتلخيصه في خمس نقاط.'
+      ]),
+      section_ids: [sec.id], subject_id: sub.id, teacher_id: assign?.teacher_id || null,
+      files: [], images: [], link: Math.random() < .3 ? 'https://example.com/worksheet' : '',
+      due_date: todayISO(new Date(Date.now() + 86400000 * (1 + i % 5))),
+      sender: i % 3 === 0 ? 'admin' : 'teacher', created_at: isoDaysAgo(i % 12)
+    });
+  }
+
+  // التبليغات
+  for (let i = 0; i < 9; i++) {
+    const school = pick(db.schools);
+    const sGrades = db.grades.filter(g => g.school_id === school.id);
+    db.announcements.push({
+      id: uid(), school_id: school.id, text: pick([
+        'يوم الخميس الموافق ٣٠ تشرين الأول عطلة رسمية بمناسبة العطلة الربيعية.',
+        'نرجو من أولياء الأمور الحضور لمقابلة المدرسين يوم السبت القادم من الساعة ٩ صباحاً.',
+        'يبدأ التسجيل للعام الدراسي القادم، وتوجد خصومات للإخوة، للاستفسار مراجعة الإدارة.',
+        'تم تأجيل امتحان الرياضيات إلى يوم الأحد بدلاً من الاثنين.',
+        'حفل تكريم الطلبة المتفوقين في قاعة المدرسة يوم الأربعاء الساعة ١٠ صباحاً.'
+      ]),
+      targets: { all: false, grade_ids: pickMany(sGrades, 1 + Math.floor(Math.random() * 2)).map(g => g.id), section_ids: [] },
+      images: [], file: null, link: Math.random() < .25 ? 'https://example.com/event' : '',
+      created_by: 'مدير النظام', created_at: isoDaysAgo(i)
+    });
+  }
+
+  // محادثات: طلبة ومدرسون
+  const mkThreads = (kind, count) => {
+    for (let i = 0; i < count; i++) {
+      const school = pick(db.schools);
+      const person = kind === 'student' ? pick(db.students.filter(s => s.school_id === school.id)) : pick(db.teachers.filter(t => t.school_id === school.id));
+      if (!person) continue;
+      const threadId = uid();
+      const status = Math.random() < .45 ? 'answered' : 'new';
+      const unread = status === 'new' ? 1 + Math.floor(Math.random() * 2) : 0;
+      db.threads.push({
+        id: threadId, kind, school_id: school.id, participant_id: person.id, participant_name: person.name,
+        participant_code: person.code, subject: kind === 'student' ? pick(['استفسار عن الواجب', 'طلب إجازة', 'سؤال عن الدرجات', 'مشكلة في الدخول', 'استفسار عن الدوام']) : pick(['تنسيق خطة الدروس', 'طلب مواد إضافية', 'استفسار إداري']),
+        status, unread, last_at: isoDaysAgo(Math.floor(Math.random() * 5), 9 + Math.floor(Math.random() * 7)),
+        created_at: isoDaysAgo(6)
+      });
+      const msgs = 2 + Math.floor(Math.random() * 4);
+      for (let m = 0; m < msgs; m++) {
+        const fromPerson = m % 2 === 0 || Math.random() < .3;
+        db.messages.push({
+          id: uid(), thread_id: threadId,
+          sender: fromPerson ? kind : 'admin',
+          sender_name: fromPerson ? person.name : 'إدارة المدرسة',
+          body: fromPerson ? pick([
+            'السلام عليكم، أرجو التوضيح بخصوص الواجب المطلوب لهذا الأسبوع.',
+            'هل يمكن معرفة درجة الامتحان الشهري؟',
+            'ابني كان مريضاً يوم الأربعاء، هل يمكن تسجيل الغياب كمُجاز؟',
+            'واجهت مشكلة في تسجيل الدخول للتطبيق.',
+            'أرجو إرسال جدول الامتحانات القادمة.'
+          ]) : pick([
+            'وعليكم السلام، تم تسجيل ملاحظتكم وسيتم الرد خلال ساعات الدوام.',
+            'تم تعديل الغياب إلى «مجاز»، شكراً لإبلاغكم.',
+            'الدرجات متاحة الآن في التطبيق، نرجو المحاولة مرة أخرى.',
+            'تم إرسال الجدول المطلوب في مرفق.',
+            'يرجى مراجعة الإدارة لاستلام إعادة تعيين كلمة المرور.'
+          ]),
+          attachments: Math.random() < .15 ? [{ type: 'pdf', name: 'مرفق.pdf', url: '#' }] : [],
+          created_at: isoDaysAgo(Math.floor(Math.random() * 5), 9 + m), read_at: status === 'answered' ? isoDaysAgo(1) : null
+        });
+      }
+    }
+  };
+  mkThreads('student', 26);
+  mkThreads('teacher', 14);
+
+  // رخص الخروج
+  for (let i = 0; i < 14; i++) {
+    const st = pick(db.students);
+    db.permits.push({
+      id: uid(), school_id: st.school_id, student_id: st.id, student_name: st.name,
+      companion: pick(['والد الطالب', 'والدة الطالب', 'العم', 'الخال', 'الأخت الكبرى', 'المشرف الصحي']),
+      reason: pick(['مراجعة طبية', 'ظرف عائلي', 'موعد أسنان', 'حالة صحية طارئة']),
+      issued_at: isoDaysAgo(Math.floor(Math.random() * 6), 9 + Math.floor(Math.random() * 5)),
+      issued_by: 'مدير النظام'
+    });
+  }
+
+  db.subAreas.push(...seedAreas());
+  db.settings.push({ id: uid(), key: 'audit' });
+  db.audit.push({ id: uid(), at: isoDaysAgo(0, 8), actor: 'مدير النظام', action: 'تشغيل النظام', detail: 'تهيئة بيانات تجريبية للمرحلة الأولى' });
+  return db;
+}
 
 
 /* ============================================================================
@@ -1356,17 +1672,21 @@ class LocalStorageAdapter {
     if (this._ready) return this._ready;
     this._ready = (async () => {
       const db = {};
-      let needsSeed = false;
+      const missing = [];
       for (const c of COLLECTIONS) {
         const v = Storage.read(c);
-        if (Array.isArray(v)) db[c] = v; else { needsSeed = true; break; }
+        if (Array.isArray(v)) db[c] = v; else { db[c] = []; missing.push(c); }
       }
-      if (needsSeed || !db.settings?.length) {
-        const seeded = await buildSeed();
-        this.db = seeded;
+      const anyData = COLLECTIONS.some(c => (db[c] || []).length > 0);
+      if (!anyData) {
+        /* أول تشغيل فقط: تهيئة كاملة */
+        this.db = await buildSeed();
         this._persistAll();
       } else {
+        /* هناك بيانات: لا تمسح شيئاً — أكمل المفاتيح الناقصة فقط */
+        if (!db.settings.length) db.settings = [defaultSettingsRecord()];
         this.db = db;
+        if (missing.length) this._persistAll();
       }
       return this;
     })();
@@ -2339,8 +2659,13 @@ class LocalStorageAdapter {
 
   /* ---- الإعدادات ---- */
   async getSettings() {
-    const s = this.db.settings.find(x => x.key === 'org');
-    return { ...s, grading: JSON.parse(JSON.stringify(s.grading)) };
+    const s = this.db.settings.find(x => x.key === 'org') || defaultSettingsRecord();
+    const base = defaultSettingsRecord();
+    if (!s.id) { s.id = base.id; }
+    const grading = s.grading || base.grading;
+    /* أكمل أي حقل ناقص حتى لا تتعطّل اللوحة ببيانات قديمة أو ناقصة */
+    for (const k of Object.keys(base)) if (s[k] === undefined) s[k] = base[k];
+    return { ...s, grading: JSON.parse(JSON.stringify(grading)) };
   }
   async saveSettings(patch) {
     const s = this.db.settings.find(x => x.key === 'org');
@@ -2408,6 +2733,7 @@ const DAL = (() => {
     };
   });
   api.init = async () => { await adapter.init(); };
+  api.resetDemoData = api.loadDemoData;
   /* الحفاظ على بيانات دخول الأدمن والمظهر عند التصفير أو تحميل بيانات تجريبية */
   const keepLogin = async () => {
     const prev = await adapter.getSettings().catch(() => null);
@@ -2427,6 +2753,15 @@ const DAL = (() => {
     const keep = await keepLogin();
     Storage.wipe();
     Storage.write('settings', []);            // لإجبار إعادة البناء من الصفر
+    adapter = new LocalStorageAdapter(); await adapter.init();
+    await reapply(keep);
+    emit({ type: 'write', method: 'reset' });
+  };
+  api.loadDemoData = async () => {
+    const keep = await keepLogin();
+    Storage.wipe();
+    const seeded = await buildDemoSeed();
+    COLLECTIONS.forEach(c => Storage.write(c, seeded[c] || []));
     adapter = new LocalStorageAdapter(); await adapter.init();
     await reapply(keep);
     emit({ type: 'write', method: 'reset' });
@@ -3490,12 +3825,50 @@ const Cloud = {
     try {
       const db = await DAL.exportAll();
       const rev = Date.now();
+
+      /* (1) اقرأ نسخة السحابة أولاً: لا نرفع فوق ما لم نره */
+      let remote = {};
+      try {
+        const rows = await this.rest('/rest/v1/kv?select=key,value');
+        (rows || []).forEach(r => { remote[r.key] = Array.isArray(r.value) ? r.value : []; });
+      } catch (e) { remote = {}; }
+
+      /* المجموعات التي يكتب فيها الجوال أيضاً: تُدمج لا تُستبدل */
+      const SHARED = ['threads', 'messages', 'homeworks', 'subLinks'];
+      const byId = (a, b) => {
+        const m = new Map();
+        (a || []).forEach(r => m.set(r.id, r));
+        (b || []).forEach(r => m.set(r.id, { ...(m.get(r.id) || {}), ...r }));
+        return [...m.values()];
+      };
+
       const batch = [];
+      let mergedAny = false;
       for (const c of COLLECTIONS) {
-        const json = JSON.stringify(db[c] || []);
+        let rows = db[c] || [];
+        const cloud = remote[c] || [];
+        if (cloud.length) {
+          if (SHARED.includes(c)) {
+            const merged = byId(cloud, rows);
+            if (merged.length !== rows.length) { rows = merged; mergedAny = true; }
+          } else if (!rows.length) {
+            continue;                       // لا تمسح بيانات السحابة بمصفوفة فارغة
+          }
+        }
+        const json = JSON.stringify(rows);
         if (this.lastPushed[c] === json) continue;
-        batch.push({ key: c, value: db[c] || [], rev });
+        batch.push({ key: c, value: rows, rev });
         this.lastPushed[c] = json;
+      }
+      /* احفظ المدمج محلياً حتى تظهر رسائل الجوال في اللوحة */
+      if (mergedAny) {
+        for (const c of SHARED) {
+          const cloud = remote[c] || [];
+          if (!cloud.length) continue;
+          const merged = byId(cloud, db[c] || []);
+          Storage.write(c, merged);
+        }
+        this._mergedPending = true;
       }
       if (!batch.length) return;
       await this.rest('/rest/v1/kv?on_conflict=key', {
@@ -3505,6 +3878,12 @@ const Cloud = {
       });
       this.rev = Math.max(this.rev, rev);
       this.online = true;
+      if (this._mergedPending) {
+        this._mergedPending = false;
+        this.lastPushed = {};                 // لا تقارن بالقديم بعد الدمج
+        await this.reload();
+        if (typeof App !== 'undefined' && App.booted) { try { await this.refreshUI(); } catch (e) {} }
+      }
     } catch (err) {
       console.warn('[cloud] فشل الرفع:', err.message);
       this.online = false;

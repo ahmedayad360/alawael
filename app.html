@@ -25,12 +25,16 @@
   --shadow:0 10px 30px rgba(10,60,140,.10);
   --shadow-lg:0 18px 50px rgba(10,40,110,.16);
   --safe-b:8px;
+  --safe-b:max(8px, env(safe-area-inset-bottom, 0px));
+  --safe-t:env(safe-area-inset-top, 0px);
+  --safe-l:env(safe-area-inset-left, 0px);
+  --safe-r:env(safe-area-inset-right, 0px);
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,Tahoma,"Noto Kufi Arabic",sans-serif;
-  background:#DDE5F2; color:var(--label); display:flex; align-items:center; justify-content:center;
+  background:var(--bg); color:var(--label); display:block;
   -webkit-font-smoothing:antialiased;
 }
 button{font-family:inherit; border:0; background:none; color:inherit; cursor:pointer; padding:0}
@@ -39,13 +43,9 @@ a{color:inherit; text-decoration:none}
 b,strong{font-weight:800}
 
 #phone{
-  position:relative; width:390px; height:844px; max-height:100vh; background:var(--bg);
+  position:relative; width:100%; max-width:100%; height:100vh; height:100dvh; background:var(--bg);
   overflow:hidden; display:flex; flex-direction:column;
-  border-radius:0; box-shadow:0 30px 90px rgba(10,30,80,.28);
-}
-@media (min-width:520px){
-  #phone{ border-radius:44px; border:9px solid #0B1020; height:844px; }
-  body{background:radial-gradient(1200px 600px at 70% 0%, #E8F0FF 0%, #DDE5F2 60%);}
+  border:0; border-radius:0; box-shadow:none;
 }
 /* ---------- شريط الحالة ---------- */
 .statusbar{
@@ -121,6 +121,8 @@ b,strong{font-weight:800}
 .hero b.nm{display:block;font-size:19px;font-weight:800;letter-spacing:-.3px}
 .hero .sub{font-size:12.5px;opacity:.92;font-weight:700;margin-top:3px}
 .hero .h-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px;position:relative;z-index:1}
+.h-grid.two{grid-template-columns:1fr 1fr}
+
 .hero .h-grid div{background:rgba(255,255,255,.16);border-radius:14px;padding:9px 6px;text-align:center}
 .hero .h-grid div.y{background:rgba(255,197,61,.95); color:#3A2A00}
 .hero .h-grid b{display:block;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -694,6 +696,41 @@ body{background:#E9EEF7}
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001ms !important; transition-duration:.001ms !important}
 }
+
+/* ==================================================================
+   إصلاحات خاصة بالآيفون (PWA) — لا تغيّر الشكل على الحاسبة
+   ================================================================== */
+html,body{ height:100%; height:100dvh; overscroll-behavior:none; }
+body{ -webkit-tap-highlight-color:transparent; }
+/* منع تكبير الصفحة تلقائياً عند الكتابة داخل الحقول */
+input,textarea,select,.input{ font-size:16px !important; }
+input[type=number],input[type=date],input[type=time]{ -webkit-appearance:none; }
+/* منع القائمة المنسدلة عند الضغط الطويل على الأزرار */
+button,.tabbar button,.chip,.btn{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+/* التمرير داخل الشاشات دون ارتداد أبيض */
+.scroll,#app,.sheet-body{ overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+/* الشريط السفلي العائم فوق شريط الهوم */
+.tabbar{ padding-bottom:calc(6px + var(--safe-b)) !important; }
+/* عند العمل كتطبيق مثبّت: اخفِ شريط الحالة المزيّف واحترم شريط الحالة الحقيقي */
+@media all and (display-mode: standalone){
+  html,body{ background:var(--bg) !important; }
+  #phone{ max-width:100% !important; width:100% !important; height:100dvh !important;
+          border:0 !important; border-radius:0 !important; box-shadow:none !important; }
+  .statusbar{ display:none !important; }
+  #phone > *:first-child:not(.statusbar){ padding-top:var(--safe-t); }
+  #phone{ padding-top:var(--safe-t); }
+  .screen{ padding-top:0; }
+}
+/* في المتصفح العادي على الجوال: احترم النوتش العلوي أيضاً */
+@media (max-width:519px) and (display-mode: browser){
+  #phone{ padding-top:var(--safe-t); }
+}
+/* آيفون صغير: لا تُقصّ العناصر */
+@media (max-height:700px){
+  .entry{ padding-bottom:calc(12px + var(--safe-b)) !important; }
+}
+/* منع التمرير الأفقي نهائياً */
+html,body,#phone{ overflow-x:hidden; max-width:100vw; }
 </style>
 </head>
 <body>
@@ -1084,20 +1121,41 @@ const Q = {
   examGrade: (examId, studentId) => DB.dailyGrades.find(g => g.exam_id === examId && g.student_id === studentId)?.value ?? null,
   monthGrade: (studentId, subjectId, period) => DB.monthlyGrades.find(g => g.student_id === studentId && g.subject_id === subjectId && g.period === period)?.value ?? null,
 
+  /* الجدول الأسبوعي — يقبل شكل اللوحة { "0-0": subjectId } أو شكل التطبيق (مصفوفة أيام) */
   weeklyFor(sectionId) {
-    if (DB.weekly[sectionId]) return DB.weekly[sectionId];
+    const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+    const store = DB.weekly || {};
+    const stored = store[sectionId];
     const sec = Q.section(sectionId);
-    const teachers = DB.teachers.filter(t => t.school_id === (sec?.school_id || 's1') && (t.section_ids || []).includes(sectionId));
-    const rnd = mkRng(hash(sectionId));
-    const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
-    return days.map((dn, di) => ({
+    const team = DB.teachers.filter(t => t.section_ids && t.section_ids.includes(sectionId));
+    const teacherOf = (sid) => (team.find(t => t.subject_id === sid) ||
+      DB.teachers.find(t => t.subject_id === sid && t.school_id === (sec && sec.school_id))) || null;
+    const periodAt = (i) => (typeof PERIODS !== 'undefined' && PERIODS[i]) ? PERIODS[i] : { id: i + 1, label: `الحصة ${i + 1}` };
+    const timeOf = (i) => { const p = periodAt(i); return p.time || p.start || `${8 + i}:30`; };
+    const build = (getSubject) => DAYS.map((dn, di) => ({
       day: di, name: dn,
-      periods: Array.from({ length: 7 }, (_, p) => {
-        const sb = DB.subjects[Math.floor(rnd() * DB.subjects.length)];
-        const t = teachers.find(x => x.subject_id === sb.id) || DB.teachers.find(x => x.school_id === (sec?.school_id) && x.subject_id === sb.id);
-        return { no: p + 1, subject_id: sb.id, teacher_id: t?.id || null, time: `${8 + p}:30` };
+      periods: Array.from({ length: 7 }, (_, pi) => {
+        const sid = getSubject(di, pi);
+        const t = sid ? teacherOf(sid) : null;
+        return { no: pi + 1, subject_id: sid || null, teacher_id: t ? t.id : null, time: timeOf(pi) };
       })
     }));
+
+    /* (أ) شكل التطبيق: مصفوفة أيام */
+    if (Array.isArray(stored) && stored.length) return stored;
+    /* (ب) شكل اللوحة: خريطة خلايا "يوم-حصة" */
+    if (stored && typeof stored === 'object') {
+      const cells = stored.cells && typeof stored.cells === 'object' ? stored.cells : stored;
+      const keys = Object.keys(cells);
+      if (keys.length) return build((di, pi) => cells[`${di}-${pi}`] || cells[`${di}-${pi + 1}`] || null);
+    }
+    /* (ج) لا يوجد جدول محفوظ: وضع تجريبي فقط يولّد جدولاً وهمياً */
+    const cloudOn = (typeof CloudApp !== 'undefined' && CloudApp.enabled);
+    if (!cloudOn && DB.subjects && DB.subjects.length) {
+      const rnd = mkRng(hash(sectionId));
+      return build(() => DB.subjects[Math.floor(rnd() * DB.subjects.length)].id);
+    }
+    return build(() => null);
   },
 
   monthExamsOf: (schoolId, period) => DB.monthlyExams
@@ -1123,15 +1181,16 @@ const Q = {
   sendMsg(threadId, from, text, opts = {}) {
     const th = DB.threads.find(t => t.id === threadId);
     const at = new Date().toISOString();
-    DB.messages.push({ thread_id: threadId, from, text, at });
+    DB.messages.push({ id: uid('m'), thread_id: threadId, from, text, at, ...(opts.auto ? { auto: true } : {}) });
     if (th) { th.last_at = at; th.unread = opts.unread != null ? opts.unread : (th.unread || 0); }
     Store.save();
   },
   markRead(threadId) { const th = DB.threads.find(t => t.id === threadId); if (th) { th.unread = 0; Store.save(); } },
   unreadThreads: (list) => list.filter(t => (t.unread || 0) > 0).length,
 
-  notifs: (to) => DB.notifications.filter(n => n.to === to).sort((a, b) => b.at.localeCompare(a.at)),
-  unread: (to) => DB.notifications.filter(n => n.to === to && !n.read).length,
+  notifFilter: (n, to) => n.to === to && (!n.owner || !DB.viewer || n.owner === DB.viewer),
+  notifs: (to) => DB.notifications.filter(n => Q.notifFilter(n, to)).sort((a, b) => b.at.localeCompare(a.at)),
+  unread: (to) => DB.notifications.filter(n => Q.notifFilter(n, to) && !n.read).length,
   push(to, type, title, body, extra = {}) {
     DB.notifications.unshift({ id: uid('n'), to, type, title, body, at: new Date().toISOString(), read: false, ...extra });
     Store.save();
@@ -1193,15 +1252,45 @@ const App = {
   role: null, user: null, route: 'home', params: {}, stack: [], asStudent: null,
   schoolId: null, lastNotifCount: 0,
 
-  go(route, params = {}) { this.stack.push({ route: this.route, params: this.params }); this.route = route; this.params = params; this.render(); },
-  back() {
-    const prev = this.stack.pop();
-    if (prev) { this.route = prev.route; this.params = prev.params; }
-    else if (this.role === 'guardian' && this.asStudent) { this.asStudent = null; this.route = 'home'; this.params = {}; }
-    else { this.route = 'home'; this.params = {}; }
+  /* الانتقال إلى شاشة جديدة: يُسجّل السابقة في المكدس ليعمل زر الرجوع */
+  go(route, params = {}) {
+    if (!this.role) return;
+    if (this.route === route) { this.params = params; this.render(); return; }   // لا تكرار في المكدس
+    this.stack.push({ route: this.route, params: this.params });
+    this._syncHistory(true);
+    this.route = route; this.params = params;
     this.render();
   },
-  reset(route = 'home') { this.route = route; this.params = {}; this.stack = []; this.render(); },
+  /* الرجوع: يعتمد على مكدس التطبيق وعلى تاريخ المتصفح معاً */
+  back() {
+    if (this.stack.length) {
+      const prev = this.stack.pop();
+      this.route = prev.route; this.params = prev.params;
+      this._syncHistory(false);
+      this.render();
+      return;
+    }
+    if (this.role === 'guardian' && this.asStudent) { this.asStudent = null; this.route = 'home'; this.params = {}; this._syncHistory(false); this.render(); return; }
+    this.route = 'home'; this.params = {}; this._syncHistory(false); this.render();
+  },
+  /* تبويب سفلي: يبدأ سلسلة جديدة (بلا مكدس قديم) */
+  tab(route) {
+    this.route = route; this.params = {}; this.stack = [];
+    this._syncHistory(false);
+    this.render();
+  },
+  reset(route = 'home') {
+    this.route = route; this.params = {}; this.stack = [];
+    this._syncHistory(false); this.render();
+  },
+  /* مزامنة تاريخ المتصفح حتى يعمل زر الرجوع في النظام أيضاً */
+  _syncHistory(push) {
+    try {
+      const st = { alawael: true, depth: this.stack.length, route: this.route };
+      if (push) history.pushState(st, '');
+      else history.replaceState(st, '');
+    } catch (e) {}
+  },
 
   logout() {
     Confirm({ title: 'تسجيل الخروج', message: 'هل تريد الخروج من الحساب؟', confirmText: 'خروج', danger: true,
@@ -1225,12 +1314,26 @@ const App = {
   },
 
   render() {
+    /* صاحب الحساب الحالي — يُستخدم لعزل الإشعارات والرسائل */
+    try {
+      DB.viewer = this.role === 'student' ? (this.user && this.user.studentId)
+        : this.role === 'guardian' ? (this.asStudent || null)
+        : this.role === 'teacher' ? (this.user && this.user.teacherId)
+        : this.role === 'driver' ? (this.user && this.user.driverId) : null;
+    } catch (e) {}
     if (!this.role) { renderEntry(); return; }
     ({ student: renderStudentApp, guardian: renderGuardianApp, teacher: renderTeacherApp,
        driver: renderDriverApp, admin: renderAdminApp }[this.role] || renderStudentApp)();
-    setTimeout(() => App.checkNotifs(), 60);
+    setTimeout(() => { try { App.checkNotifs(); } catch (e) {} }, 60);
   }
 };
+
+/* زر الرجوع في نظام الجوال (iOS/Android) يعمل مثل زر الرجوع داخل التطبيق */
+try {
+  window.addEventListener('popstate', () => {
+    try { if (App && App.role) App.back(); } catch (e) {}
+  });
+} catch (e) {}
 
 /* ---------- عناصر مشتركة ---------- */
 function navbar({ title, sub, back = false, right = '' }) {
@@ -1280,11 +1383,13 @@ function renderEntry() {
         <b>${label}</b><span>${sub}</span></button>`).join('')}
     </div>
     <button class="admin-link" data-role="admin">${ic('lock')}<span>دخول الإدارة</span><span class="chev"></span></button>
-    <div class="center small muted mt-12" style="font-weight:700">الإصدار التجريبي 2.0 · البيانات محفوظة على جهازك</div>
-    <button class="btn ghost mt-8" id="resetDemo" style="padding:10px;font-size:12.5px">إعادة ضبط البيانات التجريبية</button>
+    ${(typeof CloudApp !== 'undefined' && CloudApp.enabled)
+      ? `<div class="center small muted mt-12" style="font-weight:700">الإصدار 2.0 · متصل بقاعدة بيانات المدرسة</div>`
+      : `<div class="center small muted mt-12" style="font-weight:700">الإصدار التجريبي 2.0 · البيانات محفوظة على جهازك</div>
+         <button class="btn ghost mt-8" id="resetDemo" style="padding:10px;font-size:12.5px">إعادة ضبط البيانات التجريبية</button>`}
   </div></div>`;
   $$('[data-role]').forEach(b => b.onclick = () => openLogin(b.dataset.role));
-  $('#resetDemo').onclick = () => Confirm({ title: 'إعادة الضبط', message: 'ستُحذف كل التعديلات التجريبية وتعود البيانات الأصلية.', confirmText: 'إعادة الضبط', danger: true, onYes: () => Store.reset() });
+  if ($('#resetDemo')) $('#resetDemo').onclick = () => Confirm({ title: 'إعادة الضبط', message: 'ستُحذف كل التعديلات التجريبية وتعود البيانات الأصلية.', confirmText: 'إعادة الضبط', danger: true, onYes: () => Store.reset() });
 }
 
 const DEMO = {
@@ -1363,7 +1468,7 @@ function openLogin(role) {
 /* ==========================================================================
    8) حساب الطالب
    ========================================================================== */
-const STUDENT_TABS = [['home','home','الرئيسية'],['homework','clip','الواجبات'],['grades','chart','الدرجات'],['chat','chat','الدردشة'],['more','grid','المزيد']];
+const STUDENT_TABS = [['home','home','الرئيسية'],['homework','clip','الواجبات'],['chat','chat','الدردشة'],['more','grid','المزيد']];
 
 function studentOf() {
   if (App.role === 'student') return Q.student(App.user.studentId);
@@ -1394,7 +1499,6 @@ function renderStudentApp() {
 function studentHome(st) {
   const hw = Q.hwFor(st, isoDay());
   const notifs = Q.notifs('student').slice(0, 3);
-  const avg = Q.avg(st.id);
   return `<div class="screen">
     ${navbar({ title: `أهلاً ${st.name.split(' ')[0]}`, sub: Q.label.school(st.school_id), right: bellBtn() })}
     <div class="scroll">
@@ -1403,10 +1507,9 @@ function studentHome(st) {
           <div class="av">${ic('student')}</div>
           <div class="grow"><b class="nm">${esc(st.name)}</b><div class="sub">${esc(Q.label.school(st.school_id))}</div></div>
         </div>
-        <div class="h-grid">
+        <div class="h-grid two">
           <div><b>${esc(Q.label.grade(st.grade_id))}</b><span>الصف</span></div>
           <div><b>شعبة ${esc(Q.label.section(st.section_id))}</b><span>الشعبة</span></div>
-          <div class="y"><b>${avg ?? '—'}</b><span>المعدل</span></div>
         </div>
       </div>
 
@@ -1571,11 +1674,11 @@ function studentSchedule(st) {
           ${i === todayDow ? '<span class="d">اليوم</span>' : '<span class="d">&nbsp;</span>'}</button>`).join('')}
       </div>
       <div class="list">
-        ${day.periods.map((p, i) => `<div class="per-row">
+        ${(day.periods || []).map((p, i) => `<div class="per-row">
           <div class="per-no ${i % 2 ? 'y' : ''}">${p.no}</div>
-          <div class="per-t"><b>${esc(Q.subject(p.subject_id)?.name || '—')}</b>
-            <span>${esc(Q.teacher(p.teacher_id)?.name || 'لم يُحدد المدرس')}</span></div>
-          <div class="per-time">${8 + i}:30</div>
+          <div class="per-t"><b>${esc(p.subject_id ? (Q.subject(p.subject_id)?.name || '—') : 'لا توجد حصة')}</b>
+            <span>${esc(p.teacher_id ? (Q.teacher(p.teacher_id)?.name || '') : '—')}</span></div>
+          <div class="per-time">${esc(p.time || `${8 + i}:30`)}</div>
         </div>`).join('')}
       </div>
       <div class="note blue mt-12">${ic('info')}<div>جدول شعبتك كما هو مضاف من المدرسة — اختر اليوم من الأعلى.</div></div>
@@ -1614,8 +1717,8 @@ function studentMonthSchedule(st) {
           <div class="ri y">${ic('book')}</div>
           <div class="rt">
             <b>${esc(Q.subject(e.subject_id)?.name || '—')}</b>
-            <span>الداخل في الامتحان: ${esc(e.covers)}</span>
-            <span>${esc(e.hall)} · ${esc(e.time)}</span>
+            <span>الداخل في الامتحان: ${esc(e.covers || e.covered || e.exam_matter || 'غير محدد')}</span>
+            ${(e.hall || e.time) ? `<span>${esc(e.hall || '')} ${e.hall && e.time ? '·' : ''} ${esc(e.time || '')}</span>` : ''}
           </div>
           <div style="text-align:end;flex:none">
             <div style="font-size:12.5px;font-weight:800;white-space:nowrap">${fmtDate(e.date)}</div>
@@ -1670,7 +1773,7 @@ function studentChat(st) {
 
 function studentThread(st) {
   const th = DB.threads.find(t => t.id === App.params.id) || Q.threadAdmin(st.id);
-  if (th.kind === 'teacher') Q.markRead(th.id);
+  Q.markRead(th.id);
   const msgs = Q.msgs(th.id);
   const locked = DB.settings.chatLock.enabled;
   const title = th.kind === 'admin' ? 'إدارة المدارس' : (Q.teacher(th.teacher_id)?.name || 'مدرس');
@@ -1778,6 +1881,21 @@ function notifsScreen(list, tabs, active) {
 }
 const studentNotifs = () => notifsScreen(Q.notifs('student'), STUDENT_TABS, 'home');
 
+/* تعليم كل إشعارات هذا الحساب كمقروءة (يُستدعى عند فتح شاشة الإشعارات) */
+function markNotifsRead() {
+  const to = App.notifOwner();
+  if (!to) return 0;
+  let n = 0;
+  DB.notifications.forEach(x => {
+    if (x.to === to && !x.read && (!x.owner || !DB.viewer || x.owner === DB.viewer)) { x.read = true; n++; }
+  });
+  if (n) { Store.save(); App.lastNotifCount = Q.unread(to); }
+  const badge = document.querySelector('#bellBadge');
+  const left = Q.unread(to);
+  if (badge) { badge.textContent = left > 9 ? '9+' : String(left); badge.style.display = left ? 'grid' : 'none'; }
+  return n;
+}
+
 /* ---------- المزيد ---------- */
 function studentMore(st) {
   return `<div class="screen">
@@ -1827,11 +1945,24 @@ function bindStudent(st) {
       const th = DB.threads.find(t => t.id === App.params.id) || Q.threadAdmin(st.id);
       const doSend = () => {
         const text = box.value.trim(); if (!text) return;
+        box.value = '';
         Q.sendMsg(th.id, 'me', text, { unread: 1 });
         if (th.kind === 'admin') Q.push('admin', 'message', 'رسالة جديدة من طالب', `${st.name}: ${text.slice(0, 60)}`);
         else Q.push('teacher', 'message', 'رسالة من طالب', `${st.name}: ${text.slice(0, 60)}`);
         App.render();
         setTimeout(() => { const b = $('#chatBody'); if (b) b.scrollTop = b.scrollHeight; }, 40);
+        /* الرد التلقائي من الإدارة (إن كان مفعّلاً في اللوحة) */
+        const ar = (DB.settings && DB.settings.autoReply) || null;
+        if (th.kind === 'admin' && ar && ar.enabled && String(ar.text || '').trim()) {
+          setTimeout(() => {
+            const cur = DB.threads.find(t => t.id === th.id);
+            Q.sendMsg(th.id, 'admin', String(ar.text).trim(), { unread: cur ? (cur.unread || 0) : 0, auto: true });
+            if (App.route === 'thread' && App.params.id === th.id) {
+              App.render();
+              setTimeout(() => { const b = $('#chatBody'); if (b) b.scrollTop = b.scrollHeight; }, 40);
+            }
+          }, 1200);
+        }
       };
       send.onclick = doSend;
       box.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); } };
@@ -1864,17 +1995,20 @@ function addDriverRequest(st, driverId) {
    9) ربط عام (أزرار الرجوع والتنقل والإشعارات)
    ========================================================================== */
 function bindCommon(ctx) {
-  $$('[data-back]').forEach(b => b.onclick = () => App.back());
-  $$('[data-act]').forEach(b => b.onclick = () => {
+  $$('[data-back]').forEach(b => b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); App.back(); });
+  $$('[data-act]').forEach(b => b.onclick = (e) => {
+    e.preventDefault(); e.stopPropagation();
     const a = b.dataset.act;
     if (a === 'hw_new') return openNewHomework();
     App.go(a);
   });
-  $$('[data-tab]').forEach(b => b.onclick = () => {
-    if (App.role === 'guardian' && App.asStudent) { App.asStudent = null; return App.reset('home'); }
-    const t = b.dataset.tab;
-    App.route = t; App.params = {}; App.render();
+  /* التبويب السفلي: يبقى داخل حساب الابن عند ولي الأمر، ويبدأ سلسلة جديدة دائماً */
+  $$('[data-tab]').forEach(b => b.onclick = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    App.tab(b.dataset.tab);
   });
+  /* شاشات الإشعارات: تُعلَّم مقروءة فور فتحها */
+  if (App.route === 'notifs') setTimeout(() => { try { markNotifsRead(); } catch (e) {} }, 120);
   const readAll = $('#readAll');
   if (readAll) readAll.onclick = () => {
     DB.notifications.filter(n => n.to === App.notifOwner()).forEach(n => n.read = true);
@@ -1889,8 +2023,23 @@ function bindCommon(ctx) {
    10) ولي الأمر
    ========================================================================== */
 function renderGuardianApp() {
+  if (App.route === 'notifs' && !App.asStudent) return renderGuardianNotifs();
   if (App.asStudent) return renderStudentApp();
   return renderGuardianHome();
+}
+
+/* شاشة إشعارات ولي الأمر (كل أبنائه) */
+function renderGuardianNotifs() {
+  const g = Q.guardians().find(x => x.id === App.user?.guardianId) || Q.guardians()[0];
+  const kids = (g?.student_ids || []).map(id => Q.student(id)).filter(Boolean);
+  const list = Q.notifs('student').filter(n => !n.owner || kids.some(k => k.id === n.owner));
+  $('#app').innerHTML = notifsScreen(list, [['home', 'home', 'أبنائي'], ['notifs', 'bell', 'الإشعارات']], 'notifs');
+  bindCommon(null);
+  $$('[data-tab]').forEach(b => b.onclick = (e) => {
+    e.preventDefault();
+    if (b.dataset.tab === 'notifs') { App.tab('notifs'); return; }
+    App.asStudent = null; App.tab('home');
+  });
 }
 
 function renderGuardianHome() {
@@ -1923,10 +2072,17 @@ function renderGuardianHome() {
     </div>
     ${tabbar([['home','home','أبنائي'],['notifs','bell','الإشعارات']], 'home')}
   </div>`;
-  $$('[data-kid]').forEach(b => b.onclick = () => { App.asStudent = b.dataset.kid; App.route = 'home'; App.params = {}; App.render(); });
-  $$('[data-tab]').forEach(b => b.onclick = () => {
-    if (b.dataset.tab === 'home') { App.asStudent = null; App.route = 'home'; App.render(); return; }
-    App.asStudent = kids[0]?.id || null; App.route = b.dataset.tab; App.params = {}; App.render();
+  bindCommon(null);   // يربط الجرس وكل أزرار data-act / data-tab
+  $$('[data-kid]').forEach(b => b.onclick = (e) => {
+    e.preventDefault();
+    App.asStudent = b.dataset.kid; App.route = 'home'; App.params = {}; App.stack = [];
+    App._syncHistory(false); App.render();
+  });
+  $$('[data-tab]').forEach(b => b.onclick = (e) => {
+    e.preventDefault();
+    const t = b.dataset.tab;
+    if (t === 'notifs') { App.asStudent = null; App.stack = []; App.go('notifs'); return; }
+    App.asStudent = null; App.tab('home');
   });
   const out = $('#gLogout'); if (out) out.onclick = () => App.logout();
 }
@@ -3382,6 +3538,22 @@ function iosInstallHint() {
   if (!DB.guardians) DB.guardians = DB.guardian ? [DB.guardian] : [];
   App.render();
   setTimeout(iosInstallHint, 1200);
+  /* كشف التشغيل كتطبيق مثبّت (احتياطي للمتصفحات القديمة) */
+  try {
+    const stand = window.navigator.standalone === true ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (stand) document.documentElement.classList.add('ios-standalone');
+  } catch (e) {}
+  /* عند توفر نسخة جديدة من عامل الخدمة: حدّث تلقائياً */
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (sessionStorage.getItem('alawael.reloaded')) return;
+        sessionStorage.setItem('alawael.reloaded', '1');
+        location.reload();
+      });
+    }
+  } catch (e) {}
   /* تسجيل عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت */
   try {
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

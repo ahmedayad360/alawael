@@ -21,6 +21,7 @@ const CloudApp = (() => {
   let lastPull = 0;
   let timer = null;
   let pushing = false;
+  let pullCount = 0;
   const PUSH_KEYS = ['threads', 'messages', 'homeworks', 'subLinks', 'students'];
 
   const H = () => ({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' });
@@ -93,7 +94,10 @@ const CloudApp = (() => {
     const monthlyExams = live(g('monthly')).map(m => ({
       id: m.id, school_id: m.school_id, section_id: m.section_id, grade_id: m.grade_id || null,
       subject_id: m.subject_id, date: m.date, period: m.period || 'm1',
-      covered: m.covered || '', title: m.title || 'امتحان'
+      covers: m.exam_matter || m.covered || m.covers || '',
+      covered: m.exam_matter || m.covered || m.covers || '',
+      title: m.title || m.exam_matter || 'امتحان',
+      hall: m.hall || '', time: m.time || ''
     }));
 
     /* الدردشة: محادثة كل طالب مع الإدارة بمعرّف ثابت يطابق التطبيق */
@@ -172,7 +176,11 @@ const CloudApp = (() => {
       weekly, monthlyExams, threads, messages, notifications, drivers, requests, about,
       settings: {
         homeworkLock: { enabled: !!org.homeworkLock?.enabled, time: org.homeworkLock?.time || '20:00' },
-        chatLock: { enabled: !!org.chatLock?.enabled, note: org.chatLock?.note || '' }
+        chatLock: { enabled: !!org.chatLock?.enabled, note: org.chatLock?.note || '' },
+        autoReply: {
+          enabled: !!(org.autoReply && org.autoReply.enabled),
+          text: (org.autoReply && org.autoReply.text) || ''
+        }
       },
       audit: []
     };
@@ -257,9 +265,38 @@ const CloudApp = (() => {
       const next = adapt(kv);
       /* لا تمسح بيانات محلية إن كانت السحابة فارغة من الطلاب */
       if (!next.students.length) return false;
+
+      const firstSync = !pullCount;
+      pullCount++;
+
+      if (firstSync) {
+        /* أول سحب: بيانات السحابة هي المصدر — نتخلص من بيانات العرض التجريبية */
+        next.notifications = next.notifications || [];
+      } else {
+        /* (أ) حافظ على حالة القراءة، وعلى الإشعارات المحلية التي لم تُرفع بعد */
+        const localNotifs = new Map((DB.notifications || []).map(n => [n.id, n]));
+        next.notifications = (next.notifications || []).map(n => {
+          const old = localNotifs.get(n.id);
+          return old && old.read ? { ...n, read: true } : n;
+        });
+        (DB.notifications || []).forEach(n => {
+          if (n.owner && !next.notifications.some(x => x.id === n.id)) next.notifications.push(n);
+        });
+
+        /* (ب) الرسائل والمحادثات: دمج لا استبدال (حتى لا تضيع رسالة أُرسلت للتو) */
+        const mergeRows = (a, b) => {
+          const map = new Map();
+          (a || []).forEach(r => map.set(r.id, r));
+          (b || []).forEach(r => map.set(r.id, { ...(map.get(r.id) || {}), ...r }));
+          return [...map.values()];
+        };
+        next.threads = mergeRows(next.threads, DB.threads);
+        next.messages = mergeRows(next.messages, DB.messages);
+      }
+
       Object.assign(DB, next);
       DB.ready = true;
-      localStorage.setItem('alawael.app.v1', JSON.stringify(DB));
+      localStorage.setItem('alawael.app.v2', JSON.stringify(DB));
       return true;
     } catch (e) {
       console.warn('[cloud-app] pull', e.message);
