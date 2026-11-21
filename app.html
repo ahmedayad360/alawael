@@ -1149,223 +1149,388 @@ html[data-theme="light"]{
   --glass:rgba(255,255,255,.86);
 }
 
-/* ============================================================
-   الجيل الثالث — تصميم أزرق مجسّم (3D Blue) + زجاج عميق
-   ============================================================ */
+/* ==================================================================
+   الجيل الثالث (المُعاد) — أزرق نقي بلا 3D
+   هوية: أزرق المدرسة الغني + بطاقات بيضاء + أيقونات بتدرّج وأيقونة
+   بيضاء داخلها. بلا زجاج ولا انعكاسات ولا ظلال ثلاثية الأبعاد.
+   ملاحظة: طبقة تنسيقية بحتة — لا تغيّر أي وظيفة أو تنقّل.
+   ================================================================== */
 :root{
-  --grad-blue:linear-gradient(135deg,#3B82F6 0%,#2563EB 48%,#1D4ED8 100%);
-  --grad-blue-soft:linear-gradient(135deg,rgba(59,130,246,.20),rgba(29,78,216,.10));
-  --grad-sheen:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,0) 58%);
-  --raise:0 1px 0 rgba(255,255,255,.10) inset, 0 -1px 0 rgba(0,0,0,.20) inset, 0 14px 30px rgba(3,12,34,.42);
+  --blue:#0A6BFF; --blue-2:#0A4CC4; --blue-soft:#EAF2FF; --blue-tint:#F5F9FF; --blue-line:#DCE8FB;
+  --yellow:#FFC53D; --yellow-2:#EFA200; --yellow-soft:#FFF7E3; --yellow-line:#FFE7B2;
+  --green:#22B573; --green-soft:#E9F9F0; --red:#F1433D; --red-soft:#FFEFEE;
+  --bg:#F1F5FD; --bg-2:#F7FAFF; --card:#FFFFFF; --card-2:#FAFCFF;
+  --label:#0B1226; --label-2:#39435C; --secondary:#8A93A8; --tertiary:#B7BFCE;
+  --sep:#EDF1F8; --sep-2:#E4EAF4;
+  --r:24px; --r-sm:16px;
+
+  --grad-blue:linear-gradient(135deg,#4C8DF6 0%,#2563EB 46%,#1D4ED8 100%);
+  --grad-blue-soft:linear-gradient(135deg,rgba(76,141,246,.16),rgba(29,78,216,.08));
+  --grad-gold:linear-gradient(135deg,#FFD873 0%,#FFC53D 52%,#F0A500 100%);
+  --grad-sheen:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,0) 58%);
+
+  --shadow-sm:0 1px 2px rgba(14,30,64,.04), 0 6px 16px rgba(14,30,64,.05);
+  --shadow:0 10px 28px rgba(12,60,140,.10);
+  --shadow-lg:0 20px 48px rgba(12,45,120,.15);
+  --shadow-card:0 2px 6px rgba(16,38,80,.04), 0 12px 26px rgba(16,38,80,.055);
+  --shadow-tile:0 6px 16px rgba(10,107,255,.26);
 }
-/* ---------- الخلفية: شبكة تدرّجات زرقاء ثلاثية الأبعاد ---------- */
+
+/* ---------- الخلفية: هالات زرقاء خفيفة (بلا زجاج) ---------- */
+.screen{ background:linear-gradient(180deg,#F6F9FF 0%,#EEF3FC 46%,#EDF2FA 100%) }
+body{ background:#E9EEF7 }
+@media (min-width:520px){
+  body{ background:radial-gradient(1100px 620px at 74% -8%, #FFFFFF 0%, #E7EEFA 48%, #DDE5F3 100%) }
+}
+
+/* ---------- الشريط العلوي ---------- */
+.navbar .nb-title h1{ font-size:25px; font-weight:800; letter-spacing:-.3px }
+.navbar .nb-title span{ font-size:12px; font-weight:600; color:var(--secondary) }
+.icon-btn{
+  width:42px; height:42px; border-radius:50%; background:#fff; color:var(--label);
+  border:1px solid #E7EEF9; box-shadow:0 4px 14px rgba(16,38,80,.07);
+  transition:transform .14s ease, box-shadow .18s ease;
+}
+.icon-btn:active{ transform:scale(.94) }
+.icon-btn svg{ width:19px; height:19px; stroke-width:1.75 }
+
+/* ---------- الهيرو: هوية المدرسة الزرقاء ---------- */
+.hero{
+  border-radius:28px; padding:20px; margin:2px 0 16px; color:#fff;
+  background:
+    radial-gradient(260px 180px at 12% -26%, rgba(255,255,255,.28), rgba(255,255,255,0) 70%),
+    radial-gradient(200px 160px at 98% 116%, rgba(255,255,255,.14), rgba(255,255,255,0) 72%),
+    linear-gradient(152deg, #1663E8 0%, #0A6BFF 48%, #0A4CC4 100%);
+  box-shadow:0 18px 38px rgba(9,66,180,.26);
+  overflow:hidden;
+}
+.hero::after{
+  width:170px; height:170px; bottom:-84px; inset-inline-end:-52px;
+  background:rgba(255,255,255,.08); border:0; border-radius:50%;
+}
+.hero .av{
+  width:54px; height:54px; border-radius:18px;
+  background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.30);
+}
+.hero .av svg{ width:26px; height:26px; stroke-width:1.7 }
+.hero b.nm{ font-size:20px; font-weight:800 }
+.hero .sub{ font-size:12.5px; font-weight:600; opacity:.88 }
+.hero .h-grid div{
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.18);
+  border-radius:17px; padding:11px 6px;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+.hero .h-grid b{ font-size:13.5px; font-weight:800 }
+.hero .h-grid span{ font-size:10px; font-weight:700; opacity:.8 }
+.hero .h-grid div.y{
+  background:#fff; border-color:#fff; color:var(--blue-2);
+  box-shadow:0 10px 22px rgba(4,20,60,.20);
+}
+.hero .h-grid div.y b{ font-size:17px; font-weight:800; color:var(--blue-2) }
+.hero .h-grid div.y span{ opacity:1; color:var(--secondary) }
+.hero.yellow{
+  background:
+    radial-gradient(220px 160px at 88% -14%, rgba(255,255,255,.45), rgba(255,255,255,0) 70%),
+    linear-gradient(152deg,#FFD873 0%, #FFC53D 55%, #F2AC1F 100%);
+  color:#3B2A00; box-shadow:0 18px 38px rgba(226,155,10,.26);
+}
+.hero.yellow .h-grid div{ background:rgba(255,255,255,.45); border-color:rgba(255,255,255,.6) }
+.hero.yellow .av{ background:rgba(255,255,255,.55); border-color:rgba(255,255,255,.75) }
+
+/* ---------- البلاطات: أيقونات بتدرّج وأيقونة بيضاء ---------- */
+.tiles{ gap:10px; align-items:stretch }
+.tile{
+  background:#fff; border:1px solid #E9EFF9; border-radius:22px;
+  padding:13px 6px 12px; gap:8px; min-height:96px; align-content:center;
+  box-shadow:var(--shadow-card);
+  transition:transform .16s cubic-bezier(.3,.8,.4,1), box-shadow .2s ease;
+}
+.tile:active{ transform:scale(.955); box-shadow:0 2px 8px rgba(16,38,80,.07) }
+.tile .ti{
+  width:44px; height:44px; border-radius:15px; color:#fff;
+  background:var(--grad-blue); box-shadow:var(--shadow-tile);
+  transition:transform .18s cubic-bezier(.3,.8,.4,1), box-shadow .2s ease;
+}
+.tile:active .ti{ transform:scale(.93) }
+.tile .ti svg{ width:21px; height:21px; stroke-width:1.9 }
+.tile.b .ti,
+.tile.n .ti,
+.tile.y .ti{ color:#fff }
+.tile.b .ti{ background:var(--grad-blue) }
+.tile.n .ti{ background:linear-gradient(135deg,#7FA8F5 0%,#4E7FE0 50%,#3C63C6 100%); box-shadow:0 6px 16px rgba(78,127,224,.24) }
+.tile.y .ti{ background:var(--grad-gold); box-shadow:0 6px 16px rgba(240,165,0,.30) }
+.tile b{ font-size:11.5px; font-weight:700; line-height:1.4; color:var(--label-2) }
+
+/* ---------- البطاقات والقوائم ---------- */
+.card, .hw, .g-card, .driver{
+  background:#fff; border:1px solid #E9EFF9; border-radius:24px;
+  box-shadow:var(--shadow-card); padding:16px;
+}
+.list{
+  background:#fff; border:1px solid #E9EFF9; border-radius:24px;
+  box-shadow:var(--shadow-card); padding:0; overflow:hidden;
+}
+.row{ padding:14px 16px; border-bottom:1px solid var(--sep) }
+.row:last-child{ border-bottom:0 }
+.row .ri{
+  width:40px; height:40px; border-radius:14px;
+  background:var(--blue-soft); color:var(--blue);
+}
+.row .ri svg{ stroke-width:1.85 }
+.row .ri.y{ background:var(--yellow-soft); color:var(--yellow-2) }
+.row .rt b{ font-size:14.5px; font-weight:800; letter-spacing:-.2px }
+.row .rt span{ font-size:12px; font-weight:600; color:var(--secondary) }
+.chev{ background-color:#C3CBDA }
+.card-head h3{ font-size:15px; font-weight:800 }
+.card-head h3 svg{
+  width:28px; height:28px; padding:6px; border-radius:10px;
+  background:var(--blue-soft); color:var(--blue); box-sizing:border-box; stroke-width:1.8;
+}
+.sec-title{ font-size:12px; font-weight:800; color:var(--secondary); margin:18px 4px 9px }
+.divider{ background:var(--sep) }
+
+/* ---------- الأزرار ---------- */
+.btn{
+  border-radius:18px; padding:14px 18px; font-size:15px; font-weight:800; letter-spacing:-.2px;
+  background:var(--grad-blue); color:#fff;
+  box-shadow:0 10px 22px rgba(10,107,255,.26);
+  transition:transform .14s ease, box-shadow .18s ease, filter .18s;
+}
+.btn::before{ content:""; position:absolute; inset:0; border-radius:inherit; background:var(--grad-sheen); pointer-events:none }
+.btn{ position:relative; overflow:hidden }
+.btn:active{ transform:scale(.975); box-shadow:0 5px 12px rgba(10,107,255,.24) }
+.btn svg{ width:18px; height:18px }
+.btn.ghost{
+  background:#fff; color:var(--blue); border:1px solid #E6EDF9;
+  box-shadow:0 6px 16px rgba(16,38,80,.06);
+}
+.btn.ghost::before{ display:none }
+.btn.soft{ background:var(--blue-soft); color:var(--blue); box-shadow:none }
+.btn.soft::before{ display:none }
+.btn.yellow{ background:var(--grad-gold); color:#3A2A00; box-shadow:0 10px 22px rgba(240,165,0,.28) }
+.btn.green{ background:linear-gradient(135deg,#2FD08A,#129E63); box-shadow:0 10px 22px rgba(18,158,99,.26) }
+.btn.red{ background:linear-gradient(135deg,#F97068,#E04239); box-shadow:0 10px 22px rgba(224,66,57,.26) }
+
+/* ---------- الحقول والشرائح ---------- */
+.input{
+  border-radius:15px; border:1px solid #E4EAF4; background:#F7FAFF; color:var(--label);
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.input:focus{
+  outline:none; background:#fff; border-color:var(--blue); box-shadow:0 0 0 4px rgba(10,107,255,.12);
+}
+.field label{ font-size:12.5px; font-weight:700; color:var(--label-2) }
+.hint{ font-size:11.5px; font-weight:600; color:var(--secondary); line-height:1.7 }
+.sheet{
+  border-radius:26px 26px 0 0; background:#fff;
+  box-shadow:0 -12px 40px rgba(12,45,120,.16); border-top:1px solid #E9EFF9;
+}
+.sheet-bg{ background:rgba(10,22,44,.34) }
+.sheet h3{ font-size:17px; font-weight:800; letter-spacing:-.2px }
+.sheet .sub-t{ font-size:12.5px; font-weight:600; color:var(--secondary) }
+
+/* ---------- الملاحظات والشرائح الصغيرة ---------- */
+.note{ border-radius:18px; font-weight:600 }
+.note.blue{ background:var(--blue-tint); color:var(--blue-2); border-color:var(--blue-line) }
+.note.yellow{ background:var(--yellow-soft); color:#8A5D00; border-color:var(--yellow-line) }
+.pill{ font-weight:700; border-radius:12px }
+.pill.blue{ background:var(--blue-soft); color:var(--blue-2); border-color:var(--blue-line) }
+.pill.yellow{ background:var(--yellow-soft); color:#8A5D00; border-color:var(--yellow-line) }
+.chip{
+  border-radius:14px; font-weight:700; border:1px solid #E4EAF4; background:#fff; color:var(--label-2);
+  box-shadow:0 2px 8px rgba(16,38,80,.04); transition:transform .14s ease;
+}
+.chip:active{ transform:scale(.96) }
+.chip.on{ background:var(--blue); color:#fff; border-color:var(--blue) }
+
+/* ---------- شاشة الدخول: بلا زجاج ---------- */
+.entry .role{
+  background:#FFFFFF; border:1px solid rgba(255,255,255,.75);
+  box-shadow:0 14px 34px rgba(0,10,34,.32);
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+.entry .admin-link{
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.28); color:#fff;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+
+/* ---------- الشريط السفلي العائم ---------- */
+.tabbar{
+  background:#FFFFFF; border-top:1px solid #E9EFF9;
+  box-shadow:0 -8px 26px rgba(16,38,80,.08);
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+.tabbar .tab{ color:var(--secondary); border-radius:16px; transition:color .18s ease, background .2s ease }
+.tabbar .tab svg{ width:21px; height:21px; stroke-width:1.8 }
+.tabbar .tab.on{
+  color:#fff; background:var(--grad-blue); box-shadow:0 6px 14px rgba(10,107,255,.28);
+}
+.tabbar .tab.on b{ font-weight:800 }
+.tab-badge{ border-color:#fff; box-shadow:0 3px 8px rgba(241,67,61,.34) }
+
+/* ---------- الدرجات والدردشة ---------- */
+.bar{ background:#E6EEFB; border-radius:99px; height:8px }
+.bar i{ background:var(--grad-blue); border-radius:99px }
+.bar i.ok{ background:linear-gradient(90deg,#2FD08A,#129E63) }
+.bar i.bad{ background:linear-gradient(90deg,#F97068,#E04239) }
+.bubble{ border-radius:18px; font-weight:600; box-shadow:0 4px 14px rgba(16,38,80,.07) }
+.bubble.in{ background:#fff; color:var(--label); border:1px solid #E9EFF9 }
+.bubble.out{ background:var(--grad-blue); color:#fff; box-shadow:0 8px 20px rgba(10,107,255,.24) }
+.bubble .time{ color:var(--tertiary); font-weight:600 }
+.bubble.out .time{ color:rgba(255,255,255,.75) }
+.chat-input{ background:#fff; border-top:1px solid #E9EFF9 }
+.chat-input textarea{ background:#F7FAFF; border:1px solid #E4EAF4; border-radius:14px; font-weight:600 }
+.chat-input textarea:focus{ background:#fff; border-color:var(--blue) }
+.send-btn{ background:var(--grad-blue); color:#fff; box-shadow:0 6px 14px rgba(10,107,255,.26) }
+
+/* ---------- الحالة الفارغة والتوست ---------- */
+.empty{
+  background:#fff; border:1px dashed #DFE7F5; border-radius:24px; color:var(--secondary);
+  box-shadow:none;
+}
+.empty svg{ color:var(--blue); opacity:.35 }
+.empty b{ font-weight:800; color:var(--label-2) }
+.toast{
+  background:#0B1226; color:#fff; border-radius:16px; font-weight:700;
+  box-shadow:0 12px 34px rgba(8,20,50,.30); backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+.toast.ok{ background:rgba(18,158,99,.95) }
+.toast.err{ background:rgba(224,66,57,.95) }
+
+/* ---------- المظهر: ثلاث خيارات بلا زجاج ---------- */
+.theme-card{
+  background:#fff; border:1px solid #E9EFF9; border-radius:22px;
+  padding:13px 14px; margin-bottom:12px; box-shadow:var(--shadow-card);
+}
+.seg3{
+  display:flex; gap:5px; background:#F1F5FD; border-radius:16px; padding:5px; border:1px solid #E4EAF4;
+}
+.seg3 .seg-btn{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
+  padding:10px 4px; border-radius:12px; font-size:12px; font-weight:700; color:var(--secondary);
+  transition:all .18s cubic-bezier(.3,.8,.4,1);
+}
+.seg3 .seg-btn svg{ width:15px; height:15px; stroke-width:1.9 }
+.seg3 .seg-btn.on{
+  background:var(--grad-blue); color:#fff; box-shadow:0 6px 14px rgba(10,107,255,.26);
+}
+
+/* ==================================================================
+   الوضع الداكن — مسطّح وأنيق (بلا زجاج ولا انعكاسات)
+   ================================================================== */
+html[data-theme="dark"]{
+  --bg:#070C18; --card:#0E1626; --card-2:#121B2E;
+  --label:#F2F6FF; --label-2:#C2CEE6; --secondary:#8DA0C6; --tertiary:#5F7096;
+  --sep:rgba(255,255,255,.07); --sep-2:rgba(255,255,255,.11);
+  --blue:#4C8DF6; --blue-2:#2563EB; --blue-soft:rgba(76,141,246,.16); --blue-tint:rgba(76,141,246,.07); --blue-line:rgba(120,170,255,.24);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.30), 0 6px 16px rgba(0,0,0,.28);
+  --shadow:0 10px 28px rgba(0,0,0,.38);
+  --shadow-card:0 2px 6px rgba(0,0,0,.28), 0 12px 26px rgba(0,0,0,.34);
+  --shadow-tile:0 6px 16px rgba(10,40,90,.50);
+}
 html[data-theme="dark"] body{ background:#04070E }
 html[data-theme="dark"] #phone{
   background:
-    radial-gradient(70% 42% at 86% -6%, rgba(59,130,246,.55) 0%, rgba(6,12,26,0) 60%),
-    radial-gradient(62% 40% at 6% 4%, rgba(37,99,235,.42) 0%, rgba(6,12,26,0) 62%),
-    radial-gradient(90% 55% at 50% 108%, rgba(14,52,130,.55) 0%, rgba(4,7,14,0) 62%),
-    linear-gradient(180deg,#0A1630 0%, #060C1B 52%, #03060D 100%);
+    radial-gradient(80% 42% at 84% -8%, rgba(37,99,235,.30) 0%, rgba(4,7,14,0) 62%),
+    radial-gradient(70% 38% at 6% 2%, rgba(29,78,216,.22) 0%, rgba(4,7,14,0) 60%),
+    linear-gradient(180deg,#0A1224 0%, #070C18 60%, #05080F 100%);
 }
-/* بورقة ضوئية خفيفة فوق الخلفية */
-html[data-theme="dark"] #phone::after{
-  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+html[data-theme="dark"] .screen{ background:linear-gradient(180deg,#0B1322 0%, #070C18 52%, #060A14 100%) }
+html[data-theme="dark"] .navbar .nb-title h1{ color:var(--label) }
+html[data-theme="dark"] .navbar .nb-title span{ color:var(--secondary) }
+html[data-theme="dark"] .icon-btn{
+  background:#111A2B; border-color:rgba(120,170,255,.16); color:var(--label);
+  box-shadow:0 4px 14px rgba(0,0,0,.34);
+}
+html[data-theme="dark"] .hero{
   background:
-    radial-gradient(46% 26% at 50% -8%, rgba(147,197,253,.20), transparent 70%),
-    radial-gradient(30% 18% at 92% 22%, rgba(96,165,250,.12), transparent 70%);
-  mix-blend-mode:screen;
+    radial-gradient(260px 180px at 12% -26%, rgba(255,255,255,.14), rgba(255,255,255,0) 70%),
+    linear-gradient(152deg,#1B5FE0 0%, #1447C4 48%, #10389C 100%);
+  box-shadow:0 18px 40px rgba(0,0,0,.45);
 }
-html[data-theme="dark"] #app{ position:relative; z-index:1 }
-
-/* ---------- البطاقات: حواف مضيئة + ظل أزرق ---------- */
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .list{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.085) 0%,rgba(255,255,255,.035) 42%,rgba(255,255,255,.02) 100%),
-    linear-gradient(150deg,rgba(37,99,235,.20),rgba(9,18,40,.30) 62%);
-  border:1px solid rgba(140,180,255,.16);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.14) inset,
-    0 -14px 30px rgba(3,10,28,.35) inset,
-    0 16px 36px rgba(2,8,24,.55),
-    0 2px 6px rgba(2,8,24,.40);
-  backdrop-filter:blur(16px) saturate(125%);
-  -webkit-backdrop-filter:blur(16px) saturate(125%);
+html[data-theme="dark"] .hero .av{ background:rgba(255,255,255,.14); border-color:rgba(255,255,255,.24) }
+html[data-theme="dark"] .hero .h-grid div{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.13) }
+html[data-theme="dark"] .hero .h-grid div.y{ background:#fff; border-color:#fff }
+html[data-theme="dark"] .hero.yellow{
+  background:radial-gradient(220px 160px at 88% -14%, rgba(255,255,255,.24), rgba(255,255,255,0) 70%),
+             linear-gradient(152deg,#E8B84E 0%, #D49A2A 55%, #B87F16 100%);
 }
-/* ---------- الأزرار: مجسّمة بتدرّج أزرق ---------- */
-.btn{
-  position:relative; overflow:hidden;
-  background:var(--grad-blue); color:#fff; border:0;
-  box-shadow:0 1px 0 rgba(255,255,255,.34) inset, 0 -2px 0 rgba(9,40,110,.55) inset, 0 10px 22px rgba(29,78,216,.34);
-  transition:transform .12s cubic-bezier(.32,.72,0,1), box-shadow .12s;
-}
-.btn::before{
-  content:''; position:absolute; inset:0 0 auto 0; height:52%;
-  background:var(--grad-sheen); pointer-events:none;
-}
-.btn:active{ transform:translateY(2px) scale(.985); box-shadow:0 1px 0 rgba(255,255,255,.20) inset, 0 3px 10px rgba(29,78,216,.30) }
-.btn.soft{
-  background:linear-gradient(135deg,rgba(59,130,246,.22),rgba(29,78,216,.14));
-  color:var(--blue); box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 6px 16px rgba(4,20,60,.28);
-}
-html[data-theme="dark"] .btn.soft{ color:#BFDBFE }
-.btn.ghost{ background:transparent; box-shadow:none; border:1.5px solid var(--blue-line); color:var(--blue) }
-.btn.ghost::before{ display:none }
-.btn:disabled{ opacity:.45; box-shadow:none }
-
-/* ---------- الأيقونات المستديرة ---------- */
-.icon-btn{
-  background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.04));
-  border:1px solid rgba(180,210,255,.16);
-  box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 8px 18px rgba(3,12,34,.40);
-}
-html[data-theme="dark"] .icon-btn{ color:#BFDBFE }
-html[data-theme="light"] .icon-btn{ background:#fff; box-shadow:0 1px 0 #fff inset, 0 6px 16px rgba(16,48,110,.12) }
-.icon-btn.plain{ box-shadow:none; background:transparent; border-color:transparent }
-
-/* ---------- البلاطات (Tile) ---------- */
-.tile{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.03) 60%),
-    linear-gradient(150deg,rgba(30,64,140,.55),rgba(8,16,36,.55));
-  border:1px solid rgba(150,190,255,.18);
-  box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 14px 26px rgba(2,8,24,.48);
-  transition:transform .14s cubic-bezier(.32,.72,0,1), box-shadow .14s;
-}
-.tile:active{ transform:translateY(2px) scale(.975); box-shadow:0 1px 0 rgba(255,255,255,.10) inset, 0 5px 12px rgba(2,8,24,.42) }
-.tile .ti{
-  background:var(--grad-blue); color:#fff;
-  box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 8px 16px rgba(29,78,216,.42);
-  border-radius:16px;
-}
-html[data-theme="light"] .tile{
-  background:linear-gradient(180deg,#FFFFFF 0%,#F3F8FF 100%);
-  border:1px solid #E2ECFB;
-  box-shadow:0 1px 0 #fff inset, 0 10px 24px rgba(20,60,140,.10);
-}
-html[data-theme="light"] body{ background:linear-gradient(180deg,#F5F9FF 0%,#EEF4FD 100%) }
-html[data-theme="light"] #phone{
-  background:
-    radial-gradient(70% 40% at 92% -4%, rgba(147,197,253,.55) 0%, rgba(244,248,255,0) 62%),
-    radial-gradient(60% 34% at 4% 2%, rgba(191,219,254,.55) 0%, rgba(244,248,255,0) 60%),
-    linear-gradient(180deg,#F7FAFF 0%,#EDF3FC 100%);
-}
-
-/* ---------- البطاقة الترحيبية (Hero) ---------- */
-.hero{
-  position:relative; overflow:hidden;
-  background:var(--grad-blue);
-  box-shadow:0 1px 0 rgba(255,255,255,.30) inset, 0 18px 38px rgba(20,64,160,.42);
-  border:1px solid rgba(160,200,255,.24);
-}
-.hero::after{
-  content:''; position:absolute; inset:0; pointer-events:none;
-  background:
-    radial-gradient(60% 80% at 88% -20%, rgba(255,255,255,.42), transparent 62%),
-    linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);
-}
-.hero > *{ position:relative; z-index:1 }
-
-/* ---------- شريط التبويبات ---------- */
-.tabbar{
-  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(10,20,42,.55)) !important;
-  border:1px solid rgba(150,190,255,.20) !important;
-  box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 -10px 30px rgba(2,8,24,.55) !important;
-  backdrop-filter:blur(20px) saturate(130%);
-  -webkit-backdrop-filter:blur(20px) saturate(130%);
-}
-html[data-theme="light"] .tabbar{
-  background:rgba(255,255,255,.92) !important;
-  border:1px solid #E4EDFB !important;
-  box-shadow:0 1px 0 #fff inset, 0 -8px 24px rgba(20,60,140,.10) !important;
-}
-.tabbar button.on{ background:linear-gradient(135deg,rgba(59,130,246,.24),rgba(29,78,216,.14)) }
-html[data-theme="light"] .tabbar button.on{ background:var(--blue-soft) }
-
-/* ---------- الفواصل والحقول ---------- */
-html[data-theme="dark"] .input, html[data-theme="dark"] textarea, html[data-theme="dark"] select{
-  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
-  border-color:rgba(150,190,255,.16);
-  box-shadow:0 1px 0 rgba(0,0,0,.25) inset;
-}
-html[data-theme="dark"] .input:focus, html[data-theme="dark"] textarea:focus{
-  border-color:rgba(96,165,250,.75);
-  box-shadow:0 0 0 4px rgba(59,130,246,.18), 0 1px 0 rgba(0,0,0,.25) inset;
-}
-
-/* ---------- نمط العرض: 3 خيارات (تلقائي/فاتح/داكن) ---------- */
-.theme-card{
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
-  border:1px solid rgba(150,190,255,.16); border-radius:var(--r);
-  padding:12px 14px; margin-bottom:12px;
-  box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 12px 26px rgba(2,8,24,.40);
-}
-html[data-theme="light"] .theme-card{
-  background:#fff; border:1px solid #E4EDFB;
-  box-shadow:0 1px 0 #fff inset, 0 8px 20px rgba(20,60,140,.08);
-}
-.seg3{ display:flex; gap:6px; background:rgba(4,12,30,.45); border-radius:14px; padding:4px; border:1px solid rgba(150,190,255,.14) }
-html[data-theme="light"] .seg3{ background:#EEF3FB; border-color:#E1EAF8 }
-.seg3 .seg-btn{
-  flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
-  padding:9px 4px; border-radius:11px; font-size:12px; font-weight:800; color:var(--secondary);
-  transition:all .16s cubic-bezier(.32,.72,0,1);
-}
-.seg3 .seg-btn svg{ width:15px; height:15px }
-.seg3 .seg-btn.on{
-  background:var(--grad-blue); color:#fff;
-  box-shadow:0 1px 0 rgba(255,255,255,.30) inset, 0 6px 14px rgba(29,78,216,.40);
-}
-html[data-theme="light"] .seg3 .seg-btn.on{ background:var(--grad-blue); color:#fff }
-
-/* ---------- شبكة البلاطات: صفوف متساوية بلا تزحلق ---------- */
-.tiles{ align-items:stretch }
-.tile{ min-height:92px; align-content:center }
-
-/* ---------- البلاطات في الداكن: زجاج أزرق مجسّم ---------- */
 html[data-theme="dark"] .tile{
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 55%),
-    linear-gradient(155deg,rgba(37,99,235,.30) 0%,rgba(10,22,48,.55) 62%);
-  border:1px solid rgba(140,180,255,.20);
-  backdrop-filter:blur(18px) saturate(130%);
-  -webkit-backdrop-filter:blur(18px) saturate(130%);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.16) inset,
-    0 -10px 20px rgba(2,8,24,.35) inset,
-    0 14px 28px rgba(2,8,24,.55);
+  background:var(--card); border-color:var(--sep-2); box-shadow:var(--shadow-card);
 }
-html[data-theme="dark"] .tile b{ color:#DCE8FF }
-html[data-theme="light"] .tile b{ color:var(--label) }
-
-/* ---------- لمسات 3D صغيرة ---------- */
-html[data-theme="dark"] .pill{ box-shadow:0 1px 0 rgba(255,255,255,.10) inset }
-html[data-theme="dark"] .hw, html[data-theme="dark"] .bubble.in{
-  box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 10px 24px rgba(2,8,24,.42);
-}
-html[data-theme="dark"] .bubble.out{
-  background:var(--grad-blue);
-  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 10px 22px rgba(29,78,216,.40);
-}
-html[data-theme="dark"] .sec-title{ color:#9FB6DC }
-/* أيقونات البلاطات في الداكن: تدرّج أزرق مضيء */
 html[data-theme="dark"] .tile .ti{
-  background:linear-gradient(160deg,rgba(96,165,250,.62),rgba(29,78,216,.34));
-  color:#EAF2FF;
-  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 -2px 6px rgba(0,0,0,.35) inset, 0 8px 16px rgba(3,12,34,.45);
-}
-html[data-theme="dark"] .tile.y .ti{
-  background:linear-gradient(160deg,rgba(255,197,61,.60),rgba(240,165,0,.28)); color:#FFF1CB;
+  background:var(--grad-blue); color:#fff; box-shadow:var(--shadow-tile);
 }
 html[data-theme="dark"] .tile.b .ti,
-html[data-theme="dark"] .tile.n .ti{
-  background:linear-gradient(160deg,rgba(96,165,250,.55),rgba(37,99,235,.28)); color:#EAF2FF;
+html[data-theme="dark"] .tile.n .ti,
+html[data-theme="dark"] .tile.y .ti{ color:#fff }
+html[data-theme="dark"] .tile.b .ti{ background:var(--grad-blue) }
+html[data-theme="dark"] .tile.n .ti{ background:linear-gradient(135deg,#5E93F2 0%,#3F6FD6 50%,#2F56B4 100%) }
+html[data-theme="dark"] .tile.y .ti{ background:var(--grad-gold) }
+html[data-theme="dark"] .tile b{ color:var(--label-2) }
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .hw,
+html[data-theme="dark"] .g-card,
+html[data-theme="dark"] .driver,
+html[data-theme="dark"] .list{
+  background:var(--card); border-color:var(--sep-2); box-shadow:var(--shadow-card); backdrop-filter:none;
 }
-html[data-theme="dark"] .row .ri{
-  background:linear-gradient(160deg,rgba(59,130,246,.34),rgba(29,78,216,.16));
-  color:#BFDBFE; box-shadow:0 1px 0 rgba(255,255,255,.20) inset;
+html[data-theme="dark"] .row{ border-bottom-color:var(--sep) }
+html[data-theme="dark"] .row .ri{ background:var(--blue-soft); color:#9CC0FF }
+html[data-theme="dark"] .row .ri.y{ background:rgba(255,197,61,.16); color:#FFD672 }
+html[data-theme="dark"] .row .rt b{ color:var(--label) }
+html[data-theme="dark"] .row .rt span{ color:var(--secondary) }
+html[data-theme="dark"] .chev{ background-color:var(--tertiary) }
+html[data-theme="dark"] .card-head h3{ color:var(--label) }
+html[data-theme="dark"] .card-head h3 svg{ background:var(--blue-soft); color:#9CC0FF }
+html[data-theme="dark"] .sec-title{ color:var(--secondary) }
+html[data-theme="dark"] .btn{ background:var(--grad-blue); box-shadow:0 10px 22px rgba(10,40,90,.50) }
+html[data-theme="dark"] .btn.ghost{ background:#141E31; color:var(--label); border-color:var(--sep-2); box-shadow:none }
+html[data-theme="dark"] .btn.ghost::before{ display:none }
+html[data-theme="dark"] .btn.soft{ background:var(--blue-soft); color:#9CC0FF; box-shadow:none }
+html[data-theme="dark"] .btn.soft::before{ display:none }
+html[data-theme="dark"] .input{ background:#0C1422; border-color:var(--sep-2); color:var(--label) }
+html[data-theme="dark"] .input:focus{ background:#101A2A; border-color:var(--blue); box-shadow:0 0 0 4px rgba(76,141,246,.16) }
+html[data-theme="dark"] .field label{ color:var(--label-2) }
+html[data-theme="dark"] .hint{ color:var(--secondary) }
+html[data-theme="dark"] .sheet{ background:#0E1626; border-top-color:var(--sep-2); box-shadow:0 -12px 40px rgba(0,0,0,.5) }
+html[data-theme="dark"] .sheet-bg{ background:rgba(2,6,14,.5) }
+html[data-theme="dark"] .sheet h3{ color:var(--label) }
+html[data-theme="dark"] .sheet .sub-t{ color:var(--secondary) }
+html[data-theme="dark"] .note{ background:#101928; border-color:var(--sep-2); color:var(--label-2) }
+html[data-theme="dark"] .note.blue{ background:var(--blue-tint); border-color:var(--blue-line); color:#9CC0FF }
+html[data-theme="dark"] .note.yellow{ background:rgba(255,197,61,.12); border-color:rgba(255,197,61,.26); color:#FFD672 }
+html[data-theme="dark"] .pill{ background:#141E31; color:var(--label-2); border-color:var(--sep-2) }
+html[data-theme="dark"] .pill.blue{ background:var(--blue-soft); color:#9CC0FF; border-color:var(--blue-line) }
+html[data-theme="dark"] .pill.yellow{ background:rgba(255,197,61,.14); color:#FFD672; border-color:rgba(255,197,61,.26) }
+html[data-theme="dark"] .chip{ background:#141E31; border-color:var(--sep-2); color:var(--label-2); box-shadow:none }
+html[data-theme="dark"] .chip.on{ background:var(--grad-blue); color:#fff; border-color:transparent }
+html[data-theme="dark"] .tabbar{
+  background:rgba(10,16,30,.94); border-top-color:var(--sep-2);
+  box-shadow:0 -8px 26px rgba(0,0,0,.40); backdrop-filter:none; -webkit-backdrop-filter:none;
 }
-html[data-theme="dark"] .row .ri.y{ background:linear-gradient(160deg,rgba(255,197,61,.34),rgba(240,165,0,.14)); color:#FFD772 }
+html[data-theme="dark"] .tabbar .tab{ color:var(--secondary) }
+html[data-theme="dark"] .tabbar .tab.on{ background:var(--grad-blue); color:#fff; box-shadow:0 6px 16px rgba(10,40,90,.55) }
+html[data-theme="dark"] .bubble.in{ background:#141E31; border-color:var(--sep-2); color:var(--label) }
+html[data-theme="dark"] .bubble.out{ background:var(--grad-blue); color:#fff; box-shadow:0 8px 20px rgba(10,40,90,.5) }
+html[data-theme="dark"] .bubble .time{ color:var(--tertiary) }
+html[data-theme="dark"] .chat-input{ background:#0C1422; border-top-color:var(--sep-2) }
+html[data-theme="dark"] .chat-input textarea{ background:#141E31; border-color:var(--sep-2); color:var(--label) }
+html[data-theme="dark"] .chat-input textarea:focus{ background:#101A2A; border-color:var(--blue) }
+html[data-theme="dark"] .empty{ background:#0E1626; border-color:var(--sep-2); color:var(--secondary) }
+html[data-theme="dark"] .toast{ background:rgba(24,34,52,.96); box-shadow:0 12px 34px rgba(0,0,0,.46) }
+html[data-theme="dark"] .toast.ok{ background:rgba(18,140,90,.96) }
+html[data-theme="dark"] .toast.err{ background:rgba(198,58,50,.96) }
+html[data-theme="dark"] .theme-card{ background:var(--card); border-color:var(--sep-2); box-shadow:var(--shadow-card) }
+html[data-theme="dark"] .seg3{ background:#0C1422; border-color:var(--sep-2) }
+html[data-theme="dark"] .seg3 .seg-btn{ color:var(--secondary) }
+html[data-theme="dark"] .seg3 .seg-btn.on{ background:var(--grad-blue); color:#fff; box-shadow:0 6px 16px rgba(10,40,90,.5) }
+html[data-theme="dark"] .bar{ background:rgba(255,255,255,.08) }
+html[data-theme="dark"] .bar i{ background:var(--grad-blue) }
+html[data-theme="dark"] .bar i.ok{ background:linear-gradient(90deg,#2FD08A,#129E63) }
+html[data-theme="dark"] .bar i.bad{ background:linear-gradient(90deg,#F97068,#E04239) }
+html[data-theme="dark"] .g-line .gn{ color:var(--label-2) }
+
 </style>
 </head>
 <body>
@@ -1407,63 +1572,63 @@ try {
    1) الأيقونات
    ========================================================================== */
 const I = {
-  moon:'<path d="M20.5 14.5A8.5 8.5 0 019.5 3.5a7 7 0 100 14 8.5 8.5 0 0011-3z"/>',
-  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/>',
-  shield:'<path d="M12 3l8 3.4v6.1c0 4.8-3.3 8.8-8 10.5-4.7-1.7-8-5.7-8-10.5V6.4L12 3z"/><path d="M8.6 12.2l2.3 2.3 4.5-4.6"/>',
-  student:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.2c0-3.9 3.4-6.2 7.5-6.2s7.5 2.3 7.5 6.2"/>',
-  guardian:'<circle cx="9" cy="8" r="3.1"/><path d="M3 19.5c0-3.3 2.7-5.4 6-5.4s6 2.1 6 5.4"/><circle cx="17.6" cy="10" r="2.2"/><path d="M15.7 19.5c0-2.3 1.4-3.7 3.3-3.7 1.2 0 2.2.5 2.9 1.4"/>',
-  teacher:'<path d="M3 7.4l9-4.2 9 4.2-9 4.2-9-4.2z"/><path d="M7 9.7V15c0 1.7 2.2 3 5 3s5-1.3 5-3V9.7"/><path d="M21 7.4v5"/>',
-  driver:'<path d="M5 16.5V9.8l2.1-4.3h9.8l2.1 4.3v6.7"/><path d="M3.6 16.5h16.8"/><path d="M7 16.5v3M17 16.5v3"/><circle cx="8.2" cy="12.2" r="1.1"/><circle cx="15.8" cy="12.2" r="1.1"/>',
-  admin:'<circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-5.8 7-5.8s7 2.2 7 5.8"/><path d="M17.6 4.2l1.1 2.3 2.5.4-1.8 1.8.4 2.5-2.2-1.2-2.2 1.2.4-2.5-1.8-1.8 2.5-.4z"/>',
-  bell:'<path d="M18 8.4a6 6 0 10-12 0c0 4.6-1.8 5.6-1.8 5.6h15.6S18 13 18 8.4z"/><path d="M10.3 17.3a1.9 1.9 0 003.4 0"/>',
-  clip:'<rect x="5" y="4.5" width="14" height="16.5" rx="2.6"/><path d="M9 4.5V3.4h6v1.1M8.6 10.5h6.8M8.6 14.4h5"/>',
-  chart:'<path d="M4.5 19.5V11M10 19.5V5.5M15.5 19.5v-6M21 19.5H3"/>',
-  calendar:'<rect x="4" y="5" width="16" height="16" rx="3.2"/><path d="M8.2 3v3.6M15.8 3v3.6M4 10.2h16"/>',
-  calendarGrid:'<rect x="3.6" y="4.4" width="16.8" height="16.2" rx="3"/><path d="M3.6 9.4h16.8M9 9.4v11.2M15 9.4v11.2M3.6 15h16.8"/>',
-  chat:'<path d="M21 11.6c0 4.2-4 7.6-9 7.6-1 0-2-.1-2.9-.4L4 21l1.2-3.6C3.8 16.1 3 13.9 3 11.6 3 7.4 7 4 12 4s9 3.4 9 7.6z"/>',
-  message:'<path d="M4 6.5h16v11H4z"/><path d="M4.4 7l7.6 6 7.6-6"/>',
-  car:'<path d="M5 16.5V9.8l2.1-4.3h9.8l2.1 4.3v6.7"/><path d="M3.6 16.5h16.8M7 16.5v3M17 16.5v3"/>',
-  lock:'<rect x="5" y="10.4" width="14" height="10.1" rx="2.8"/><path d="M8.2 10.4V7.2a3.8 3.8 0 017.6 0v3.2"/>',
-  search:'<circle cx="11" cy="11" r="6.6"/><path d="M20 20l-3.8-3.8"/>',
-  plus:'<path d="M12 5.2v13.6M5.2 12h13.6"/>',
-  x:'<path d="M6.2 6.2l11.6 11.6M17.8 6.2L6.2 17.8"/>',
-  check:'<path d="M4.8 12.4l4.6 4.6L19.2 7.2"/>',
-  back:'<path d="M15 5.2L8.2 12 15 18.8"/>',
-  send:'<path d="M21 3.4L10.4 14M21 3.4l-6.6 17.8-3.9-8.2-8.1-3.9L21 3.4z"/>',
-  phone:'<path d="M6.2 3.6h3l1.5 3.8-2 1.5a11.4 11.4 0 005.9 5.9l1.5-2 3.8 1.5v3a2 2 0 01-2.2 2A17.6 17.6 0 014.2 5.8a2 2 0 012-2.2z"/>',
-  info:'<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.4M12 7.9h.01"/>',
-  alert:'<path d="M12 3.6l8.6 15H3.4L12 3.6z"/><path d="M12 9.6v4M12 16.4h.01"/>',
-  trash:'<path d="M4.6 6.6h14.8M9.4 6.6V4.4h5.2v2.2M6.6 6.6l.9 13.2h9l.9-13.2"/>',
-  edit:'<path d="M4.4 19.6h4.2L19.4 8.8a2.2 2.2 0 000-3.1l-1.1-1.1a2.2 2.2 0 00-3.1 0L4.4 15.4v4.2z"/>',
-  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3.2 20c0-3.3 2.6-5.3 5.8-5.3s5.8 2 5.8 5.3"/><path d="M16.4 5.2a3 3 0 010 5.7M17.8 14.9c1.9.5 3.2 1.9 3.2 4"/>',
-  user:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.2c0-3.9 3.4-6.2 7.5-6.2s7.5 2.3 7.5 6.2"/>',
-  grid:'<rect x="3.4" y="3.4" width="7.2" height="7.2" rx="2.2"/><rect x="13.4" y="3.4" width="7.2" height="7.2" rx="2.2"/><rect x="3.4" y="13.4" width="7.2" height="7.2" rx="2.2"/><rect x="13.4" y="13.4" width="7.2" height="7.2" rx="2.2"/>',
-  home:'<path d="M4 11.2L12 4l8 7.2"/><path d="M6.2 9.8V19a1 1 0 001 1h9.6a1 1 0 001-1V9.8"/>',
-  book:'<path d="M4.4 5.6A2.6 2.6 0 017 3h13v15.4H7a2.6 2.6 0 00-2.6 2.6z"/><path d="M4.4 18.6A2.6 2.6 0 017 16h13"/>',
-  file:'<path d="M14 3.6H7.4a2 2 0 00-2 2v12.8a2 2 0 002 2h9.2a2 2 0 002-2V8.4L14 3.6z"/><path d="M13.8 3.8V8.6h4.8"/>',
-  image:'<rect x="3.6" y="4.6" width="16.8" height="14.8" rx="3"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M4.2 16.6l4.6-4 3.4 3 3-2.6 4.2 3.8"/>',
-  clock:'<circle cx="12" cy="12" r="8.6"/><path d="M12 7.6V12l3.2 2"/>',
-  star:'<path d="M12 3.8l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.9l5.8-.8L12 3.8z"/>',
+  moon:'<path d="M20.4 14.6A8.6 8.6 0 019.4 3.6a8.6 8.6 0 1011 11z"/><path d="M17.4 4.2l.5 1.6 1.6.5-1.6.5-.5 1.6-.5-1.6-1.6-.5 1.6-.5.5-1.6z"/>',
+  sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.2M12 19.4v2.2M2.4 12h2.2M19.4 12h2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M19.1 4.9l-1.6 1.6M6.5 17.5l-1.6 1.6"/>',
+  shield:'<path d="M12 2.9l7.6 3.2v5.8c0 4.5-3.1 8.3-7.6 9.9-4.5-1.6-7.6-5.4-7.6-9.9V6.1L12 2.9z"/><path d="M8.9 11.9l2.2 2.2 4.1-4.2"/>',
+  student:'<circle cx="12" cy="8.2" r="3.5"/><path d="M4.8 20.4c0-3.9 3.2-6.3 7.2-6.3s7.2 2.4 7.2 6.3"/>',
+  guardian:'<circle cx="9.2" cy="8.2" r="3"/><path d="M3.4 19.8c0-3.2 2.6-5.2 5.8-5.2s5.8 2 5.8 5.2"/><circle cx="17.4" cy="10.2" r="2.1"/><path d="M15.6 19.8c0-2.2 1.3-3.6 3.1-3.6 1.1 0 2 .5 2.7 1.3"/>',
+  teacher:'<path d="M2.8 7.6L12 3.2l9.2 4.4L12 12 2.8 7.6z"/><path d="M6.6 9.9v4.7c0 1.7 2.4 3.1 5.4 3.1s5.4-1.4 5.4-3.1V9.9"/><path d="M21.2 7.6v5.1"/>',
+  driver:'<circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3.4v6.2M12 14.4v6.2M3.4 12h6.2M14.4 12h6.2"/>',
+  admin:'<circle cx="11" cy="8.2" r="3.3"/><path d="M4.6 20.2c0-3.5 2.9-5.6 6.4-5.6s6.4 2.1 6.4 5.6"/><path d="M18.4 3.2l1 2.1 2.3.4-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.4z"/>',
+  bell:'<path d="M18.2 9.6a6.2 6.2 0 10-12.4 0c0 4.6-1.9 5.7-1.9 5.7h16.2s-1.9-1.1-1.9-5.7z"/><path d="M10.2 18.6a2 2 0 003.6 0"/><path d="M12 3.2a5.6 5.6 0 015.6 5.6"/>',
+  clip:'<rect x="4.6" y="4.4" width="14.8" height="16.6" rx="3"/><path d="M9.2 4.4V3.2h5.6v1.2"/><path d="M8.6 10.6h6.8M8.6 14.4h4.6"/>',
+  chart:'<path d="M4.4 19.6h15.2"/><path d="M7.4 19.6v-6.2M12 19.6V6.4M16.6 19.6v-8.8"/>',
+  calendar:'<rect x="3.8" y="5" width="16.4" height="16" rx="3.2"/><path d="M8 3.2v3.4M16 3.2v3.4"/><path d="M3.8 10h16.4"/><path d="M8.4 14h2M13.6 14h2M8.4 17.4h2M13.6 17.4h2"/>',
+  calendarGrid:'<rect x="3.6" y="4.6" width="16.8" height="16" rx="3"/><path d="M3.6 9.6h16.8M9.2 9.6v11M14.8 9.6v11M3.6 15.1h16.8"/>',
+  chat:'<path d="M20.8 11.4c0 4.1-3.9 7.4-8.8 7.4-.9 0-1.9-.1-2.8-.4L4 20.6l1.2-3.5C3.7 15.8 3.2 13.7 3.2 11.4 3.2 7.3 7.1 4 12 4s8.8 3.3 8.8 7.4z"/><path d="M8.6 11.5h.01M12 11.5h.01M15.4 11.5h.01"/>',
+  message:'<rect x="3.4" y="5.4" width="17.2" height="13.2" rx="3.2"/><path d="M4.2 7.2l7.8 5.4 7.8-5.4"/>',
+  car:'<path d="M4.9 16.6v-6.3l2.2-4.4h9.8l2.2 4.4v6.3"/><path d="M3.4 16.6h17.2"/><path d="M6.6 16.6v3.2M17.4 16.6v3.2"/><path d="M8 12.4h8"/>',
+  lock:'<rect x="4.8" y="10.2" width="14.4" height="10.4" rx="3"/><path d="M8 10.2V7.4a4 4 0 018 0v2.8"/><path d="M12 14.4v2.2"/>',
+  search:'<circle cx="10.9" cy="10.9" r="6.6"/><path d="M15.6 15.6l4.4 4.4"/>',
+  plus:'<path d="M12 5.4v13.2M5.4 12h13.2"/>',
+  x:'<path d="M6.4 6.4l11.2 11.2M17.6 6.4L6.4 17.6"/>',
+  check:'<path d="M5 12.6l4.4 4.4L19 7.4"/>',
+  back:'<path d="M14.8 5.4L8.2 12l6.6 6.6"/>',
+  send:'<path d="M20.8 3.4L10.6 13.6"/><path d="M20.8 3.4l-6.3 17.2-3.9-7.4-7.2-3.9 17.4-5.9z"/>',
+  phone:'<path d="M6.4 3.6h2.9l1.5 3.7-2 1.5a11.5 11.5 0 005.9 5.9l1.5-2 3.7 1.5v2.9a2 2 0 01-2.2 2A17.6 17.6 0 014.4 5.8a2 2 0 012-2.2z"/>',
+  info:'<circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5.4M12 7.8h.01"/>',
+  alert:'<path d="M12 3.8l8.4 14.8H3.6L12 3.8z"/><path d="M12 9.8v3.8M12 16.4h.01"/>',
+  trash:'<path d="M4.8 6.8h14.4"/><path d="M9.6 6.8V4.6h4.8v2.2"/><path d="M6.8 6.8l.9 12.8h8.6l.9-12.8"/><path d="M10.4 10.4v5.8M13.6 10.4v5.8"/>',
+  edit:'<path d="M4.6 19.4h4L19.2 8.8a2.1 2.1 0 000-3l-1-1a2.1 2.1 0 00-3 0L4.6 15.4v4z"/><path d="M14.4 6.4l3.2 3.2"/>',
+  users:'<circle cx="9.2" cy="8.2" r="3.1"/><path d="M3.4 20c0-3.2 2.6-5.2 5.8-5.2s5.8 2 5.8 5.2"/><path d="M16.4 5.4a3 3 0 010 5.5M17.9 14.9c1.9.5 3.1 1.9 3.1 3.9"/>',
+  user:'<circle cx="12" cy="8.2" r="3.5"/><path d="M4.8 20.4c0-3.9 3.2-6.3 7.2-6.3s7.2 2.4 7.2 6.3"/>',
+  grid:'<rect x="3.6" y="3.6" width="7" height="7" rx="2.4"/><rect x="13.4" y="3.6" width="7" height="7" rx="2.4"/><rect x="3.6" y="13.4" width="7" height="7" rx="2.4"/><rect x="13.4" y="13.4" width="7" height="7" rx="2.4"/>',
+  home:'<path d="M3.8 11.2L12 4l8.2 7.2"/><path d="M6 9.9V19a1 1 0 001 1h10a1 1 0 001-1V9.9"/><path d="M10 20v-5.2h4V20"/>',
+  book:'<path d="M4.4 5.4A2.6 2.6 0 017 2.8h12.6v15.4H7a2.6 2.6 0 00-2.6 2.6z"/><path d="M4.4 18.2A2.6 2.6 0 017 15.6h12.6"/><path d="M7.6 7.2h7.4"/>',
+  file:'<path d="M13.8 3.6H7.4a2 2 0 00-2 2v12.8a2 2 0 002 2h9.2a2 2 0 002-2V8.4z"/><path d="M13.6 3.8v4.6h4.6"/><path d="M8.8 13h6.4M8.8 16.4h4.4"/>',
+  image:'<rect x="3.6" y="4.6" width="16.8" height="14.8" rx="3"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M4.2 16.8l4.6-4 3.4 3 3-2.6 4.2 3.8"/>',
+  clock:'<circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.4 2.1"/>',
+  star:'<path d="M12 3.6l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 10l6-.9z"/>',
   logout:'<path d="M9.6 4.6H6.4a2 2 0 00-2 2v10.8a2 2 0 002 2h3.2"/><path d="M15.4 8.2L19.2 12l-3.8 3.8M19.2 12H9.8"/>',
   building:'<path d="M4.6 20.4V5.2a1.6 1.6 0 011.6-1.6h8.4a1.6 1.6 0 011.6 1.6v15.2"/><path d="M2.8 20.4h18.4M16.2 9.4h2.6a1.6 1.6 0 011.6 1.6v9.4"/><path d="M8 7.4h.01M11.6 7.4h.01M8 11h.01M11.6 11h.01M8 14.6h.01M11.6 14.6h.01"/>',
   link:'<path d="M10.2 13.8a3.6 3.6 0 005.1 0l2.6-2.6a3.6 3.6 0 00-5.1-5.1l-1.3 1.3"/><path d="M13.8 10.2a3.6 3.6 0 00-5.1 0L6.1 12.8a3.6 3.6 0 005.1 5.1l1.3-1.3"/>',
-  gear:'<circle cx="12" cy="12" r="3.1"/><path d="M19.4 14.2a1.6 1.6 0 00.3 1.8l.1.1a1.9 1.9 0 11-2.7 2.7l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5v.2a1.9 1.9 0 11-3.8 0v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1a1.9 1.9 0 11-2.7-2.7l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H4a1.9 1.9 0 110-3.8h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8l-.1-.1a1.9 1.9 0 112.7-2.7l.1.1a1.6 1.6 0 001.8.3H10a1.6 1.6 0 001-1.5V4a1.9 1.9 0 113.8 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a1.9 1.9 0 112.7 2.7l-.1.1a1.6 1.6 0 00-.3 1.8V10a1.6 1.6 0 001.5 1h.2a1.9 1.9 0 110 3.8h-.2a1.6 1.6 0 00-1.5 1z"/>',
-  megaphone:'<path d="M3.4 10.2v3.6a1.6 1.6 0 001.6 1.6h1.6l7.8 4V4.6l-7.8 4H5a1.6 1.6 0 00-1.6 1.6z"/><path d="M17.6 8.6a4.6 4.6 0 010 6.8M20 6a8 8 0 010 12"/>',
-  checkCircle:'<circle cx="12" cy="12" r="8.6"/><path d="M8.4 12.2l2.5 2.5 4.7-4.8"/>',
-  filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
-  school:'<path d="M12 3l9 4.5h-18L12 3z"/><path d="M4.5 10.5h15v9h-15z"/><path d="M2.8 19.5h18.4M9.6 19.5v-5.2h4.8v5.2"/>',
-  layers:'<path d="M12 3.4l8.4 4.2L12 11.8 3.6 7.6 12 3.4z"/><path d="M3.6 12l8.4 4.2L20.4 12M3.6 16.2L12 20.4l8.4-4.2"/>',
+  gear:'<circle cx="12" cy="12" r="3.2"/><path d="M19.1 14.4a1.6 1.6 0 00.3 1.8l.1.1a1.9 1.9 0 11-2.7 2.7l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5v.2a1.9 1.9 0 11-3.8 0v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1a1.9 1.9 0 11-2.7-2.7l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H4a1.9 1.9 0 110-3.8h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8l-.1-.1a1.9 1.9 0 112.7-2.7l.1.1a1.6 1.6 0 001.8.3H10a1.6 1.6 0 001-1.5V4a1.9 1.9 0 113.8 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a1.9 1.9 0 112.7 2.7l-.1.1a1.6 1.6 0 00-.3 1.8V10a1.6 1.6 0 001.5 1h.2a1.9 1.9 0 110 3.8h-.2a1.6 1.6 0 00-1.5 1z"/>',
+  megaphone:'<path d="M3.4 10.2v3.6a1.6 1.6 0 001.6 1.6h1.6l7.8 4V4.6l-7.8 4H5a1.6 1.6 0 00-1.6 1.6z"/><path d="M17.6 8.6a4.6 4.6 0 010 6.8M20 6a8 8 0 010 12"/><path d="M7.2 15.4v3.4a1.4 1.4 0 002.8 0v-2.2"/>',
+  checkCircle:'<circle cx="12" cy="12" r="8.6"/><path d="M8.2 12.2l2.6 2.6 5-5.2"/>',
+  filter:'<path d="M3.8 5.2h16.4l-6.4 7.4v6.2l-3.6 2v-8.2z"/>',
+  school:'<path d="M12 3.2l9 4.4H3z"/><path d="M5 11v8.2h14V11"/><path d="M3 19.4h18"/><path d="M9.8 19.2v-5h4.4v5"/>',
+  layers:'<path d="M12 3.4l8.4 4.2L12 11.8 3.6 7.6z"/><path d="M3.6 12l8.4 4.2L20.4 12M3.6 16.2L12 20.4l8.4-4.2"/>',
   sync:'<path d="M20.4 11.2a8.4 8.4 0 00-14.6-4.6L3.6 8.8"/><path d="M3.6 4.6v4.2h4.2"/><path d="M3.6 12.8a8.4 8.4 0 0014.6 4.6l2.2-2.2"/><path d="M20.4 19.4v-4.2h-4.2"/>',
-  sunMoon:'<circle cx="9" cy="9" r="3.4"/><path d="M9 2.6v1.8M9 13.6v1.8M2.6 9h1.8M13.6 9h1.8M4.2 4.2l1.3 1.3M12.5 12.5l1.3 1.3M13.8 4.2l-1.3 1.3M5.5 12.5l-1.3 1.3"/><path d="M19.6 19.4a4.6 4.6 0 01-3.2-7.9 3.9 3.9 0 003.2 7.9z"/>'
+  sunMoon:'<circle cx="8" cy="8" r="3.4"/><path d="M8 1.8v1.8M8 12.4v1.8M1.8 8h1.8M12.4 8h1.8M3.5 3.5l1.3 1.3M11.2 11.2l1.3 1.3M12.5 3.5l-1.3 1.3M4.8 11.2l-1.3 1.3"/><path d="M20.6 19.4a5 5 0 01-6.2-6.6 4.2 4.2 0 006.2 6.6z"/>'
 };
-const ic = (k, cls='') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${I[k]||I.grid}</svg>`;
+const ic = (k, cls='') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${I[k]||I.grid}</svg>`;
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ==========================================================================
    2) أدوات عامة
    ========================================================================== */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const esc = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = (p='x') => p + Math.random().toString(36).slice(2, 9);
 const AR_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const AR_MONTHS = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
