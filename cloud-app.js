@@ -22,7 +22,8 @@ const CloudApp = (() => {
   let timer = null;
   let pushing = false;
   let pullCount = 0;
-  const PUSH_KEYS = ['threads', 'messages', 'homeworks', 'subLinks', 'students'];
+  const PUSH_KEYS = ['threads', 'messages', 'homeworks', 'subLinks', 'students', 'blockedStudents'];
+  const KV_KEYS = ['threads', 'messages', 'subLinks', 'homeworks', 'weekly', 'notifications', 'settings', 'blockedStudents'];
 
   const H = () => ({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' });
   const base = () => cfg.url.replace(/\/$/, '');
@@ -137,9 +138,18 @@ const CloudApp = (() => {
       messages.push({
         id: m.id, thread_id: thId, from: m.sender === 'student' ? 'me' : 'staff',
         text: m.body || '', at: m.created_at, sender_name: m.sender_name || '',
+        /* المرفقات (صور وملفات) تُنقل كما هي — تظهر للطرفين */
+        ...(Array.isArray(m.attachments) && m.attachments.length ? { attachments: m.attachments } : {}),
         ...(m.edited ? { edited: true } : {})
       });
     });
+
+    /* حجب الدرجات: قرار الإدارة يخفي الدرجات اليومية والشهرية للطالب في التطبيق */
+    const blockedStudents = live(g('blockedStudents')).map(b => ({
+      id: b.id, student_id: b.student_id, student_name: b.student_name || '',
+      school_id: b.school_id || null, reason: b.reason || '',
+      blocked_at: b.blocked_at || b.created_at || new Date().toISOString()
+    }));
 
     /* الإشعارات: لكل طالب ما يخصه، وللمدرس ما يخصه */
     const notifications = [];
@@ -215,6 +225,7 @@ const CloudApp = (() => {
       schools, grades, sections, subjects, students, teachers, guardians,
       guardian: guardians[0] || null, homeworks, dailyExams, dailyGrades, monthlyGrades,
       weekly, monthlyExams, threads, messages, notifications, drivers, requests, about, absences,
+      blockedStudents,
       settings: {
         homeworkLock: { enabled: !!org.homeworkLock?.enabled, time: org.homeworkLock?.time || '20:00' },
         chatLock: { enabled: !!org.chatLock?.enabled, note: org.chatLock?.note || '' },
@@ -263,7 +274,7 @@ const CloudApp = (() => {
         id: m.id, thread_id: m.thread_id,
         sender: m.from === 'me' ? 'student' : 'admin',
         sender_name: m.from === 'me' ? ((db.students.find(s => 'th_a_' + s.id === m.thread_id) || {}).name || 'طالب') : 'إدارة المدرسة',
-        body: m.text || '', attachments: [], created_at: m.at, read_at: null,
+        body: m.text || '', attachments: (Array.isArray(m.attachments) ? m.attachments : []), created_at: m.at, read_at: null,
         ...(m.edited ? { edited: true, edited_at: m.edited_at || m.at } : {})
       }))
       .concat([...tombMsg].filter(id => !delMsg.has(id)).map(id => ({ id, is_deleted: true, deleted_at: new Date().toISOString() })));
@@ -337,7 +348,7 @@ const CloudApp = (() => {
     if (!enabled || pushing || typeof DB === 'undefined' || !DB.ready) return;
     pushing = true;
     try {
-      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + ['threads', 'messages', 'subLinks', 'homeworks', 'weekly', 'notifications', 'settings'].map(k => '"' + k + '"').join(',') + ')');
+      const need = await rest('/rest/v1/kv?select=key,value&key=in.(' + KV_KEYS.map(k => '"' + k + '"').join(',') + ')');
       const cur = {};
       (need || []).forEach(r => { cur[r.key] = r.value || []; });
       const conv = toDashboard(DB, cur);

@@ -40,10 +40,11 @@
 </div>
 <script>
 const EXPECT = {
-  'app.html': 367024,
-  'cloud-app.js': 26209,
+  'app.html': 513288,
+  'app-standalone.html': 540747,
+  'cloud-app.js': 26993,
   'sw.js': 3544,
-  'dashboard.html': 1921321,
+  'dashboard.html': 1936848,
   'cloud-config.js': 537,
   'manifest.webmanifest': 1002
 };
@@ -83,7 +84,7 @@ async function run() {
     v.innerHTML = `⚠️ التطبيق محدّث، لكن ${bad} ملف ناقص أو قديم — ارفع الملفات الحمراء.`;
   } else {
     v.className = 'verdict r';
-    v.innerHTML = `❌ ${bad} ملف من 6 غير محدّث.<br>ارفع ملفات الحزمة الجديدة (app.html · cloud-app.js · sw.js · dashboard.html) ثم أعد الفحص.`;
+    v.innerHTML = `❌ ${bad} ملف من ${Object.keys(EXPECT).length} غير محدّث.<br>ارفع ملفات الحزمة الجديدة (app.html · cloud-app.js · sw.js · dashboard.html) ثم أعد الفحص.`;
   }
 }
 run();

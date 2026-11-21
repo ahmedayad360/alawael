@@ -374,7 +374,7 @@ table.tbl tbody tr.clickable{cursor:pointer}
 .bubble .msg-act{display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); border-radius:9px; padding:4px 9px; font-size:10.5px; font-weight:800; font-family:inherit; cursor:pointer}
 .bubble .msg-act:hover{color:var(--blue); border-color:var(--blue)}
 .bubble .msg-act svg{width:11px; height:11px}
-.chat-input{border-top:1px solid var(--line); padding:12px 14px; display:flex; gap:9px; align-items:flex-end; background:var(--surface)}
+.chat-input{border-top:1px solid var(--line); padding:12px 14px; display:flex; gap:9px; align-items:flex-end; background:var(--surface); flex-wrap:wrap}
 .chat-input textarea{flex:1; border:none; background:var(--surface-2); border-radius:13px; padding:11px 13px; resize:none; min-height:44px; max-height:120px; outline:none; font-weight:600; border:1.5px solid transparent}
 .chat-input textarea:focus{border-color:var(--blue); background:var(--surface)}
 .unread-ping{position:fixed; inset-block-start:78px; inset-inline-end:24px; z-index:120}
@@ -482,6 +482,19 @@ table.tbl tbody tr.clickable{cursor:pointer}
 .thumb-wrap button svg{width:12px;height:12px}
 .att-chip{display:inline-flex; align-items:center; gap:5px; background:var(--surface-2); border:1px solid var(--line); padding:4px 9px; border-radius:9px; font-size:11px; font-weight:700}
 .att-chip svg{width:13px;height:13px; color:var(--blue)}
+/* مرفقات الدردشة: صور مصغّرة وملفات قابلة للفتح */
+.bubble .att-thumb{width:104px; height:104px; padding:0; border-radius:13px; overflow:hidden; border:1px solid var(--line); background:var(--surface-2); cursor:pointer; display:block}
+.bubble .att-thumb img{width:100%; height:100%; object-fit:cover; display:block}
+.bubble.out .att-thumb{border-color:rgba(255,255,255,.4)}
+.bubble .att-file{cursor:pointer; font-family:inherit; font-size:11px}
+.bubble .att-file:hover{border-color:var(--blue)}
+.bubble.out .att-file{background:rgba(255,255,255,.2); color:#fff; border-color:rgba(255,255,255,.32)}
+.bubble.out .att-file svg{color:#fff}
+.att-pending-row{width:100%; display:flex; gap:6px; flex-wrap:wrap; padding:2px 0 2px}
+.att-pending-row .att-chip{align-items:center}
+.att-x{display:inline-grid; place-items:center; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,.08); color:inherit; border:none; padding:0; cursor:pointer}
+.att-x svg{width:10px; height:10px; color:inherit}
+.chat-input:has(.att-pending-row){flex-wrap:wrap}
 .perm-text{background:var(--ok-bg); border:1px solid color-mix(in srgb,var(--ok) 30%,transparent); color:color-mix(in srgb,var(--ok) 80%,#000); padding:14px 16px; border-radius:14px; font-weight:700; line-height:1.8; font-size:13.5px}
 [data-theme="dark"] .perm-text{color:var(--ok)}
 .ro-cell{background:var(--violet-bg); color:var(--violet); font-weight:800; border:1.5px dashed color-mix(in srgb,var(--violet) 40%,transparent); border-radius:11px; padding:9px 11px; text-align:center; font-family:var(--font-num)}
@@ -1075,6 +1088,75 @@ async function compressImage(file, maxDim = 900, quality = 0.72) {
   } catch { return { name: file.name, size: file.size, dataUrl }; }
 }
 
+/* --------------------- مرفقات الدردشة (صور + ملفات) ----------------------
+   حدود الحجم: الصور 2 م.ب، والملفات الأخرى 5 م.ب — مطابقة لتطبيق الجوال */
+const ATTACH_MAX = { image: 2 * 1024 * 1024, file: 5 * 1024 * 1024 };
+const fmtFileSize = (b) => {
+  const n = Number(b) || 0;
+  if (n < 1024) return n + ' بايت';
+  if (n < 1048576) return Math.round(n / 1024) + ' ك.ب';
+  return (n / 1048576).toFixed(1) + ' م.ب';
+};
+const isImageFile = (f) => !!(f && ((f.type && String(f.type).indexOf('image/') === 0) || /\.(png|jpe?g|gif|webp|bmp|heic|heif)$/i.test(f.name || '')));
+/* يحوّل ملفاً مختاراً إلى مرفق جاهز للإرسال (نفس صيغة تطبيق الجوال) */
+async function prepChatAttachment(file) {
+  const name = file.name || 'ملف';
+  if (isImageFile(file)) {
+    const c = await compressImage(file);
+    if (c.size > ATTACH_MAX.image) throw new Error(`حجم الصورة «${name}» يتجاوز ${fmtFileSize(ATTACH_MAX.image)}`);
+    return { type: 'image', name, size: c.size, mime: 'image/jpeg', url: c.dataUrl };
+  }
+  if ((file.size || 0) > ATTACH_MAX.file) throw new Error(`حجم الملف «${name}» يتجاوز ${fmtFileSize(ATTACH_MAX.file)}`);
+  const url = await readFileAsDataURL(file);
+  return { type: 'file', name, size: file.size || 0, mime: file.type || '', url };
+}
+/* مرفق → blob لفتحه أو تنزيله */
+function attToBlob(a) {
+  try {
+    const s = String((a && a.url) || '');
+    const i = s.indexOf(',');
+    if (i < 0) return null;
+    const head = s.slice(0, i), b64 = s.slice(i + 1);
+    const mime = (head.match(/data:([^;]+)/) || [])[1] || (a && a.mime) || 'application/octet-stream';
+    const bin = atob(b64); const arr = new Uint8Array(bin.length);
+    for (let i2 = 0; i2 < bin.length; i2++) arr[i2] = bin.charCodeAt(i2);
+    return new Blob([arr], { type: mime });
+  } catch (e) { return null; }
+}
+/* معاينة صورة بملء الشاشة داخل اللوحة */
+function showImageViewer(url, name) {
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `<div class="modal narrow" style="background:transparent;border:none;box-shadow:none;padding:0">
+      <div style="position:relative">
+        <img src="${esc(url)}" alt="${esc(name || '')}" style="display:block;max-width:100%;max-height:78vh;border-radius:14px;margin:0 auto">
+        <button class="btn xs" data-close style="position:absolute;top:10px;inset-inline-start:10px">إغلاق</button>
+      </div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.onclick = (e) => { if (e.target === ov || e.target.closest('[data-close]')) close(); };
+}
+/* فتح/تنزيل مرفق قادم من التطبيق */
+function openChatAttachment(a) {
+  if (!a || !a.url) { toast('تعذّر فتح المرفق', 'err'); return; }
+  if (a.type === 'image') { showImageViewer(a.url, a.name); return; }
+  const blob = attToBlob(a);
+  if (!blob) { toast('تعذّر فتح المرفق', 'err'); return; }
+  downloadBlob(blob, a.name || 'ملف');
+}
+
+/* عرض مرفق داخل فقاعة الرسالة: صورة مصغّرة قابلة للفتح، أو ملف قابل للتنزيل */
+function attBubbleHtml(a, msgId, idx) {
+  if (!a) return '';
+  const isImg = a.type === 'image' && a.url;
+  if (isImg) {
+    return `<button class="att-thumb" data-att="${idx}" data-msg="${esc(msgId || '')}" title="${esc(a.name || 'صورة')}">
+      <img src="${esc(a.url)}" alt="${esc(a.name || 'صورة')}"></button>`;
+  }
+  return `<button class="att-chip att-file" data-att="${idx}" data-msg="${esc(msgId || '')}" title="${esc(a.name || 'مرفق')}">
+      ${icon('fileText')} ${esc(a.name || 'مرفق')}${a.size ? ` · ${fmtFileSize(a.size)}` : ''}</button>`;
+}
+
 /* ------------------------------ الإشعارات (Toast) ------------------------ */
 function toast(msg, type = 'info', ms = 3200) {
   let host = $('#toasts');
@@ -1226,7 +1308,7 @@ const STORE_PREFIX = 'sms.v3.';
 const COLLECTIONS = ['schools', 'grades', 'sections', 'subjects', 'students', 'guardians', 'guardianStudents',
   'teachers', 'teacherAssignments', 'weekly', 'monthly', 'homeworks', 'exams', 'dailyGrades', 'monthlyGrades',
   'absences', 'announcements', 'scheduledNotices', 'threads', 'messages', 'permits', 'notifications', 'audit', 'settings',
-  'subAreas', 'subscriptions', 'subLinks'];
+  'subAreas', 'subscriptions', 'subLinks', 'blockedStudents'];
 
 /* ------------------------------- التخزين -------------------------------- */
 const Storage = {
@@ -1799,6 +1881,32 @@ class LocalStorageAdapter {
   async getStudent(id) {
     const s = this.db.students.find(x => x.id === id && !x.is_deleted);
     return s ? { ...s } : null;
+  }
+  /* ---- حجب الدرجات: يخفي الدرجات اليومية والشهرية عن الطالب في تطبيقه ---- */
+  async listBlockedStudents({ schoolId, q } = {}) {
+    return this._alive('blockedStudents')
+      .filter(b => (!schoolId || b.school_id === schoolId) && arMatch(b.student_name, q))
+      .sort((a, b) => (b.blocked_at || '').localeCompare(a.blocked_at || '')).map(b => ({ ...b }));
+  }
+  async isStudentBlocked(studentId) {
+    return !!this.db.blockedStudents.find(x => x.student_id === studentId && !x.is_deleted);
+  }
+  async blockStudent({ studentId, studentName, schoolId, reason, actor }) {
+    const exist = this.db.blockedStudents.find(x => x.student_id === studentId && !x.is_deleted);
+    if (exist) return { ...exist };
+    const st = this.db.students.find(s => s.id === studentId);
+    if (!st && !studentName) throw new Error('الطالب غير موجود');
+    return this._add('blockedStudents', {
+      id: uid(), student_id: studentId,
+      student_name: (studentName || (st ? st.name : '')).trim(),
+      school_id: schoolId || (st ? st.school_id : null) || null,
+      reason: (reason || '').trim(),
+      blocked_by: actor || 'الإدارة',
+      blocked_at: new Date().toISOString(), is_deleted: false
+    });
+  }
+  async unblockStudent(id) {
+    return this._softDelete('blockedStudents', id);
   }
   _pinLength() { return this.db.settings?.find(x => x.key === 'org')?.login?.passwordLength || 4; }
   async _newAccount(scope) {
@@ -2765,7 +2873,8 @@ const DAL = (() => {
     'saveAttendance', 'addAnnouncement', 'deleteAnnouncement', 'sendMessage', 'updateMessage', 'deleteMessage', 'markThreadRead', 'markThreadReviewed', 'broadcastMessage',
     'addPermit', 'markNotificationRead', 'markAllNotificationsRead', 'logAudit', 'saveSettings',
     'deleteStudents', 'notifyStudents', 'notifyGradeStudents', 'notifyTeachers', 'addTeachersBulk', 'addTeacherAssignments',
-    'removeTeacherAssignment', 'updateExam', 'publishExamGrades', 'receiveMessage', 'updateHomework', 'deleteHomeworks', 'updateAnnouncement', 'deleteAnnouncements', 'notifyTeachers', 'addTeachersBulk', 'reorderSubjects', 'updateAccount', 'resetAreas', 'reorderStudents', 'resetStudentOrder', 'saveScheduledNotice', 'setScheduledStatus', 'deleteScheduledNotice', 'runDueSchedules', 'nextRunOf']);
+    'removeTeacherAssignment', 'updateExam', 'publishExamGrades', 'receiveMessage', 'updateHomework', 'deleteHomeworks', 'updateAnnouncement', 'deleteAnnouncements', 'notifyTeachers', 'addTeachersBulk', 'reorderSubjects', 'updateAccount', 'resetAreas', 'reorderStudents', 'resetStudentOrder', 'saveScheduledNotice', 'setScheduledStatus', 'deleteScheduledNotice', 'runDueSchedules', 'nextRunOf',
+    'blockStudent', 'unblockStudent']);
 
   const api = { onChange(fn) { subs.add(fn); return () => subs.delete(fn); }, use(next) { adapter = next; emit({ type: 'adapter', name: next.name }); }, get adapterName() { return adapter.name; } };
   const METHODS = ['listSchools', 'getSchool', 'updateSchool', 'listGrades', 'saveGrade', 'reorderGrades', 'deleteGrade', 'listSections',
@@ -2783,7 +2892,8 @@ const DAL = (() => {
     'notifyTeachers', 'addTeachersBulk',
     'listSubAreas', 'addSubArea', 'deleteSubArea', 'listSubscriptions', 'saveSubscription', 'deleteSubscription',
     'setSubscriptionStatus', 'homeworkLockState', 'chatLockState',
-    'listSubLinks', 'requestSubLink', 'respondSubLink', 'linkSubStudent', 'deleteSubLink'];
+    'listSubLinks', 'requestSubLink', 'respondSubLink', 'linkSubStudent', 'deleteSubLink',
+    'listBlockedStudents', 'isStudentBlocked', 'blockStudent', 'unblockStudent'];
   METHODS.forEach(m => {
     api[m] = async (...args) => {
       await adapter.init();
@@ -2877,6 +2987,7 @@ const App = {
         { id: 'homeworkLog', label: 'سجل الواجبات', icon: 'archive' },
         { id: 'dailyGrades', label: 'الدرجات اليومية', icon: 'chart' },
         { id: 'monthlyGrades', label: 'الدرجات الشهرية', icon: 'chartPie' },
+        { id: 'gradeBlock', label: 'حجب الدرجات', icon: 'lock' },
         { id: 'absences', label: 'الغيابات', icon: 'fileText' }
       ]
     },
@@ -7164,7 +7275,7 @@ App.sections.chat = {
               ${m.auto ? '<span class="auto-lbl">رد آلي — يحتاج مراجعة الموظف</span>' : ''}
               <div style="font-size:10.5px;font-weight:800;opacity:.75;margin-bottom:3px">${esc(m.sender_name)}</div>
               ${esc(m.body)}
-              ${(m.attachments || []).length ? `<div class="att">${m.attachments.map(a => `<span class="att-chip" style="background:rgba(255,255,255,.2);color:inherit">${icon(a.type === 'pdf' ? 'fileText' : 'image')} ${esc(a.name || 'مرفق')}</span>`).join('')}</div>` : ''}
+              ${(m.attachments || []).length ? `<div class="att">${m.attachments.map((a, ai) => attBubbleHtml(a, m.id, ai)).join('')}</div>` : ''}
               <span class="time">${fmtTime(m.created_at)} ${m.broadcast ? '· رسالة جماعية' : ''}${m.edited ? ' · عُدّلت' : ''}</span>
               <div class="msg-acts">
                 ${m.sender === 'admin' && !m.auto ? `<button class="msg-act" data-editmsg="${m.id}" title="تعديل الرسالة">${icon('edit')} تعديل</button>` : ''}
@@ -7175,10 +7286,11 @@ App.sections.chat = {
           ${chatLock.enabled ? `<div class="chat-input" style="justify-content:center;background:var(--danger-bg);border-top:1px solid var(--line)">
             <span class="muted bold small" style="display:flex;align-items:center;gap:8px">${icon('lock')} الدردشة موقوفة — لا يمكن إرسال رسائل. فعّلها من الإعدادات أو من الزر أعلى الصفحة.</span>
           </div>` : `<div class="chat-input">
-            <textarea id="msgBox" placeholder="اكتب الرد… (نص، أو أرفق صوراً/PDF)" rows="1"></textarea>
+            <div id="attPending" class="att-pending-row" style="display:none"></div>
+            <textarea id="msgBox" placeholder="اكتب الرد… (نص، أو أرفق صورة أو ملفاً)" rows="1"></textarea>
             <button class="icon-btn" id="attBtn" title="إرفاق ملف أو صورة" style="box-shadow:none">${icon('link')}</button>
             <button class="btn" id="sendBtn">${icon('send')} إرسال</button>
-            <input type="file" id="attInput" accept="image/*,application/pdf" multiple hidden>
+            <input type="file" id="attInput" multiple hidden>
           </div>`}` : `<div class="chat-pane">${emptyState('اختر محادثة من القائمة', 'message')}</div>`}
         </div>
       </div>`;
@@ -7215,13 +7327,24 @@ App.sections.chat = {
 
       const attachments = [];
       if ($('#msgBox', host)) {
+        /* شريط المرفقات المعلّقة — يظهر أعلى صندوق الكتابة */
+        const paintPending = () => {
+          const box = $('#attPending', host); if (!box) return;
+          if (!attachments.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+          box.style.display = '';
+          box.innerHTML = attachments.map((a, i) => `<span class="att-chip">${icon(a.type === 'image' ? 'image' : 'fileText')} ${esc(a.name || 'مرفق')} · ${fmtFileSize(a.size)}
+              <button class="att-x" data-rmatt="${i}" title="حذف">${icon('x')}</button></span>`).join('');
+          $$('[data-rmatt]', box).forEach(b => b.onclick = () => { attachments.splice(+b.dataset.rmatt, 1); paintPending(); });
+        };
         $('#attBtn', host).onclick = () => $('#attInput', host).click();
         $('#attInput', host).onchange = async (e) => {
           for (const f of [...e.target.files]) {
-            if (f.type === 'application/pdf') attachments.push({ type: 'pdf', name: f.name, url: '#' });
-            else { const c = await compressImage(f); attachments.push({ type: 'image', name: c.name, url: c.dataUrl }); }
+            try { attachments.push(await prepChatAttachment(f)); }
+            catch (err) { toast(err.message || 'تعذّر إرفاق الملف', 'err', 4000); }
           }
-          toast(`أُرفق ${attachments.length} ملف — سيُرسل مع الرد`, 'ok', 2200);
+          e.target.value = '';
+          paintPending();
+          if (attachments.length) toast(`أُرفق ${attachments.length} ملف — سيُرسل مع الرد`, 'ok', 2200);
         };
         const send = async () => {
           const text = $('#msgBox', host).value.trim();
@@ -7234,6 +7357,12 @@ App.sections.chat = {
         $('#sendBtn', host).onclick = send;
         $('#msgBox', host).onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); };
       }
+      /* فتح المرفقات القادمة من تطبيق الطالب (صور + ملفات) */
+      $$('[data-att]', host).forEach(el => el.onclick = () => {
+        const m = messages.find(x => x.id === el.dataset.msg);
+        const a = m && (m.attachments || [])[+el.dataset.att];
+        if (a) openChatAttachment(a);
+      });
       $$('[data-editmsg]', host).forEach(b => b.onclick = async () => {
         const m = messages.find(x => x.id === b.dataset.editmsg); if (!m) return;
         openModal({
@@ -7821,6 +7950,133 @@ App.sections.settings = {
       DataTools.bind(host);
       $$('[data-go-admin]', host).forEach(b => b.onclick = () => App.go('adminAccount'));
     };
+    draw();
+  }
+};
+
+
+/* ============================================================================
+   23-sections-gradeblock.js — حجب الدرجات
+   يتيح للوحة منع طالب من رؤية درجاته اليومية والشهرية في تطبيقه.
+   البحث بالاسم، مع أزرار الحجب ورفع الحجب.
+   ========================================================================== */
+'use strict';
+
+App.sections.gradeBlock = {
+  title: 'حجب الدرجات', crumb: 'المتابعة اليومية', icon: 'lock',
+  render(host) {
+    const st = { q: '' };
+
+    const draw = async () => {
+      if (!App.requireSchool(host)) return;
+      const students = await DAL.listStudents({ schoolId: App.schoolId });
+      const blocked = await DAL.listBlockedStudents({ schoolId: App.schoolId });
+      const blockedIds = new Set(blocked.map(b => b.student_id));
+      const q = st.q.trim();
+      /* الطلبة غير المحجوبين المطابقون للبحث */
+      const candidates = students.filter(s => !blockedIds.has(s.id) && (!q || arMatch(s.name, q)));
+      const shown = q ? candidates : candidates.slice(0, 40);
+      const shownBlocked = q ? blocked.filter(b => arMatch(b.student_name, q)) : blocked;
+
+      host.innerHTML = `
+      <div class="notice mb-16">${icon('info')}<div>
+        <b>حجب الدرجات</b> — عند حجب طالب تُخفى عنه <b>الدرجات اليومية</b> و<b>الدرجات الشهرية</b> في تطبيق الطالب فقط،
+        ويظهر له بدلها إشعار «درجاته محجوبة». ولا يؤثر ذلك على بقية الطلبة ولا على سجلات المدرسة.
+      </div></div>
+
+      <div class="card mb-16">
+        <div class="card-body" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+          ${field('ابحث باسم الطالب', `<input class="input" id="gbQ" placeholder="اكتب اسم الطالب…" value="${esc(st.q)}" style="min-width:260px">`)}
+          <div class="spacer"></div>
+          <span class="pill blue">${fmtNum(blocked.length)} طالب محجوب</span>
+          <span class="pill">${fmtNum(students.length)} طالب في المدرسة</span>
+          ${st.q ? `<button class="btn ghost" id="gbClear">${icon('x')} مسح البحث</button>` : ''}
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1.25fr 1fr;gap:16px;align-items:start">
+        <div class="card">
+          <div class="card-head"><h3>${icon('users')} طلبة المدرسة${q ? ' — نتائج البحث' : ''}</h3>
+            <div class="end"><span class="pill">${fmtNum(shown.length)} معروض</span></div></div>
+          <div class="card-body" style="padding:0">
+            ${shown.length ? `<div class="table-wrap" style="border:none">
+              <table class="tbl">
+                <thead><tr><th style="width:52px">#</th><th>اسم الطالب</th><th style="width:150px">الصف والشعبة</th><th style="width:120px">الكود</th><th style="width:120px">إجراء</th></tr></thead>
+                <tbody>
+                  ${shown.map((s, i) => `<tr>
+                    <td class="num-cell muted">${i + 1}</td>
+                    <td><b>${esc(s.name)}</b></td>
+                    <td class="muted" style="font-size:11.5px;font-weight:600">${esc(App.gradeName(s.grade_id))} — شعبة ${esc(App.sectionName(s.section_id))}</td>
+                    <td class="muted" style="font-size:11.5px;font-weight:700">${esc(s.code || '—')}</td>
+                    <td><button class="btn xs danger" data-block="${s.id}" data-name="${esc(s.name)}">${icon('lock')} حجب</button></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>` : emptyState(q ? 'لا يوجد طالب بهذا الاسم' : 'كل الطلبة محجوبون — ارفع الحجب من القائمة المجاورة', 'users')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>${icon('lock')} المحجوبون</h3>
+            <div class="end"><span class="pill danger">${fmtNum(shownBlocked.length)}</span></div></div>
+          <div class="card-body" style="padding:0">
+            ${shownBlocked.length ? shownBlocked.map(b => `<div class="audit-row" style="padding:12px 16px;align-items:flex-start">
+              <div class="ico" style="background:var(--danger-bg);color:var(--danger)">${icon('lock')}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;font-size:12.5px">${esc(b.student_name)}</div>
+                <div class="muted" style="font-size:11px;font-weight:600;margin-top:3px">
+                  ${b.reason ? esc(b.reason) : 'بدون سبب محدد'} · ${esc(b.blocked_by || 'الإدارة')} · ${relTime(b.blocked_at)}
+                </div>
+              </div>
+              <button class="btn xs ghost" data-unblock="${b.id}" style="color:var(--ok)">${icon('unlock')} رفع</button>
+            </div>`).join('') : emptyState('لا يوجد طلاب محجوبون', 'unlock')}
+          </div>
+        </div>
+      </div>`;
+
+      const qi = $('#gbQ', host);
+      qi.oninput = debounce((e) => { st.q = e.target.value; draw(); const again = $('#gbQ', host); if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); } }, 260);
+      $('#gbClear', host)?.addEventListener('click', () => { st.q = ''; draw(); });
+
+      $$('[data-block]', host).forEach(b => b.onclick = async () => {
+        const id = b.dataset.block, name = b.dataset.name;
+        openModal({
+          title: 'حجب درجات طالب', size: 'narrow',
+          body: `<div class="notice warn mb-12">${icon('lock')}<div>
+              سيُخفى عن «<b>${esc(name)}</b>» في تطبيقه كل <b>الدرجات اليومية</b> و<b>الدرجات الشهرية</b>،
+              ويظهر له بدلها إشعار «درجاته محجوبة». لا يتأثر بقية الطلبة.
+            </div></div>
+            ${field('سبب الحجب (اختياري — يظهر للطالب)', `<input class="input" id="gbReason" placeholder="مثال: قيد المراجعة مع ولي الأمر">`)}`,
+          footer: `<button class="btn ghost" data-no>إلغاء</button><button class="btn danger" id="gbBlockOk">${icon('lock')} حجب الدرجات</button>`,
+          onMount(ov, close) {
+            ov.querySelector('[data-no]').onclick = close;
+            ov.querySelector('#gbBlockOk').onclick = async () => {
+              const reason = ($('#gbReason', ov)?.value || '').trim();
+              await DAL.blockStudent({ studentId: id, studentName: name, schoolId: App.schoolId, reason, actor: App.user?.name || 'الإدارة' });
+              await DAL.logAudit({ action: 'حجب درجات طالب', detail: name + (reason ? ' — ' + reason : '') });
+              close();
+              toast(`تم حجب درجات «${name}»`, 'ok');
+              draw();
+            };
+          }
+        });
+      });
+
+      $$('[data-unblock]', host).forEach(b => b.onclick = async () => {
+        const rec = blocked.find(x => x.id === b.dataset.unblock);
+        const name = rec ? rec.student_name : 'الطالب';
+        const ok = await confirmModal({
+          title: 'رفع الحجب', danger: false, iconName: 'unlock', confirmText: 'رفع الحجب',
+          message: `سيعود «${name}» إلى رؤية درجاته اليومية والشهرية في تطبيقه. هل تريد المتابعة؟`
+        });
+        if (!ok) return;
+        await DAL.unblockStudent(b.dataset.unblock);
+        await DAL.logAudit({ action: 'رفع حجب درجات طالب', detail: name });
+        toast(`تم رفع الحجب عن «${name}»`, 'ok');
+        draw();
+      });
+    };
+
     draw();
   }
 };
