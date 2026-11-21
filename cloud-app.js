@@ -53,12 +53,20 @@ const CloudApp = (() => {
     const assigns = live(g('teacherAssignments'));
     const teachers = live(g('teachers')).map(t => {
       const as = assigns.filter(a => a.teacher_id === t.id);
+      /* المدرس عام: قد يدرّس عدة مواد في عدة مدارس — نُبقي الإسنادات كاملة */
+      const assignments = as.map(a => ({
+        school_id: a.school_id || t.school_id, subject_id: a.subject_id,
+        grade_id: a.grade_id, section_id: a.section_id
+      })).filter(a => a.subject_id || a.section_id);
       return {
         id: t.id, name: t.name, school_id: t.school_id, code: t.code,
         password: t.pw_plain || t.password || '',
         subject_id: as[0]?.subject_id || null,
         grade_id: as[0]?.grade_id || null,
-        section_ids: [...new Set(as.map(a => a.section_id).filter(Boolean))]
+        section_ids: [...new Set(as.map(a => a.section_id).filter(Boolean))],
+        subject_ids: [...new Set(as.map(a => a.subject_id).filter(Boolean))],
+        school_ids: [...new Set(as.map(a => a.school_id || t.school_id).filter(Boolean))],
+        assignments
       };
     });
 
@@ -176,7 +184,8 @@ const CloudApp = (() => {
       id: x.id, name: x.name, phone: x.phone || '', car_type: x.car_type || '',
       car_number: x.car_number || x.plate || x.car_no || '',
       areas: (x.area_ids || []).map(id => (live(g('subAreas')).find(a => a.id === id) || {}).name).filter(Boolean),
-      seats: x.seats || 0,
+      seats: x.seats || x.max_students || 0,
+      max_students: x.max_students || 0,
       /* كود السائق قد يكون بريده الإلكتروني (email) — نستخدمه ككود دخول */
       code: x.code || x.email || '', email: x.email || '',
       password: x.pw_plain || x.password || '',
@@ -184,7 +193,15 @@ const CloudApp = (() => {
     }));
     const requests = links.map(l => ({
       id: l.id, driver_id: l.subscription_id, student_id: l.student_id, status: l.status || 'pending',
-      at: l.created_at, guardian_phone: (students.find(s => s.id === l.student_id) || {}).guardian_phone || ''
+      at: l.created_at || l.at || l.decided_at || null,
+      /* رقم ولي الأمر: من طلب الطالب نفسه (الرابط) أولاً، ثم من ملف الطالب */
+      guardian_phone: l.guardian_phone || (students.find(s => s.id === l.student_id) || {}).guardian_phone || ''
+    }));
+
+    /* الغيابات: سجلات غياب/عذر لكل طالب (تُعرض في التطبيق) */
+    const absences = live(g('absences')).map(a => ({
+      id: a.id, student_id: a.student_id, section_id: a.section_id, school_id: a.school_id,
+      date: a.date, type: a.type || 'absent', recorded_at: a.recorded_at || a.created_at || ''
     }));
 
     const org = (g('settings').find(x => x.key === 'org')) || {};
@@ -197,7 +214,7 @@ const CloudApp = (() => {
     return {
       schools, grades, sections, subjects, students, teachers, guardians,
       guardian: guardians[0] || null, homeworks, dailyExams, dailyGrades, monthlyGrades,
-      weekly, monthlyExams, threads, messages, notifications, drivers, requests, about,
+      weekly, monthlyExams, threads, messages, notifications, drivers, requests, about, absences,
       settings: {
         homeworkLock: { enabled: !!org.homeworkLock?.enabled, time: org.homeworkLock?.time || '20:00' },
         chatLock: { enabled: !!org.chatLock?.enabled, note: org.chatLock?.note || '' },
@@ -205,6 +222,10 @@ const CloudApp = (() => {
           enabled: !!(org.autoReply && org.autoReply.enabled),
           text: (org.autoReply && org.autoReply.text) || '',
           cooldownHours: (org.autoReply && Number(org.autoReply.cooldownHours) > 0) ? Number(org.autoReply.cooldownHours) : 2
+        },
+        /* الدرجة العظمى للدرجات الشهرية (يحددها الأدمن من اللوحة) */
+        grading: {
+          maxMark: (org.grading && Number(org.grading.maxMark) > 0) ? Number(org.grading.maxMark) : 100
         },
         /* حساب الإدارة: يُستخدم للدخول إلى لوحة الإدارة من مربع الطالب */
         admin: {

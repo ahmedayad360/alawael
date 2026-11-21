@@ -1148,6 +1148,224 @@ html[data-theme="light"] #phone{ background:var(--bg) }
 html[data-theme="light"]{
   --glass:rgba(255,255,255,.86);
 }
+
+/* ============================================================
+   الجيل الثالث — تصميم أزرق مجسّم (3D Blue) + زجاج عميق
+   ============================================================ */
+:root{
+  --grad-blue:linear-gradient(135deg,#3B82F6 0%,#2563EB 48%,#1D4ED8 100%);
+  --grad-blue-soft:linear-gradient(135deg,rgba(59,130,246,.20),rgba(29,78,216,.10));
+  --grad-sheen:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,0) 58%);
+  --raise:0 1px 0 rgba(255,255,255,.10) inset, 0 -1px 0 rgba(0,0,0,.20) inset, 0 14px 30px rgba(3,12,34,.42);
+}
+/* ---------- الخلفية: شبكة تدرّجات زرقاء ثلاثية الأبعاد ---------- */
+html[data-theme="dark"] body{ background:#04070E }
+html[data-theme="dark"] #phone{
+  background:
+    radial-gradient(70% 42% at 86% -6%, rgba(59,130,246,.55) 0%, rgba(6,12,26,0) 60%),
+    radial-gradient(62% 40% at 6% 4%, rgba(37,99,235,.42) 0%, rgba(6,12,26,0) 62%),
+    radial-gradient(90% 55% at 50% 108%, rgba(14,52,130,.55) 0%, rgba(4,7,14,0) 62%),
+    linear-gradient(180deg,#0A1630 0%, #060C1B 52%, #03060D 100%);
+}
+/* بورقة ضوئية خفيفة فوق الخلفية */
+html[data-theme="dark"] #phone::after{
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(46% 26% at 50% -8%, rgba(147,197,253,.20), transparent 70%),
+    radial-gradient(30% 18% at 92% 22%, rgba(96,165,250,.12), transparent 70%);
+  mix-blend-mode:screen;
+}
+html[data-theme="dark"] #app{ position:relative; z-index:1 }
+
+/* ---------- البطاقات: حواف مضيئة + ظل أزرق ---------- */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .list{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.085) 0%,rgba(255,255,255,.035) 42%,rgba(255,255,255,.02) 100%),
+    linear-gradient(150deg,rgba(37,99,235,.20),rgba(9,18,40,.30) 62%);
+  border:1px solid rgba(140,180,255,.16);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.14) inset,
+    0 -14px 30px rgba(3,10,28,.35) inset,
+    0 16px 36px rgba(2,8,24,.55),
+    0 2px 6px rgba(2,8,24,.40);
+  backdrop-filter:blur(16px) saturate(125%);
+  -webkit-backdrop-filter:blur(16px) saturate(125%);
+}
+/* ---------- الأزرار: مجسّمة بتدرّج أزرق ---------- */
+.btn{
+  position:relative; overflow:hidden;
+  background:var(--grad-blue); color:#fff; border:0;
+  box-shadow:0 1px 0 rgba(255,255,255,.34) inset, 0 -2px 0 rgba(9,40,110,.55) inset, 0 10px 22px rgba(29,78,216,.34);
+  transition:transform .12s cubic-bezier(.32,.72,0,1), box-shadow .12s;
+}
+.btn::before{
+  content:''; position:absolute; inset:0 0 auto 0; height:52%;
+  background:var(--grad-sheen); pointer-events:none;
+}
+.btn:active{ transform:translateY(2px) scale(.985); box-shadow:0 1px 0 rgba(255,255,255,.20) inset, 0 3px 10px rgba(29,78,216,.30) }
+.btn.soft{
+  background:linear-gradient(135deg,rgba(59,130,246,.22),rgba(29,78,216,.14));
+  color:var(--blue); box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 6px 16px rgba(4,20,60,.28);
+}
+html[data-theme="dark"] .btn.soft{ color:#BFDBFE }
+.btn.ghost{ background:transparent; box-shadow:none; border:1.5px solid var(--blue-line); color:var(--blue) }
+.btn.ghost::before{ display:none }
+.btn:disabled{ opacity:.45; box-shadow:none }
+
+/* ---------- الأيقونات المستديرة ---------- */
+.icon-btn{
+  background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.04));
+  border:1px solid rgba(180,210,255,.16);
+  box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 8px 18px rgba(3,12,34,.40);
+}
+html[data-theme="dark"] .icon-btn{ color:#BFDBFE }
+html[data-theme="light"] .icon-btn{ background:#fff; box-shadow:0 1px 0 #fff inset, 0 6px 16px rgba(16,48,110,.12) }
+.icon-btn.plain{ box-shadow:none; background:transparent; border-color:transparent }
+
+/* ---------- البلاطات (Tile) ---------- */
+.tile{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.03) 60%),
+    linear-gradient(150deg,rgba(30,64,140,.55),rgba(8,16,36,.55));
+  border:1px solid rgba(150,190,255,.18);
+  box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 14px 26px rgba(2,8,24,.48);
+  transition:transform .14s cubic-bezier(.32,.72,0,1), box-shadow .14s;
+}
+.tile:active{ transform:translateY(2px) scale(.975); box-shadow:0 1px 0 rgba(255,255,255,.10) inset, 0 5px 12px rgba(2,8,24,.42) }
+.tile .ti{
+  background:var(--grad-blue); color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 8px 16px rgba(29,78,216,.42);
+  border-radius:16px;
+}
+html[data-theme="light"] .tile{
+  background:linear-gradient(180deg,#FFFFFF 0%,#F3F8FF 100%);
+  border:1px solid #E2ECFB;
+  box-shadow:0 1px 0 #fff inset, 0 10px 24px rgba(20,60,140,.10);
+}
+html[data-theme="light"] body{ background:linear-gradient(180deg,#F5F9FF 0%,#EEF4FD 100%) }
+html[data-theme="light"] #phone{
+  background:
+    radial-gradient(70% 40% at 92% -4%, rgba(147,197,253,.55) 0%, rgba(244,248,255,0) 62%),
+    radial-gradient(60% 34% at 4% 2%, rgba(191,219,254,.55) 0%, rgba(244,248,255,0) 60%),
+    linear-gradient(180deg,#F7FAFF 0%,#EDF3FC 100%);
+}
+
+/* ---------- البطاقة الترحيبية (Hero) ---------- */
+.hero{
+  position:relative; overflow:hidden;
+  background:var(--grad-blue);
+  box-shadow:0 1px 0 rgba(255,255,255,.30) inset, 0 18px 38px rgba(20,64,160,.42);
+  border:1px solid rgba(160,200,255,.24);
+}
+.hero::after{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(60% 80% at 88% -20%, rgba(255,255,255,.42), transparent 62%),
+    linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%);
+}
+.hero > *{ position:relative; z-index:1 }
+
+/* ---------- شريط التبويبات ---------- */
+.tabbar{
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(10,20,42,.55)) !important;
+  border:1px solid rgba(150,190,255,.20) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.16) inset, 0 -10px 30px rgba(2,8,24,.55) !important;
+  backdrop-filter:blur(20px) saturate(130%);
+  -webkit-backdrop-filter:blur(20px) saturate(130%);
+}
+html[data-theme="light"] .tabbar{
+  background:rgba(255,255,255,.92) !important;
+  border:1px solid #E4EDFB !important;
+  box-shadow:0 1px 0 #fff inset, 0 -8px 24px rgba(20,60,140,.10) !important;
+}
+.tabbar button.on{ background:linear-gradient(135deg,rgba(59,130,246,.24),rgba(29,78,216,.14)) }
+html[data-theme="light"] .tabbar button.on{ background:var(--blue-soft) }
+
+/* ---------- الفواصل والحقول ---------- */
+html[data-theme="dark"] .input, html[data-theme="dark"] textarea, html[data-theme="dark"] select{
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03));
+  border-color:rgba(150,190,255,.16);
+  box-shadow:0 1px 0 rgba(0,0,0,.25) inset;
+}
+html[data-theme="dark"] .input:focus, html[data-theme="dark"] textarea:focus{
+  border-color:rgba(96,165,250,.75);
+  box-shadow:0 0 0 4px rgba(59,130,246,.18), 0 1px 0 rgba(0,0,0,.25) inset;
+}
+
+/* ---------- نمط العرض: 3 خيارات (تلقائي/فاتح/داكن) ---------- */
+.theme-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(150,190,255,.16); border-radius:var(--r);
+  padding:12px 14px; margin-bottom:12px;
+  box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 12px 26px rgba(2,8,24,.40);
+}
+html[data-theme="light"] .theme-card{
+  background:#fff; border:1px solid #E4EDFB;
+  box-shadow:0 1px 0 #fff inset, 0 8px 20px rgba(20,60,140,.08);
+}
+.seg3{ display:flex; gap:6px; background:rgba(4,12,30,.45); border-radius:14px; padding:4px; border:1px solid rgba(150,190,255,.14) }
+html[data-theme="light"] .seg3{ background:#EEF3FB; border-color:#E1EAF8 }
+.seg3 .seg-btn{
+  flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
+  padding:9px 4px; border-radius:11px; font-size:12px; font-weight:800; color:var(--secondary);
+  transition:all .16s cubic-bezier(.32,.72,0,1);
+}
+.seg3 .seg-btn svg{ width:15px; height:15px }
+.seg3 .seg-btn.on{
+  background:var(--grad-blue); color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.30) inset, 0 6px 14px rgba(29,78,216,.40);
+}
+html[data-theme="light"] .seg3 .seg-btn.on{ background:var(--grad-blue); color:#fff }
+
+/* ---------- شبكة البلاطات: صفوف متساوية بلا تزحلق ---------- */
+.tiles{ align-items:stretch }
+.tile{ min-height:92px; align-content:center }
+
+/* ---------- البلاطات في الداكن: زجاج أزرق مجسّم ---------- */
+html[data-theme="dark"] .tile{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 55%),
+    linear-gradient(155deg,rgba(37,99,235,.30) 0%,rgba(10,22,48,.55) 62%);
+  border:1px solid rgba(140,180,255,.20);
+  backdrop-filter:blur(18px) saturate(130%);
+  -webkit-backdrop-filter:blur(18px) saturate(130%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.16) inset,
+    0 -10px 20px rgba(2,8,24,.35) inset,
+    0 14px 28px rgba(2,8,24,.55);
+}
+html[data-theme="dark"] .tile b{ color:#DCE8FF }
+html[data-theme="light"] .tile b{ color:var(--label) }
+
+/* ---------- لمسات 3D صغيرة ---------- */
+html[data-theme="dark"] .pill{ box-shadow:0 1px 0 rgba(255,255,255,.10) inset }
+html[data-theme="dark"] .hw, html[data-theme="dark"] .bubble.in{
+  box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 10px 24px rgba(2,8,24,.42);
+}
+html[data-theme="dark"] .bubble.out{
+  background:var(--grad-blue);
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 10px 22px rgba(29,78,216,.40);
+}
+html[data-theme="dark"] .sec-title{ color:#9FB6DC }
+/* أيقونات البلاطات في الداكن: تدرّج أزرق مضيء */
+html[data-theme="dark"] .tile .ti{
+  background:linear-gradient(160deg,rgba(96,165,250,.62),rgba(29,78,216,.34));
+  color:#EAF2FF;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset, 0 -2px 6px rgba(0,0,0,.35) inset, 0 8px 16px rgba(3,12,34,.45);
+}
+html[data-theme="dark"] .tile.y .ti{
+  background:linear-gradient(160deg,rgba(255,197,61,.60),rgba(240,165,0,.28)); color:#FFF1CB;
+}
+html[data-theme="dark"] .tile.b .ti,
+html[data-theme="dark"] .tile.n .ti{
+  background:linear-gradient(160deg,rgba(96,165,250,.55),rgba(37,99,235,.28)); color:#EAF2FF;
+}
+html[data-theme="dark"] .row .ri{
+  background:linear-gradient(160deg,rgba(59,130,246,.34),rgba(29,78,216,.16));
+  color:#BFDBFE; box-shadow:0 1px 0 rgba(255,255,255,.20) inset;
+}
+html[data-theme="dark"] .row .ri.y{ background:linear-gradient(160deg,rgba(255,197,61,.34),rgba(240,165,0,.14)); color:#FFD772 }
 </style>
 </head>
 <body>
@@ -1173,10 +1391,17 @@ html[data-theme="light"]{
 <script>
 'use strict';
 window.__splashAt = Date.now();
-/* النمط: داكن افتراضياً — يمكن تغييره من داخل التطبيق */
+/* النمط: تلقائي (نهاراً فاتح / ليلاً داكن) — ويمكن تثبيته من الإعدادات */
 try {
-  const t = localStorage.getItem('alawael.theme');
-  document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  var _m = localStorage.getItem('alawael.themeMode');
+  if (_m !== 'light' && _m !== 'dark' && _m !== 'auto') {
+    var _old = localStorage.getItem('alawael.theme');
+    _m = (_old === 'light' || _old === 'dark') ? _old : 'auto';
+  }
+  var _h = new Date().getHours();
+  var _t = _m === 'auto' ? ((_h >= 18 || _h < 6) ? 'dark' : 'light') : _m;
+  document.documentElement.setAttribute('data-theme', _t);
+  document.documentElement.setAttribute('data-mode', _m);
 } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
 /* ==========================================================================
    1) الأيقونات
@@ -1227,7 +1452,9 @@ const I = {
   checkCircle:'<circle cx="12" cy="12" r="8.6"/><path d="M8.4 12.2l2.5 2.5 4.7-4.8"/>',
   filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
   school:'<path d="M12 3l9 4.5h-18L12 3z"/><path d="M4.5 10.5h15v9h-15z"/><path d="M2.8 19.5h18.4M9.6 19.5v-5.2h4.8v5.2"/>',
-  layers:'<path d="M12 3.4l8.4 4.2L12 11.8 3.6 7.6 12 3.4z"/><path d="M3.6 12l8.4 4.2L20.4 12M3.6 16.2L12 20.4l8.4-4.2"/>'
+  layers:'<path d="M12 3.4l8.4 4.2L12 11.8 3.6 7.6 12 3.4z"/><path d="M3.6 12l8.4 4.2L20.4 12M3.6 16.2L12 20.4l8.4-4.2"/>',
+  sync:'<path d="M20.4 11.2a8.4 8.4 0 00-14.6-4.6L3.6 8.8"/><path d="M3.6 4.6v4.2h4.2"/><path d="M3.6 12.8a8.4 8.4 0 0014.6 4.6l2.2-2.2"/><path d="M20.4 19.4v-4.2h-4.2"/>',
+  sunMoon:'<circle cx="9" cy="9" r="3.4"/><path d="M9 2.6v1.8M9 13.6v1.8M2.6 9h1.8M13.6 9h1.8M4.2 4.2l1.3 1.3M12.5 12.5l1.3 1.3M13.8 4.2l-1.3 1.3M5.5 12.5l-1.3 1.3"/><path d="M19.6 19.4a4.6 4.6 0 01-3.2-7.9 3.9 3.9 0 003.2 7.9z"/>'
 };
 const ic = (k, cls='') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${I[k]||I.grid}</svg>`;
 
@@ -1248,12 +1475,15 @@ const dayIdx = (iso) => new Date(iso + 'T12:00:00').getDay();
 const fmtDate = (iso) => { if (!iso) return '—'; const d = new Date(iso + (iso.length === 10 ? 'T12:00:00' : '')); return `${d.getDate()} ${AR_MONTHS[d.getMonth()]}`; };
 const fmtTime = (iso) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const rel = (iso) => {
-  const s = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (!iso) return '—';
+  const t = new Date(iso).getTime();
+  if (isNaN(t)) return '—';
+  const s = (Date.now() - t) / 1000;
   if (s < 60) return 'الآن';
   if (s < 3600) return `قبل ${Math.floor(s/60)} د`;
   if (s < 86400) return `قبل ${Math.floor(s/3600)} س`;
   if (s < 604800) return `قبل ${Math.floor(s/86400)} ي`;
-  return fmtDate(iso.slice(0,10));
+  return fmtDate(String(iso).slice(0, 10));
 };
 const debounce = (fn, ms = 260) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const arMatch = (hay, needle) => {
@@ -1285,9 +1515,10 @@ const PERIOD_LABEL = id => (PERIODS.find(p => p.id === id) || {}).label || id;
 function seed() {
   const d = { schools: [], grades: [], sections: [], subjects: [], students: [], teachers: [], guardians: [], guardian: null,
     homeworks: [], dailyExams: [], dailyGrades: [], monthlyGrades: [], weekly: {}, monthlyExams: [],
-    threads: [], messages: [], notifications: [], drivers: [], requests: [], about: {},
+    threads: [], messages: [], notifications: [], drivers: [], requests: [], about: {}, absences: [],
     settings: { homeworkLock: { enabled: true, time: '20:00' }, chatLock: { enabled: false },
-      autoReply: { enabled: false, text: '', cooldownHours: 2 } }, audit: [] };
+      autoReply: { enabled: false, text: '', cooldownHours: 2 },
+      grading: { maxMark: 100 } }, audit: [] };
 
   d.schools = [
     { id: 's1', name: 'ابتدائية الأوائل', stage: 'ابتدائي' },
@@ -1555,6 +1786,10 @@ const Q = {
   }),
   examGrade: (examId, studentId) => DB.dailyGrades.find(g => g.exam_id === examId && g.student_id === studentId)?.value ?? null,
   monthGrade: (studentId, subjectId, period) => DB.monthlyGrades.find(g => g.student_id === studentId && g.subject_id === subjectId && g.period === period)?.value ?? null,
+  /* الغيابات: سجلات الطالب مرتبة من الأحدث */
+  absencesOf: (sid) => (DB.absences || []).filter(a => a.student_id === sid)
+    .slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))),
+  absenceCount: (sid) => (DB.absences || []).filter(a => a.student_id === sid && a.type !== 'excused').length,
 
   /* الجدول الأسبوعي — يقبل شكل اللوحة { "0-0": subjectId } أو شكل التطبيق (مصفوفة أيام) */
   weeklyFor(sectionId) {
@@ -1725,7 +1960,13 @@ const Q = {
   pushMany(list, type, title, body) { list.forEach(to => Q.push(to, type, title, body)); },
 
   requestsFor: (driverId) => DB.requests.filter(r => r.driver_id === driverId),
-  driversInArea: (area) => DB.drivers.filter(d => d.areas.some(a => arMatch(a, area)))
+  /* السائق الممتلئ (بلغ عدد الطلاب المسموح) يختفي من بحث الطلبة */
+  driversInArea: (area) => DB.drivers.filter(d => {
+    if (!d.areas.some(a => arMatch(a, area))) return false;
+    const max = d.max_students || d.seats || 0;
+    if (max > 0 && (d.students || []).length >= max) return false;
+    return true;
+  })
 };
 /* ==========================================================================
    5) واجهة عامة
@@ -1907,8 +2148,8 @@ function navbar({ title, sub, back = false, right = '' }) {
   </div>`;
 }
 function themeBtn() {
-  const dark = currentTheme() === 'dark';
-  return `<button class="icon-btn plain theme-btn" data-theme-toggle="1" aria-label="نمط العرض">${ic(dark ? 'sun' : 'moon')}</button>`;
+  const mode = themeMode(), t = resolveTheme(mode);
+  return `<button class="icon-btn plain theme-btn" data-theme-toggle="1" aria-label="نمط العرض (${mode})" title="${mode === 'auto' ? 'تلقائي' : (t === 'dark' ? 'داكن' : 'فاتح')}">${ic(mode === 'auto' ? 'sync' : themeIcon(t))}</button>`;
 }
 function bellBtn() {
   const n = Q.unread(App.notifOwner());
@@ -1936,20 +2177,82 @@ function subjChip(subjectId) {
   return `<span class="pill blue">${ic('book','svg-i')} ${esc(s?.name || '—')}</span>`;
 }
 
-/* ---------- نمط العرض: داكن / فاتح ---------- */
-function currentTheme() {
-  try { return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'; } catch (e) { return 'dark'; }
+/* ---------- نمط العرض: تلقائي (ليل/نهار) / فاتح / داكن ---------- */
+/* الليل من 18:00 حتى 06:00 — التطبيق يبدّل تلقائياً دون تدخل المستخدم */
+const AUTO_NIGHT_FROM = 18, AUTO_DAY_FROM = 6;
+
+function themeMode() {
+  try {
+    const m = localStorage.getItem('alawael.themeMode');
+    if (m === 'light' || m === 'dark' || m === 'auto') return m;
+  } catch (e) {}
+  /* توافق مع الإصدار السابق: من اختار نمطاً يدوياً يبقى عليه */
+  try {
+    const old = localStorage.getItem('alawael.theme');
+    if (old === 'light' || old === 'dark') return old;
+  } catch (e) {}
+  return 'auto';
 }
-function setTheme(t) {
-  try { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('alawael.theme', t); } catch (e) {}
-  App.render();
+function autoTheme() {
+  const h = new Date().getHours();
+  return (h >= AUTO_NIGHT_FROM || h < AUTO_DAY_FROM) ? 'dark' : 'light';
 }
+function resolveTheme(mode) {
+  const m = mode || themeMode();
+  return m === 'auto' ? autoTheme() : m;
+}
+function currentTheme() { return resolveTheme(); }
+function applyTheme() {
+  const mode = themeMode(), t = resolveTheme(mode);
+  try {
+    document.documentElement.setAttribute('data-theme', t);
+    document.documentElement.setAttribute('data-mode', mode);
+    localStorage.setItem('alawael.theme', t);
+    localStorage.setItem('alawael.themeMode', mode);   /* ثبّت الوضع المختار */
+    const mc = document.querySelector('meta[name="theme-color"]');
+    if (mc) mc.setAttribute('content', t === 'dark' ? '#070C18' : '#0A6BFF');
+  } catch (e) {}
+  return t;
+}
+function setTheme(mode) {
+  try { localStorage.setItem('alawael.themeMode', mode); } catch (e) {}
+  applyTheme();
+  if (typeof App !== 'undefined' && App.render) App.render();
+}
+function setThemeMode(mode) { setTheme(mode); }
+/* تبديل سريع من زر الشريط: تلقائي ← فاتح ← داكن ← تلقائي */
+function cycleTheme() {
+  const order = ['auto', 'light', 'dark'];
+  const next = order[(order.indexOf(themeMode()) + 1) % 3];
+  setTheme(next);
+  const names = { auto: 'تلقائي (نهاراً/ليلاً)', light: 'فاتح', dark: 'داكن' };
+  try { Toast('نمط العرض: ' + names[next], 'ok'); } catch (e) {}
+}
+/* فحص دوري: يبدّل النمط تلقائياً عند دخول الليل أو النهار */
+function startThemeWatcher() {
+  try {
+    setInterval(() => {
+      if (themeMode() !== 'auto') return;
+      if (resolveTheme('auto') === document.documentElement.getAttribute('data-theme')) return;
+      applyTheme();
+      if (typeof App !== 'undefined' && App.render && !App.asStudent) App.render();
+    }, 60000);
+    /* عند رجوع التطبيق إلى الواجهة */
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && themeMode() === 'auto') applyTheme(); });
+  } catch (e) {}
+}
+function themeIcon(t) { return t === 'dark' ? 'moon' : 'sun'; }
 function themeRow() {
-  const dark = currentTheme() === 'dark';
-  return `<button class="row theme-row" data-theme-toggle="1">
-    <div class="ri y">${ic(dark ? 'moon' : 'sun')}</div>
-    <div class="rt"><b>نمط العرض</b><span>${dark ? 'داكن — الوضع الحالي' : 'فاتح — الوضع الحالي'}</span></div>
-    <span class="pill ${dark ? '' : 'y'}">${dark ? 'داكن' : 'فاتح'}</span></button>`;
+  const mode = themeMode(), t = resolveTheme(mode);
+  const seg = (id, label, icon) => `<button class="seg-btn ${mode === id ? 'on' : ''}" data-theme-mode="${id}">${ic(icon, 'svg-i')} ${label}</button>`;
+  return `<div class="theme-card">
+    <div class="row" style="gap:10px;padding:2px 2px 10px">
+      <div class="ri y">${ic(themeIcon(t))}</div>
+      <div class="rt"><b>نمط العرض</b><span>${mode === 'auto' ? `تلقائي — الآن ${t === 'dark' ? 'داكن (ليل)' : 'فاتح (نهار)'}` : (t === 'dark' ? 'داكن — ثابت' : 'فاتح — ثابت')}</span></div>
+    </div>
+    <div class="seg3">${seg('auto', 'تلقائي', 'sync')}${seg('light', 'فاتح', 'sun')}${seg('dark', 'داكن', 'moon')}</div>
+    <div class="hint" style="margin-top:8px">«تلقائي» يبدّل النمط وحده: داكن بعد 6 مساءً وفاتح من 6 صباحاً.</div>
+  </div>`;
 }
 
 /* ==========================================================================
@@ -2077,7 +2380,7 @@ function renderStudentApp() {
   const st = studentOf();
   if (!st) return renderGuardianHome();
   const r = App.route;
-  const map = { home: studentHome, homework: studentHomework, grades: studentGrades, chat: studentChat,
+  const map = { home: studentHome, homework: studentHomework, grades: studentGrades, absences: studentAbsences, chat: studentChat,
     thread: studentThread, schedule: studentSchedule, monthSchedule: studentMonthSchedule,
     subs: studentSubs, about: studentAbout, notifs: studentNotifs, more: studentMore };
   $('#app').innerHTML = (map[r] || studentHome)(st);
@@ -2117,6 +2420,7 @@ function studentHome(st) {
         ${TILE('calendarGrid','الجدول اليومي','b','schedule')}
         ${TILE('calendar','الجدول الشهري','y','monthSchedule')}
         ${TILE('chat','الدردشة','b','chat', (typeof Q.unreadMsgs === 'function' ? Q.unreadMsgs() : 0))}
+        ${TILE('alert','الغيابات','y','absences', (typeof Q.absenceCount === 'function' ? Q.absenceCount(st.id) : 0))}
         ${TILE('car','الاشتراك','y','subs')}
         ${TILE('building','عن المدرسة','n','about')}
         ${TILE('bell','الإشعارات','b','notifs', Q.unread('student'))}
@@ -2191,6 +2495,37 @@ function studentHomework(st) {
         : empty('clip', 'لا توجد واجبات في هذا اليوم', 'اختر يوماً آخر من الأعلى')}
     </div>
     ${tabbar(STUDENT_TABS, 'homework')}
+  </div>`;
+}
+
+/* ---------- الغيابات ---------- */
+function studentAbsences(st) {
+  const list = (typeof Q.absencesOf === 'function' ? Q.absencesOf(st.id) : []);
+  const absent = list.filter(a => a.type !== 'excused').length;
+  const excused = list.filter(a => a.type === 'excused').length;
+  return `<div class="screen">
+    ${navbar({ title: 'الغيابات', sub: 'سجل غيابك في المدرسة', back: true, right: `${themeBtn()}${bellBtn()}` })}
+    <div class="scroll">
+      <div class="hero">
+        <div class="h-top">
+          <div class="av">${ic('alert')}</div>
+          <div class="grow"><b class="nm">${esc(st.name)}</b><div class="sub">${esc(Q.label.school(st.school_id))}</div></div>
+        </div>
+        <div class="h-grid two">
+          <div><b>${absent}</b><span>أيام غياب</span></div>
+          <div><b>${excused}</b><span>أيام بعذر</span></div>
+        </div>
+      </div>
+      ${list.length ? `<div class="sec-title">سجل الغيابات</div>
+      <div class="list">
+        ${list.map(a => `<div class="row">
+          <div class="ri ${a.type === 'excused' ? '' : 'y'}">${ic(a.type === 'excused' ? 'check' : 'alert')}</div>
+          <div class="rt"><b>${a.type === 'excused' ? 'غائب بعذر' : 'غائب'}</b><span>${fmtDate(a.date)} · ${dayName(a.date)}</span></div>
+          <span class="pill ${a.type === 'excused' ? 'blue' : 'yellow'}">${a.type === 'excused' ? 'بعذر' : 'بدون عذر'}</span>
+        </div>`).join('')}
+      </div>` : empty('check', 'لا توجد أيام غياب', 'أنت منتظم في الحضور — استمر')}
+    </div>
+    ${tabbar(STUDENT_TABS, 'home')}
   </div>`;
 }
 
@@ -2422,7 +2757,7 @@ function studentSubs(st) {
         const areas = d.areas.map(a => '<span class="pill ' + (arMatch(a, q) ? 'blue' : 'gray') + '">' + esc(a) + '</span>').join('');
         return '<div class="driver"><div class="d-top"><div class="d-av">' + ic('car') + '</div>'
           + '<div class="grow"><b>' + esc(d.name) + '</b><span>' + esc(d.car_type) + '</span></div>'
-          + '<span class="pill yellow">' + d.seats + ' مقعداً</span></div>'
+          + '<span class="pill yellow">' + ((+d.seats > 0) ? (+d.seats + ' مقعداً') : 'مقاعد غير محدودة') + '</span></div>'
           + '<div class="d-areas">' + areas + '</div>'
           + '<div class="d-acts"><a class="btn ghost" href="tel:' + d.phone.replace(/\s/g, '') + '">' + ic('phone') + ' اتصال</a>'
           + '<button class="btn ' + (done ? 'ghost' : '') + '" data-add-driver="' + d.id + '"' + (done ? ' disabled' : '') + '>' + ic(done ? 'check' : 'plus') + ' ' + (done ? 'تم الإرسال' : 'إضافة') + '</button></div></div>';
@@ -2639,6 +2974,9 @@ function leaveDriver(st, reqId) {
 
 function addDriverRequest(st, driverId) {
   const d = Q.driver(driverId);
+  /* السائق الممتلئ لا يقبل طلبات جديدة */
+  const max = d.max_students || d.seats || 0;
+  if (max > 0 && (d.students || []).length >= max) return Toast('هذا السائق ممتلئ — اختر سائقاً آخر', 'err');
   Sheet.open({
     title: 'طلب الاشتراك مع السائق',
     sub: `${d.name} · ${d.car_type}`,
@@ -2681,10 +3019,15 @@ function bindCommon(ctx) {
     try { await PushSetup.enable(); } catch (err) { Toast('تعذّر تفعيل الإشعارات', 'err'); }
     App.render();
   };
-  /* تبديل نمط العرض (داكن/فاتح) */
+  /* تبديل نمط العرض: تلقائي ← فاتح ← داكن */
   $$('[data-theme-toggle]').forEach(b => b.onclick = (e) => {
     e.preventDefault(); e.stopPropagation();
-    setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+    cycleTheme();
+  });
+  /* اختيار النمط من صف الإعدادات */
+  $$('[data-theme-mode]').forEach(b => b.onclick = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    setTheme(b.dataset.themeMode);
   });
   /* شاشات الإشعارات: تُعلَّم مقروءة فور فتحها */
   if (App.route === 'notifs') setTimeout(() => { try { markNotifsRead(); } catch (e) {} }, 120);
@@ -2771,10 +3114,57 @@ function renderGuardianHome() {
 const TEACHER_TABS = [['home','home','الرئيسية'],['hw','clip','واجباتي'],['students','users','الطلبة'],['chat','chat','الدردشة'],['tsettings','gear','الإعدادات']];
 
 function teacherOf() { return Q.teacher(App.user.teacherId); }
-function teacherSections(t) { return (t.section_ids || []).map(id => Q.section(id)).filter(Boolean); }
+
+/* المدرس عام: إسنادات (مدرسة + مادة + صف + شعبة). متوافق مع المدرسين القدامى (مادة/شعبة واحدة) */
+function teacherAssignments(t) {
+  if (Array.isArray(t.assignments) && t.assignments.length) return t.assignments;
+  const subs = (t.subject_ids && t.subject_ids.length) ? t.subject_ids : (t.subject_id ? [t.subject_id] : []);
+  const secs = t.section_ids || [];
+  const schools = (t.school_ids && t.school_ids.length) ? t.school_ids : (t.school_id ? [t.school_id] : []);
+  const out = [];
+  if (secs.length) {
+    secs.forEach(sid => {
+      const sec = Q.section(sid);
+      out.push({ school_id: sec?.school_id || schools[0] || null, subject_id: subs[0] || null,
+        grade_id: sec?.grade_id || t.grade_id || null, section_id: sid });
+    });
+  } else {
+    subs.forEach(sub => out.push({ school_id: schools[0] || null, subject_id: sub, grade_id: t.grade_id || null, section_id: null }));
+  }
+  return out;
+}
+function teacherSubjectIds(t) {
+  const ids = (teacherAssignments(t) || []).map(a => a.subject_id).filter(Boolean);
+  if (!ids.length && t.subject_id) ids.push(t.subject_id);
+  return [...new Set(ids)];
+}
+function teacherSchoolIds(t) {
+  const ids = (teacherAssignments(t) || []).map(a => a.school_id).filter(Boolean);
+  if (!ids.length && t.school_id) ids.push(t.school_id);
+  return [...new Set(ids)];
+}
+function teacherSections(t) {
+  const ids = [...new Set((teacherAssignments(t) || []).map(a => a.section_id).filter(Boolean))];
+  return ids.map(id => Q.section(id)).filter(Boolean);
+}
 function teacherStudents(t) {
-  const ids = t.section_ids || [];
-  return DB.students.filter(s => ids.includes(s.section_id)).sort((a, b) => a.order - b.order);
+  const ids = teacherSections(t).map(s => s.id);
+  const seen = new Set();
+  return DB.students.filter(s => ids.includes(s.section_id))
+    .filter(s => (seen.has(s.id) ? false : seen.add(s.id)))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+/* شعب مادة معيّنة للمدرس (عند اختيار المادة أثناء إنشاء واجب) */
+function teacherSectionsFor(t, subjectId, gradeId) {
+  const as = teacherAssignments(t).filter(a => !subjectId || a.subject_id === subjectId);
+  const ids = as.map(a => a.section_id).filter(Boolean);
+  return teacherSections(t).filter(sec => ids.includes(sec.id) && (!gradeId || sec.grade_id === gradeId));
+}
+function teacherGradeIds(t) {
+  const fromAs = (teacherAssignments(t) || []).map(a => a.grade_id).filter(Boolean);
+  if (fromAs.length) return [...new Set(fromAs)];
+  const secs = teacherSections(t);
+  return [...new Set(secs.map(s => s.grade_id).filter(Boolean))];
 }
 
 function renderTeacherApp() {
@@ -2793,12 +3183,12 @@ function teacherHome(t) {
   const secs = teacherSections(t);
   const sts = teacherStudents(t);
   return `<div class="screen">
-    ${navbar({ title: `أهلاً ${t.name.replace('أ. ','')}`, sub: `${Q.subject(t.subject_id)?.name} · ${Q.label.grade(t.grade_id)}`, right: `${themeBtn()}${bellBtn()}` })}
+    ${navbar({ title: `أهلاً ${t.name.replace('أ. ','')}`, sub: `${teacherSubjectIds(t).map(id => Q.subject(id)?.name).filter(Boolean).join(' · ') || 'بلا مادة'} · ${teacherSchoolIds(t).length > 1 ? teacherSchoolIds(t).length + ' مدارس' : Q.label.school(teacherSchoolIds(t)[0])}`, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       <div class="hero">
         <div class="h-top"><div class="av">${ic('teacher')}</div>
-          <div class="grow"><b class="nm">${esc(t.name)}</b><div class="sub">${esc(Q.label.school(t.school_id))}</div></div></div>
-        <div class="h-grid"><div><b>${esc(Q.subject(t.subject_id)?.name)}</b><span>المادة</span></div>
+          <div class="grow"><b class="nm">${esc(t.name)}</b><div class="sub">${esc(teacherSchoolIds(t).map(id => Q.label.school(id)).join(' · '))}</div></div></div>
+        <div class="h-grid"><div><b>${esc(teacherSubjectIds(t).map(id => Q.subject(id)?.name).filter(Boolean).join(' · ') || '—')}</b><span>${teacherSubjectIds(t).length > 1 ? 'المواد' : 'المادة'}</span></div>
           <div><b>${secs.length}</b><span>شعبة</span></div>
           <div class="y"><b>${sts.length}</b><span>طالب</span></div></div>
       </div>
@@ -2843,11 +3233,11 @@ function teacherHW(t) {
 function teacherStudentsScreen(t) {
   const secs = teacherSections(t);
   return `<div class="screen">
-    ${navbar({ title: 'الطلبة', sub: `${Q.label.grade(t.grade_id)} — ${secs.length} شعبة`, back: true, right: `${themeBtn()}${bellBtn()}` })}
+    ${navbar({ title: 'الطلبة', sub: `${secs.length} شعبة · ${teacherSubjectIds(t).map(id => Q.subject(id)?.name).filter(Boolean).join(' · ') || '—'}`, back: true, right: `${themeBtn()}${bellBtn()}` })}
     <div class="scroll">
       ${secs.map(sec => {
         const sts = Q.studentsOf(sec.id);
-        return `<div class="sec-title">${esc(Q.label.grade(sec.grade_id))} — شعبة ${esc(sec.name)} <span class="chk-count">(${sts.length} طالب)</span></div>
+        return `<div class="sec-title">${esc(Q.label.grade(sec.grade_id))} — شعبة ${esc(sec.name)} <span class="chk-count">(${sts.length} طالب · ${esc(Q.label.school(sec.school_id))})</span></div>
         <div class="list">
           ${sts.map(s => `<div class="row">
             <div class="rt"><b>${esc(s.name)}</b><span>${esc(s.code)}</span></div>
@@ -2911,8 +3301,8 @@ function teacherSettings(t) {
     <div class="scroll">
       <div class="card">
         <div class="field"><label>الاسم</label><input class="input" value="${esc(t.name)}" disabled></div>
-        <div class="field"><label>المادة</label><input class="input" value="${esc(Q.subject(t.subject_id)?.name || '')}" disabled></div>
-        <div class="field"><label>المدرسة</label><input class="input" value="${esc(Q.label.school(t.school_id))}" disabled></div>
+        <div class="field"><label>المواد</label><input class="input" value="${esc(teacherSubjectIds(t).map(id => Q.subject(id)?.name).filter(Boolean).join(' · ') || '—')}" disabled></div>
+        <div class="field"><label>المدارس</label><input class="input" value="${esc(teacherSchoolIds(t).map(id => Q.label.school(id)).join(' · ') || '—')}" disabled></div>
         <div class="field"><label>كود الدخول</label><input class="input" value="${esc(t.code)}" disabled dir="ltr"></div>
       </div>
       <div class="list">${themeRow()}</div>
@@ -2920,7 +3310,7 @@ function teacherSettings(t) {
       <div class="list">
         ${secs.map(sec => `<div class="row">
           <div class="ri">${ic('layers')}</div>
-          <div class="rt"><b>${esc(Q.label.grade(sec.grade_id))}</b><span>شعبة ${esc(sec.name)} — ${Q.studentsOf(sec.id).length} طالب</span></div>
+          <div class="rt"><b>${esc(Q.label.grade(sec.grade_id))} — شعبة ${esc(sec.name)}</b><span>${esc(Q.label.school(sec.school_id))} · ${Q.studentsOf(sec.id).length} طالب · ${esc(teacherAssignments(t).filter(a => a.section_id === sec.id).map(a => Q.subject(a.subject_id)?.name).filter(Boolean).join(' / ') || '—')}</span></div>
         </div>`).join('') || `<div style="padding:14px" class="small muted bold">لا شعب</div>`}
       </div>
       <div class="note blue mt-16">${ic('lock')}<div>لا يمكن تعديل هذه البيانات من التطبيق — التعديل من إدارة المدرسة فقط.</div></div>
@@ -2938,24 +3328,42 @@ const teacherNotifs = () => notifsScreen(Q.notifs('teacher'), TEACHER_TABS, 'hom
 /* ---------- محرّر الواجب (مدرس + أدمن) ---------- */
 function homeworkEditor({ teacher = null, editing = null, onSave }) {
   const isAdmin = !teacher;
+  /* المدرس قد يدرّس عدة مواد/صفوف/مدارس — نعرض له موادّه وصفوفه فقط */
+  const tSubs = teacher ? teacherSubjectIds(teacher) : [];
+  const tGrades = teacher ? teacherGradeIds(teacher) : [];
+  const tSecs = teacher ? teacherSections(teacher) : [];
   const grades = isAdmin
     ? Q.gradesOf(App.schoolId)
-    : [Q.grade(teacher.grade_id)].filter(Boolean);
-  const startGrade = editing?.grade_id || grades.find(g => Q.studentsOfGrade(g.id).length)?.id || grades[0]?.id;
-  const startSecs = editing?.section_ids || (teacher ? teacher.section_ids : []);
+    : tGrades.map(id => Q.grade(id)).filter(Boolean);
+  const multiSub = isAdmin || tSubs.length > 1;
+  const subjOptions = isAdmin ? DB.subjects.map(x => x.id) : tSubs;
+  const startSubject = editing?.subject_id || (teacher && tSubs.includes(teacher.subject_id) ? teacher.subject_id : tSubs[0]) || '';
+  const gradeOfSub = (sid) => {
+    const as = (teacher ? teacherAssignments(teacher) : []).filter(a => !sid || a.subject_id === sid).map(a => a.grade_id).filter(Boolean);
+    return [...new Set(as)];
+  };
+  const startGrade = editing?.grade_id
+    || (teacher ? (gradeOfSub(startSubject).find(gid => grades.some(g => g.id === gid)) || grades.find(g => tSecs.some(sec => sec.grade_id === g.id && (!startSubject || teacherAssignments(teacher).some(a => a.subject_id === startSubject && a.section_id === sec.id))) )?.id) : null)
+    || grades.find(g => Q.studentsOfGrade(g.id).length)?.id || grades[0]?.id;
+  const startSecs = editing?.section_ids || (teacher ? tSecs.map(x => x.id) : []);
   Sheet.open({
     title: editing ? 'تعديل الواجب' : 'إضافة واجب',
     sub: 'اختر الصف ثم الشعب ثم تفاصيل الواجب',
     body: `
-      <div class="field"><label>${isAdmin ? 'الصف' : 'الصف (المادة: ' + esc(Q.subject(teacher.subject_id)?.name) + ')'}</label>
+      <div class="field"><label>${isAdmin ? 'الصف' : 'الصف' + (tSubs.length > 1 ? '' : ' (المادة: ' + esc(Q.subject(tSubs[0])?.name || '') + ')')}</label>
         <select class="input" id="hwGrade">
           ${grades.map(g => `<option value="${g.id}" ${g.id === startGrade ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}
         </select></div>
       <div class="field"><label>الشعب <span class="chk-count" id="secCount"></span></label>
         <div class="pick" id="hwSecs"></div>
         ${isAdmin ? '' : `<div class="hint">تظهر فقط الشعب التي تدرّسها.</div>`}</div>
-      ${isAdmin ? `<div class="field"><label>المادة</label><select class="input" id="hwSubject">
-        ${DB.subjects.map(s => `<option value="${s.id}" ${editing?.subject_id === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}
+      ${multiSub ? `<div class="field"><label>المادة</label><select class="input" id="hwSubject">
+        ${subjOptions.map(id => {
+          const nm = Q.subject(id)?.name || '—';
+          const sch = Q.subject(id)?.school_id;
+          const dup = subjOptions.filter(x => Q.subject(x)?.name === nm).length > 1;
+          return `<option value="${id}" ${startSubject === id ? 'selected' : ''}>${esc(nm)}${dup && sch ? ' — ' + esc(Q.label.school(sch)) : ''}</option>`;
+        }).join('')}
       </select></div>` : ''}
       <div class="field"><label>نص الواجب</label><textarea class="input" id="hwText" placeholder="اكتب نص الواجب…">${esc(editing?.text || '')}</textarea></div>
       <div class="field"><label>المرفقات</label>
@@ -2971,9 +3379,13 @@ function homeworkEditor({ teacher = null, editing = null, onSave }) {
       let images = editing?.images || 0;
       let pdf = editing?.pdf || '';
       const gSel = $('#hwGrade', ov), secBox = $('#hwSecs', ov);
+      const subSel = $('#hwSubject', ov);
+      const curSubject = () => (subSel ? subSel.value : (teacher ? (startSubject || teacher.subject_id) : ''));
       let picked = new Set(startSecs);
       const drawSecs = () => {
-        const secs = Q.sectionsOf(gSel.value).filter(s => !teacher || (teacher.section_ids || []).includes(s.id));
+        const sub = curSubject();
+        const secs = Q.sectionsOf(gSel.value).filter(sec => !teacher
+          || teacherSectionsFor(teacher, sub, gSel.value).some(x => x.id === sec.id));
         picked = new Set([...picked].filter(id => secs.some(s => s.id === id)));
         if (!picked.size) secs.forEach(s => picked.add(s.id));
         secBox.innerHTML = secs.map(s => `<div class="pick-row ${picked.has(s.id) ? 'on' : ''}" data-sec="${s.id}">
@@ -2988,6 +3400,7 @@ function homeworkEditor({ teacher = null, editing = null, onSave }) {
         $('#secCount', ov).textContent = `(${picked.size} مختارة)`;
       };
       gSel.onchange = drawSecs;
+      if (subSel && teacher) subSel.onchange = () => { picked.clear(); drawSecs(); };
       drawSecs();
       $('#hwImg', ov).onclick = () => { images = images ? 0 : 2; $('#hwImgT', ov).textContent = `صور (${images})`; };
       $('#hwPdf', ov).onclick = () => { pdf = pdf ? '' : 'ورقة عمل.pdf'; $('#hwPdfT', ov).textContent = pdf || 'PDF'; };
@@ -2998,7 +3411,7 @@ function homeworkEditor({ teacher = null, editing = null, onSave }) {
         onSave({
           grade_id: gSel.value, section_ids: [...picked], text, images, pdf,
           link: $('#hwLink', ov).value.trim(),
-          subject_id: isAdmin ? $('#hwSubject', ov).value : teacher.subject_id
+          subject_id: isAdmin ? $('#hwSubject', ov).value : (subSel ? subSel.value : (startSubject || teacher.subject_id))
         });
         close();
       };
@@ -3117,7 +3530,7 @@ function reqRow(r) {
 }
 
 function driverRequests(d) {
-  const all = Q.requestsFor(d.id).sort((a, b) => b.at.localeCompare(a.at));
+  const all = Q.requestsFor(d.id).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
   const pend = all.filter(r => r.status === 'pending');
   return `<div class="screen">
     ${navbar({ title: 'الطلبات', sub: `${pend.length} بانتظار قرارك`, back: true, right: `${themeBtn()}${bellBtn()}` })}
@@ -3514,9 +3927,10 @@ function adminGrades() {
 
 function openStudentGrades(student) {
   const period = App.params.period || 'm1';
+  const maxMark = (DB.settings && DB.settings.grading && DB.settings.grading.maxMark) || 100;
   Sheet.open({
     title: student.name,
-    sub: `${PERIOD_LABEL(period)} — ${Q.label.grade(student.grade_id)} / شعبة ${Q.label.section(student.section_id)}`,
+    sub: `${PERIOD_LABEL(period)} — ${Q.label.grade(student.grade_id)} / شعبة ${Q.label.section(student.section_id)} · الدرجة من ${maxMark}`,
     body: DB.subjects.map((s, i) => `<div class="field" style="display:flex;align-items:center;gap:10px;margin-bottom:9px">
         <label style="flex:1;margin:0;font-size:13px;color:var(--label)">${esc(s.name)}</label>
         <input class="input" data-gsub="${s.id}" inputmode="numeric" dir="ltr" style="width:88px;padding:10px;text-align:center"
@@ -3526,13 +3940,19 @@ function openStudentGrades(student) {
     onMount(ov, close) {
       $('#saveGrades', ov).onclick = () => {
         let saved = 0;
+        const bad = [];
         $$('[data-gsub]', ov).forEach(inp => {
           const raw = inp.value.trim(); if (raw === '') return;
-          const v = +raw; if (!(v >= 0 && v <= 100)) return;
+          const v = +raw;
+          if (!(v >= 0 && v <= maxMark)) { bad.push(inp); return; }
           let row = DB.monthlyGrades.find(g => g.student_id === student.id && g.subject_id === inp.dataset.gsub && g.period === period);
-          if (row) row.value = v; else DB.monthlyGrades.push({ student_id: student.id, subject_id: inp.dataset.gsub, period, value: v, max: 100 });
+          if (row) row.value = v; else DB.monthlyGrades.push({ student_id: student.id, subject_id: inp.dataset.gsub, period, value: v, max: maxMark });
           saved++;
         });
+        if (bad.length) {
+          bad.forEach(inp => { inp.style.borderColor = 'var(--red)'; inp.style.background = 'rgba(239,68,68,.12)'; });
+          Toast(`درجة أعلى من ${maxMark} — لم تُحفظ`, 'err'); return;
+        }
         if (saved) Q.push('student', 'grade', 'درجة جديدة', `${PERIOD_LABEL(period)} — تم تسجيل ${saved} درجة جديدة.`);
         Store.save(); close(); Toast('حُفظت الدرجات ✓', 'ok'); App.render();
       };
@@ -3553,12 +3973,17 @@ function openExamGrades(exam) {
     actions: `<button class="btn" id="saveExamGrades">${ic('check')} حفظ الدرجات</button>`,
     onMount(ov, close) {
       $('#saveExamGrades', ov).onclick = () => {
+        const bad = [];
         $$('[data-dgrade]', ov).forEach(inp => {
           const raw = inp.value.trim(); if (raw === '') return;
-          const v = +raw; if (!(v >= 0 && v <= exam.max)) return;
+          const v = +raw; if (!(v >= 0 && v <= exam.max)) { bad.push(inp); return; }
           let row = DB.dailyGrades.find(g => g.exam_id === exam.id && g.student_id === inp.dataset.dgrade);
           if (row) row.value = v; else DB.dailyGrades.push({ exam_id: exam.id, student_id: inp.dataset.dgrade, value: v });
         });
+        if (bad.length) {
+          bad.forEach(inp => { inp.style.borderColor = 'var(--red)'; inp.style.background = 'rgba(239,68,68,.12)'; });
+          Toast(`درجة أعلى من ${exam.max} — لم تُحفظ`, 'err'); return;
+        }
         Q.push('student', 'grade', `درجة جديدة — ${Q.subject(exam.subject_id)?.name}`, exam.name);
         Store.save(); close(); Toast('حُفظت الدرجات ✓', 'ok'); App.render();
       };
@@ -3606,7 +4031,7 @@ function openCellEditor(sectionId, dayIdx, periodIdx) {
       </select></div>
       <div class="field"><label>المدرس</label><select class="input" id="cellTeacher">
         <option value="">— بدون —</option>
-        ${teachers.map(t => `<option value="${t.id}" ${t.id === cell.teacher_id ? 'selected' : ''}>${esc(t.name)} — ${esc(Q.subject(t.subject_id)?.name)}</option>`).join('')}
+        ${teachers.map(t => `<option value="${t.id}" ${t.id === cell.teacher_id ? 'selected' : ''}>${esc(t.name)}${teacherSubjectIds(t).length ? ' — ' + esc(teacherSubjectIds(t).map(id => Q.subject(id)?.name).filter(Boolean).join(' / ')) : ''}</option>`).join('')}
       </select></div>`,
     actions: `<button class="btn" id="cellSave">${ic('check')} حفظ</button>`,
     onMount(ov, close) {
@@ -3876,8 +4301,11 @@ function adminAccounts() {
   let rows = '';
   if (kind === 'student') rows = DB.students.filter(s => s.school_id === App.schoolId).map(s =>
     accRow(s, `${Q.label.grade(s.grade_id)} · شعبة ${Q.label.section(s.section_id)}`)).join('');
-  if (kind === 'teacher') rows = DB.teachers.filter(t => t.school_id === App.schoolId).map(t =>
-    accRow(t, `${Q.subject(t.subject_id)?.name} · ${(t.section_ids || []).map(id => 'شعبة ' + Q.label.section(id)).join(' ')}`)).join('');
+  if (kind === 'teacher') rows = DB.teachers.map(t => {
+    const subs = teacherSubjectIds(t).map(id => Q.subject(id)?.name).filter(Boolean).join(' / ') || 'بلا مادة';
+    const secs = teacherSections(t).map(sec => 'شعبة ' + Q.label.section(sec.id) + ' (' + Q.label.school(sec.school_id) + ')').join(' ');
+    return accRow(t, `${subs} · ${secs}`);
+  }).join('');
   if (kind === 'guardian') rows = Q.guardians().map(g =>
     accRow(g, `${(g.student_ids || []).length} أبناء · ${g.relation || ''}`)).join('');
   if (kind === 'driver') rows = DB.drivers.map(d => accRow(d, `${d.car_type} · ${d.areas.join(' · ')}`)).join('');
@@ -4351,6 +4779,8 @@ const PushSetup = (() => {
    18) التهيئة
    ========================================================================== */
 (async function boot() {
+  /* نمط العرض أولاً (قبل أول رسم) — تلقائي نهاراً/ليلاً */
+  try { applyTheme(); startThemeWatcher(); } catch (e) {}
   Store.load();
   /* إن كانت المزامنة السحابية مفعّلة: اسحب بيانات اللوحة قبل أول رسم */
   try { if (typeof CloudApp !== 'undefined' && CloudApp.enabled) await CloudApp.boot(); } catch (e) { console.warn('[cloud]', e); }

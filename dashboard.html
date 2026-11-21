@@ -360,7 +360,7 @@ table.tbl tbody tr.clickable{cursor:pointer}
 .thread .pv{font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px}
 .thread .meta{margin-inline-start:auto; text-align:end; display:flex; flex-direction:column; gap:4px; align-items:flex-end}
 .thread .tm{font-size:10.5px; color:var(--muted); font-weight:700}
-.chat-pane{display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--sh-1)}
+.chat-pane{display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--sh-1); max-height:min(78vh,860px); min-height:520px}
 .chat-head{display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--surface-2)}
 .chat-body{flex:1; overflow:auto; padding:20px; display:flex; flex-direction:column; gap:12px; background:
   radial-gradient(circle at 20% 10%, color-mix(in srgb,var(--blue) 5%,transparent), transparent 45%), var(--surface-2)}
@@ -1957,10 +1957,13 @@ class LocalStorageAdapter {
       audit: ['audit']
     };
     const done = {};
+    const cleared = [];
     for (const a of areas) {
       const cols = map[a]; if (!cols) continue;
-      cols.forEach(c => { done[c] = (done[c] || 0) + (this.db[c]?.length || 0); this.db[c] = []; this._save(c); });
+      cols.forEach(c => { done[c] = (done[c] || 0) + (this.db[c]?.length || 0); this.db[c] = []; this._save(c); cleared.push(c); });
     }
+    /* إعلام المزامنة السحابية: التصفير مقصود — امسح السحابة أيضاً */
+    if (typeof Cloud !== 'undefined' && Cloud.forceEmpty) Cloud.forceEmpty(cleared);
     return done;
   }
 
@@ -2231,6 +2234,19 @@ class LocalStorageAdapter {
     return { count: students.length };
   }
   async saveGrades({ examId, entries }) {
+    /* التحقق من الدرجة العظمى: أي درجة أعلى من (من كم) تُرفض ولا تُحفظ */
+    const exam = this.db.exams.find(x => x.id === examId);
+    const grading = this.db.settings.find(x => x.key === 'org')?.grading || {};
+    const maxMark = (exam && (exam.max_mark || exam.max)) || grading.maxMark || 100;
+    for (const { studentId, value } of entries) {
+      const raw = String(value ?? '').trim();
+      if (!raw || /غائب|غياب/.test(raw)) continue;
+      const num = Number(raw);
+      if (isNaN(num) || num < 0 || num > maxMark) {
+        const st = this.db.students.find(x => x.id === studentId);
+        throw new Error(`درجة «${st ? st.name : studentId}» (${raw}) أعلى من الدرجة العظمى (${maxMark}) — لم تُحفظ`);
+      }
+    }
     entries.forEach(({ studentId, value }) => {
       let row = this.db.dailyGrades.find(g => g.exam_id === examId && g.student_id === studentId);
       if (!row) { row = { id: uid(), exam_id: examId, student_id: studentId }; this.db.dailyGrades.push(row); }
@@ -2252,6 +2268,18 @@ class LocalStorageAdapter {
   }
   async saveMonthlyGrades({ studentId, period, values, schoolId, manual = {} }) {
     // values: { subjectId: value } — manual: قيم الفترات المحسوبة/اليدوية
+    /* التحقق من الدرجة العظمى: أي درجة أعلى من (من كم) تُرفض ولا تُحفظ */
+    const grading = this.db.settings.find(x => x.key === 'org')?.grading || {};
+    const maxMark = grading.maxMark || 100;
+    for (const [subjectId, value] of Object.entries(values)) {
+      const raw = String(value ?? '').trim();
+      if (!raw || /غائب|غياب/.test(raw)) continue;
+      const num = Number(raw);
+      if (isNaN(num) || num < 0 || num > maxMark) {
+        const sub = this.db.subjects.find(x => x.id === subjectId);
+        throw new Error(`درجة «${sub ? sub.name : subjectId}» (${raw}) أعلى من الدرجة العظمى (${maxMark}) — لم تُحفظ`);
+      }
+    }
     Object.entries(values).forEach(([subjectId, value]) => {
       let row = this.db.monthlyGrades.find(g => g.student_id === studentId && g.subject_id === subjectId && g.period === period);
       if (!row) { row = { id: uid(), student_id: studentId, subject_id: subjectId, period, school_id: schoolId }; this.db.monthlyGrades.push(row); }
@@ -2592,6 +2620,8 @@ class LocalStorageAdapter {
         name, email, phone, area_ids: [...(data.area_ids || [])],
         car_type: String(data.car_type ?? r.car_type ?? '').trim(),
         car_number: String(data.car_number ?? r.car_number ?? '').trim(),
+        max_students: (data.max_students !== undefined && data.max_students !== null && data.max_students !== '')
+          ? Math.max(1, parseInt(data.max_students, 10) || 0) : 0,
         notes: String(data.notes || '').trim(), status: data.status || r.status || 'active',
         password: data.password || r.password, updated_at: new Date().toISOString()
       });
@@ -2602,6 +2632,7 @@ class LocalStorageAdapter {
       id: uid(), name, email, phone, password, area_ids: [...(data.area_ids || [])],
       car_type: String(data.car_type || '').trim(),
       car_number: String(data.car_number || '').trim(),
+      max_students: data.max_students ? Math.max(1, parseInt(data.max_students, 10) || 0) : 0,
       notes: String(data.notes || '').trim(), status: 'active',
       created_at: new Date().toISOString(), is_deleted: false
     });
@@ -3885,8 +3916,8 @@ const Cloud = {
           if (SHARED.includes(c)) {
             const merged = byId(cloud, rows);
             if (merged.length !== rows.length) { rows = merged; mergedAny = true; }
-          } else if (!rows.length) {
-            continue;                       // لا تمسح بيانات السحابة بمصفوفة فارغة
+          } else if (!rows.length && !this._forceEmpty?.has(c)) {
+            continue;                       // لا تمسح بيانات السحابة بمصفوفة فارغة (إلا عند التصفير المقصود)
           }
         }
         const json = JSON.stringify(rows);
@@ -3930,6 +3961,13 @@ const Cloud = {
   async pushAll() {
     this.lastPushed = {};
     await this.push();
+  },
+
+  /* التصفير المقصود: يسمح برفع مصفوفة فارغة لمجموعة (مسح السحابة أيضاً) */
+  forceEmpty(cols = []) {
+    this._forceEmpty = new Set([...(this._forceEmpty || []), ...cols]);
+    this.lastPushed = {};
+    this.queuePush();
   },
 
   /* ---------- السحب الدوري ---------- */
@@ -6194,6 +6232,11 @@ App.sections.dailyGrades = {
           const v = inp.value.trim();
           if (v) st.values[inp.dataset.st] = v; else delete st.values[inp.dataset.st];
           inp.classList.toggle('absent', /غائب|غياب/.test(v));
+          /* تلوين الحقل بالأحمر إذا تجاوز الدرجة العظمى */
+          const num = Number(v);
+          const over = v && !/غائب|غياب/.test(v) && (isNaN(num) || num < 0 || num > maxMark);
+          inp.style.borderColor = over ? 'var(--danger)' : '';
+          inp.style.background = over ? 'var(--danger-bg)' : '';
           st.dirty = true;
           const stEl = $('#gradeState', host);
           if (stEl) { stEl.className = 'pill warn'; stEl.textContent = 'غير محفوظ'; }
@@ -6210,14 +6253,18 @@ App.sections.dailyGrades = {
 
       $('#saveGrades', host)?.addEventListener('click', async () => {
         const entries = Object.entries(st.values).map(([studentId, value]) => ({ studentId, value }));
-        await DAL.saveGrades({ examId: exam.id, entries });
+        try {
+          await DAL.saveGrades({ examId: exam.id, entries });
+        } catch (e) { return toast(e.message, 'err', 5000); }
         await DAL.logAudit({ action: 'حفظ درجات يومية', detail: `${exam.name} — ${entries.length} طالب` });
         st.dirty = false; toast('تم حفظ الدرجات بنجاح', 'ok'); draw();
       });
       $('#publishGrades', host)?.addEventListener('click', async () => {
         const entries = Object.entries(st.values).map(([studentId, value]) => ({ studentId, value }));
         if (!entries.length) return toast('لا توجد درجات لنشرها', 'warn');
-        await DAL.saveGrades({ examId: exam.id, entries });
+        try {
+          await DAL.saveGrades({ examId: exam.id, entries });
+        } catch (e) { return toast(e.message, 'err', 5000); }
         const res = await DAL.publishExamGrades({ examId: exam.id, actor: App.user.name });
         await DAL.logAudit({ action: 'نشر درجات وإشعار', detail: `${exam.name} — ${res.count} طالب` });
         await App.refreshBadges();
@@ -6410,20 +6457,22 @@ App.sections.monthlyGrades = {
 
       $('#saveM', host).onclick = async () => {
         let count = 0, overrides = 0;
-        for (const s2 of students) {
-          const values = {};
-          $$(`.mval[data-st="${s2.id}"]`, host).forEach(inp => {
-            const val = inp.value;
-            if (inp.dataset.isconst === '1') {
-              /* المحسوب: يُخزَّن فقط عند تعديله يدوياً، وإلا يبقى تلقائياً */
-              const computed = inp.dataset.computed || '';
-              if (String(val).trim() !== '' && String(val).trim() !== String(computed).trim()) { values[inp.dataset.sub] = val; overrides++; }
-              else values[inp.dataset.sub] = '';
-            } else values[inp.dataset.sub] = val;
-          });
-          await DAL.saveMonthlyGrades({ studentId: s2.id, period: st.period, values, schoolId: App.schoolId });
-          count += Object.keys(values).length;
-        }
+        try {
+          for (const s2 of students) {
+            const values = {};
+            $$(`.mval[data-st="${s2.id}"]`, host).forEach(inp => {
+              const val = inp.value;
+              if (inp.dataset.isconst === '1') {
+                /* المحسوب: يُخزَّن فقط عند تعديله يدوياً، وإلا يبقى تلقائياً */
+                const computed = inp.dataset.computed || '';
+                if (String(val).trim() !== '' && String(val).trim() !== String(computed).trim()) { values[inp.dataset.sub] = val; overrides++; }
+                else values[inp.dataset.sub] = '';
+              } else values[inp.dataset.sub] = val;
+            });
+            await DAL.saveMonthlyGrades({ studentId: s2.id, period: st.period, values, schoolId: App.schoolId });
+            count += Object.keys(values).length;
+          }
+        } catch (e) { return toast(e.message, 'err', 5000); }
         await DAL.logAudit({ action: 'حفظ درجات شهرية', detail: `${period.label} — ${App.sectionLabel(st.sectionId)} — ${count} قيمة` });
         toast(overrides ? `تم الحفظ — ${overrides} درجة معدّلة يدوياً` : `تم حفظ ${count} قيمة`, 'ok'); draw();
       };
@@ -7145,8 +7194,24 @@ App.sections.chat = {
         toast('تم تفعيل الدردشة للطلبة والمدرسين', 'ok'); draw();
       });
       $$('[data-th]', host).forEach(t => t.onclick = () => { st.threadId = t.dataset.th; draw(); });
+      /* فتح المحادثة على أحدث رسالة (أسفل المحادثة) */
       const body = $('#chatBody', host);
-      if (body) body.scrollTop = body.scrollHeight;
+      if (body) {
+        const toNewest = () => {
+          /* إن لم يكن العمود قابلاً للتمرير (شاشة صغيرة) نمرّر أقرب حاوية قابلة للتمرير */
+          if (body.scrollHeight > body.clientHeight + 4) { body.scrollTop = body.scrollHeight; return; }
+          let p = body.parentElement;
+          while (p && p !== document.body) {
+            if (p.scrollHeight > p.clientHeight + 4) { p.scrollTop = p.scrollHeight; return; }
+            p = p.parentElement;
+          }
+          window.scrollTo({ top: document.body.scrollHeight });
+        };
+        toNewest();
+        requestAnimationFrame(toNewest);
+        setTimeout(toNewest, 60);
+        setTimeout(toNewest, 220);
+      }
 
       const attachments = [];
       if ($('#msgBox', host)) {
@@ -8255,7 +8320,7 @@ App.sections.guardianAccounts = {
       const rows = guardians.filter(g => arMatch(g.name, st.q) || arMatch(g.code, st.q));
 
       host.innerHTML = `
-      <div class="grid cols-4" style="gap:12px">
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px">
         ${[
           { l: 'حسابات أولياء الأمور', v: guardians.length, i: 'guardian', c: 'violet' },
           { l: 'نتائج البحث', v: rows.length, i: 'search', c: '' },
@@ -8464,25 +8529,30 @@ App.sections.teacherAccounts = {
   render(host) {
     let openTeacher = null;                 // المدرس المفتوح
     const st = { q: '', selected: new Set() };
-    const pick = { subject: '', grade: '', sections: new Set() };
+    const pick = { school: '', subject: '', grade: '', sections: new Set() };
 
     const draw = async () => {
       if (!App.requireSchool(host)) return;
-      const teachers = await DAL.listTeachers({ schoolId: App.schoolId });
-      const grades = await DAL.listGrades({ schoolId: App.schoolId });
-      const sections = await DAL.listSections({ schoolId: App.schoolId });
-      const subjects = await DAL.listSubjects({ schoolId: App.schoolId });
+      /* المدرس عام: يظهر في كل المدارس — نعرض كل المدرسين وكل الصفوف والشعب والمواد */
+      const teachers = await DAL.listTeachers({});
+      const grades = await DAL.listGrades({});
+      const sections = await DAL.listSections({});
+      const subjects = await DAL.listSubjects({});
+      const schools = App.cache.schools || [];
       const byId = Object.fromEntries(teachers.map(t => [t.id, t]));
 
       /* ---------------- (1) معلومات الربط لمدرس محدد ---------------- */
       if (openTeacher && byId[openTeacher]) {
         const t = byId[openTeacher];
-        const availableSections = sections.filter(s => s.grade_id === pick.grade);
+        const pickSchool = pick.school || App.schoolId;
+        const schoolGrades = grades.filter(g => g.school_id === pickSchool);
+        const schoolSubjects = subjects.filter(x => x.school_id === pickSchool);
+        const availableSections = sections.filter(s => s.grade_id === pick.grade && s.school_id === pickSchool);
         const chosenSections = [...pick.sections].filter(id => availableSections.some(s => s.id === id));
         const grouped = {};
         (t.assignments || []).forEach(a => {
-          const key = `${a.subject_id}|${a.grade_id}`;
-          (grouped[key] ||= { subject_id: a.subject_id, grade_id: a.grade_id, items: [] }).items.push(a);
+          const key = `${a.school_id}|${a.subject_id}|${a.grade_id}`;
+          (grouped[key] ||= { school_id: a.school_id, subject_id: a.subject_id, grade_id: a.grade_id, items: [] }).items.push(a);
         });
         const secCount = new Set((t.assignments || []).map(a => a.section_id)).size;
         const subjCount = new Set((t.assignments || []).map(a => a.subject_id)).size;
@@ -8490,7 +8560,7 @@ App.sections.teacherAccounts = {
         host.innerHTML = `
         <div class="row between mb-12" style="flex-wrap:wrap;gap:8px">
           <button class="btn sm ghost" id="backT">${icon('chevronRight')} رجوع إلى قائمة المدرسين</button>
-          <span class="pill blue">${icon('building')} ${esc(App.schoolName(App.schoolId))}</span>
+          <span class="pill blue">${icon('building')} مدرس عام — يدرّس في كل المدارس</span>
         </div>
 
         <div class="card">
@@ -8515,7 +8585,7 @@ App.sections.teacherAccounts = {
             ${Object.keys(grouped).length ? Object.values(grouped).map(g => `
               <div style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px">
                 <div class="row between"><b style="font-size:12.5px">${esc(App.subjectName(g.subject_id))}</b>
-                  <span class="pill">${esc(App.gradeName(g.grade_id))}</span></div>
+                  <span class="pill">${esc(App.gradeName(g.grade_id))} · ${esc(App.schoolName(g.school_id))}</span></div>
                 <div class="chips mt-8">
                   ${g.items.map(a => `<span class="chip-rm">شعبة ${esc(App.sectionName(a.section_id))}
                     <button data-rma="${a.id}" title="إزالة">${icon('x')}</button></span>`).join('')}
@@ -8530,21 +8600,27 @@ App.sections.teacherAccounts = {
           <div class="card-body">
             <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
               <div>
-                <label class="small bold muted" style="display:block;margin-bottom:6px">1) المادة</label>
+                <label class="small bold muted" style="display:block;margin-bottom:6px">1) المدرسة</label>
+                <select class="input" id="pickSchool">
+                  ${schools.map(sc => `<option value="${sc.id}" ${pickSchool === sc.id ? 'selected' : ''}>${esc(sc.name)}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="small bold muted" style="display:block;margin-bottom:6px">2) المادة</label>
                 <select class="input" id="pickSubject">
                   <option value="">— اختر المادة —</option>
-                  ${subjects.map(s2 => `<option value="${s2.id}" ${pick.subject === s2.id ? 'selected' : ''}>${esc(s2.name)}</option>`).join('')}
+                  ${schoolSubjects.map(s2 => `<option value="${s2.id}" ${pick.subject === s2.id ? 'selected' : ''}>${esc(s2.name)}</option>`).join('')}
                 </select>
               </div>
               <div>
-                <label class="small bold muted" style="display:block;margin-bottom:6px">2) الصف</label>
+                <label class="small bold muted" style="display:block;margin-bottom:6px">3) الصف</label>
                 <select class="input" id="pickGrade" ${!pick.subject ? 'disabled' : ''}>
                   <option value="">— اختر الصف —</option>
-                  ${grades.map(g => `<option value="${g.id}" ${pick.grade === g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}
+                  ${schoolGrades.map(g => `<option value="${g.id}" ${pick.grade === g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}
                 </select>
               </div>
               <div>
-                <label class="small bold muted" style="display:block;margin-bottom:6px">3) الشعب
+                <label class="small bold muted" style="display:block;margin-bottom:6px">4) الشعب
                   <button class="btn xs ghost" id="allSecs" type="button" style="float:left;${!availableSections.length ? 'display:none' : ''}">تحديد الكل</button></label>
                 <div class="multiselect-box" id="pickSections">
                   ${availableSections.length
@@ -8556,16 +8632,19 @@ App.sections.teacherAccounts = {
             </div>
             <div class="row between mt-12">
               <div class="small muted bold" id="pickSummary">
-                ${pick.subject ? esc(App.subjectName(pick.subject)) : 'بدون مادة'} × ${chosenSections.length} شعبة
+                ${pick.subject ? esc(App.subjectName(pick.subject)) : 'بدون مادة'} × ${chosenSections.length} شعبة — ${esc(App.schoolName(pickSchool))}
                 ${pick.subject && chosenSections.length ? ` = <b style="color:var(--accent)">${chosenSections.length}</b> إسناد` : ''}
               </div>
               <button class="btn" id="saveAssign" ${(!pick.subject || !pick.grade || !chosenSections.length) ? 'disabled' : ''}>${icon('check')} ربط المحدد</button>
             </div>
-            <div class="notice mt-12">${icon('info')} <b>أنت من يحدد</b>: المادة (قائمة منسدلة) ← الصف ← الشعب بنفسك. لا يتم اختيار أي شعبة تلقائياً.</div>
+            <div class="notice mt-12">${icon('info')} <div><b>المدرس عام</b>: يمكنك ربطه بمواد وشعب في <b>أي مدرسة</b> — كرّر الربط لكل مدرسة أو مادة يحتاجها (مدرس يدرّس العربية في مدرستين ورياضيات في ثالثة، مثلاً). <b>أنت من يحدد</b>: المدرسة ← المادة ← الصف ← الشعب، ولا يتم اختيار أي شعبة تلقائياً.</div></div>
           </div>
         </div>`;
 
-        $('#backT', host).onclick = () => { openTeacher = null; pick.subject = ''; pick.grade = ''; pick.sections.clear(); draw(); };
+        $('#backT', host).onclick = () => { openTeacher = null; pick.school = ''; pick.subject = ''; pick.grade = ''; pick.sections.clear(); draw(); };
+        $('#pickSchool', host)?.addEventListener('change', (e) => {
+          pick.school = e.target.value; pick.subject = ''; pick.grade = ''; pick.sections.clear(); draw();
+        });
         $('#editT', host).onclick = () => Accounts.editModal({ kind: 'teacher', account: t, onDone: () => App.reloadRefs().then(draw) });
         $('#toggleT', host).onclick = async () => {
           await DAL.setAccountStatus('teacher', t.id, t.status === 'disabled' ? 'active' : 'disabled');
@@ -8583,7 +8662,7 @@ App.sections.teacherAccounts = {
         };
 
         const ps = $('#pickSubject', host);
-        if (ps) ps.onchange = (e) => { pick.subject = e.target.value; if (!pick.subject) { pick.grade = ''; pick.sections.clear(); } draw(); };
+        if (ps) ps.onchange = (e) => { pick.subject = e.target.value; pick.grade = ''; pick.sections.clear(); draw(); };
         const pg = $('#pickGrade', host);
         if (pg) pg.onchange = (e) => { pick.grade = e.target.value; pick.sections.clear(); draw(); };
         $$('[data-psec]', host).forEach(c => c.onchange = () => { c.checked ? pick.sections.add(c.dataset.psec) : pick.sections.delete(c.dataset.psec); draw(); });
@@ -8595,7 +8674,7 @@ App.sections.teacherAccounts = {
           if (!chosenSections.length) return toast('حدّد الشعب التي تريد ربطها', 'err');
           const list = chosenSections.map(sid => {
             const sec = sections.find(x => x.id === sid);
-            return { subject_id: pick.subject, section_id: sec.id, grade_id: sec.grade_id, school_id: App.schoolId };
+            return { subject_id: pick.subject, section_id: sec.id, grade_id: sec.grade_id, school_id: sec.school_id || pickSchool };
           });
           const added = await DAL.addTeacherAssignments(t.id, list);
           await DAL.logAudit({ action: 'ربط مدرس', detail: `${t.name} — ${App.subjectName(pick.subject)} — ${added} إسناد` });
@@ -8620,7 +8699,8 @@ App.sections.teacherAccounts = {
           { l: 'المدرسون', v: teachers.length, i: 'teacher', c: '' },
           { l: 'نتائج البحث', v: rows.length, i: 'search', c: 'blue' },
           { l: 'إجمالي الإسنادات', v: teachers.reduce((n, t) => n + (t.assignments || []).length, 0), i: 'link', c: 'ok' },
-          { l: 'مدرسون بلا ربط', v: teachers.filter(t => !(t.assignments || []).length).length, i: 'alert', c: 'warn' }
+          { l: 'مدرسون بلا ربط', v: teachers.filter(t => !(t.assignments || []).length).length, i: 'alert', c: 'warn' },
+          { l: 'مدرسون في أكثر من مدرسة', v: teachers.filter(t => new Set((t.assignments || []).map(a => a.school_id)).size > 1).length, i: 'building', c: 'violet' }
         ].map(k => `<div class="kpi"><div class="kpi-ico ${k.c}">${icon(k.i)}</div><div><div class="kpi-val">${fmtNum(k.v)}</div><div class="kpi-lbl">${k.l}</div></div></div>`).join('')}
       </div>
 
@@ -8650,18 +8730,21 @@ App.sections.teacherAccounts = {
           <table class="tbl">
             <thead><tr>
               <th style="width:36px"><input type="checkbox" id="tCheckAll" style="accent-color:var(--accent);width:16px;height:16px" ${rows.length && rows.every(t => st.selected.has(t.id)) ? 'checked' : ''}></th>
-              <th>المدرس</th><th>الكود</th><th>كلمة المرور</th><th>المواد</th><th>الشعب</th><th>الإسنادات</th><th></th></tr></thead>
+              <th>المدرس</th><th>الكود</th><th>كلمة المرور</th><th>المواد</th><th>المدارس</th><th>الشعب</th><th>الإسنادات</th><th></th></tr></thead>
             <tbody>
               ${rows.map(t => {
                 const subjN = new Set((t.assignments || []).map(a => a.subject_id)).size;
                 const secN = new Set((t.assignments || []).map(a => a.section_id)).size;
+                const scIds = [...new Set((t.assignments || []).map(a => a.school_id).filter(Boolean))];
+                const subjNames = [...new Set((t.assignments || []).map(a => App.subjectName(a.subject_id)))].filter(n => n && n !== '—');
                 return `<tr data-open-t="${t.id}" style="cursor:pointer" class="${st.selected.has(t.id) ? 'selected-row' : ''}">
                   <td onclick="event.stopPropagation()"><input type="checkbox" class="t-check" data-id="${t.id}" ${st.selected.has(t.id) ? 'checked' : ''} style="accent-color:var(--accent);width:16px;height:16px"></td>
                   <td><div class="row" style="gap:8px;flex-wrap:nowrap">
                     <b style="font-size:12.5px">${esc(t.name)}</b>${t.status === 'disabled' ? ' <span class="pill danger">معطّل</span>' : ''}</div></td>
                   <td><span class="code">${esc(t.code)}</span></td>
                   <td><span class="code pw">${esc(t.pw_plain || '••••')}</span></td>
-                  <td>${subjN ? `<span class="pill blue">${fmtNum(subjN)} مادة</span>` : '<span class="muted small">—</span>'}</td>
+                  <td>${subjN ? `<span class="pill blue" title="${esc(subjNames.join(' · '))}">${fmtNum(subjN)} مادة</span><div class="muted" style="font-size:10.5px;font-weight:600;margin-top:2px">${esc(subjNames.slice(0, 2).join(' · '))}${subjNames.length > 2 ? ' …' : ''}</div>` : '<span class="muted small">—</span>'}</td>
+                  <td>${scIds.length ? `<span class="pill ${scIds.length > 1 ? 'ok' : ''}">${icon('building')} ${scIds.length > 1 ? fmtNum(scIds.length) + ' مدارس' : esc(App.schoolName(scIds[0]))}</span>${scIds.length > 1 ? `<div class="muted" style="font-size:10.5px;font-weight:600;margin-top:2px">${esc(scIds.map(i => App.schoolName(i)).join(' · '))}</div>` : ''}` : '<span class="muted small">—</span>'}</td>
                   <td>${secN ? `<span class="pill violet">${fmtNum(secN)} شعبة</span>` : '<span class="muted small">—</span>'}</td>
                   <td class="num-cell"><b>${fmtNum((t.assignments || []).length)}</b></td>
                   <td><div class="row" style="gap:5px;flex-wrap:nowrap">
@@ -8670,7 +8753,7 @@ App.sections.teacherAccounts = {
                     <span class="btn xs soft">${icon('eye')} الربط</span>
                   </div></td>
                 </tr>`;
-              }).join('') || `<tr><td colspan="8">${emptyState(st.q ? 'لا مدرس مطابق للبحث' : 'لا يوجد مدرسون — أضف مدرساً جديداً', 'teacher')}</td></tr>`}
+              }).join('') || `<tr><td colspan="9">${emptyState(st.q ? 'لا مدرس مطابق للبحث' : 'لا يوجد مدرسون — أضف مدرساً جديداً', 'teacher')}</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -9374,7 +9457,7 @@ App.sections.subscriptions = {
   title: 'الاشتراكات', crumb: 'الاشتراكات', icon: 'idCard',
   render(host) {
     const st = {
-      name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '',
+      name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', maxStudents: '',
       areaIds: new Set(), editId: null,
       areaQ: '', manualArea: '', q: ''
     };
@@ -9422,6 +9505,7 @@ App.sections.subscriptions = {
               ${field('رقم الهاتف', `<input class="input" id="subPhone" value="${esc(st.phone)}" placeholder="0770 000 0000" dir="ltr">`)}
               ${field('نوع السيارة', `<input class="input" id="subCar" value="${esc(st.carType)}" placeholder="مثال: كيا بيكانتو — بيضاء — 2022">`)}
               ${field('رقم السيارة', `<input class="input" id="subCarNo" value="${esc(st.carNumber)}" placeholder="مثال: 12345 موصل" dir="ltr">`)}
+              ${field('عدد الطلاب المسموح', `<input class="input" id="subMaxStudents" type="number" min="1" value="${esc(st.maxStudents)}" placeholder="مثال: 10" dir="ltr">`, 'عند امتلاء هذا العدد يختفي السائق من بحث الطلبة')}
             </div>
             ${field('ملاحظات (اختياري)', `<input class="input" id="subNotes" value="${esc(st.notes)}" placeholder="مثال: مشترك منذ 2026 — يغطي الجانب الأيمن">`)}
 
@@ -9463,6 +9547,7 @@ App.sections.subscriptions = {
                     ${x.status === 'disabled' ? pill('موقوف', 'danger') : pill('نشط', 'ok')}</div>
                   <div class="muted" style="font-size:11.5px;font-weight:700;margin-top:2px" dir="ltr">${esc(x.email)}</div>
                   <div class="muted" style="font-size:11.5px;font-weight:600">${esc(x.phone || 'بلا هاتف')} · كلمة المرور <span class="code pw" style="font-size:10.5px">${esc(x.password)}</span>${x.car_type ? ` · السيارة: ${esc(x.car_type)}` : ''}${x.car_number ? ` · رقمها: ${esc(x.car_number)}` : ''}${x.notes ? ` · ${esc(x.notes)}` : ''}</div>
+                  ${x.max_students ? `<div class="muted" style="font-size:11px;font-weight:700;margin-top:2px">الطلاب: <b>${fmtNum((linksOf[x.id] || []).filter(l => l.status === 'accepted').length)}</b> / ${fmtNum(x.max_students)}${(linksOf[x.id] || []).filter(l => l.status === 'accepted').length >= x.max_students ? ' <span class="pill warn" style="font-size:9.5px">ممتلئ — مخفي عن البحث</span>' : ''}</div>` : ''}
                   <div class="row" style="gap:4px;flex-wrap:wrap;margin-top:5px">
                     ${(x.area_ids || []).length ? x.area_ids.map(id => `<span class="pill blue" style="font-size:10px">${esc(areaById[id]?.name || 'منطقة محذوفة')}</span>`).join('') : '<span class="pill warn" style="font-size:10px">بلا مناطق</span>'}
                   </div>
@@ -9508,6 +9593,7 @@ App.sections.subscriptions = {
       $('#subPhone', host).oninput = e => st.phone = e.target.value;
       $('#subCar', host).oninput = e => st.carType = e.target.value;
       $('#subCarNo', host).oninput = e => st.carNumber = e.target.value;
+      $('#subMaxStudents', host).oninput = e => st.maxStudents = e.target.value;
       $('#subNotes', host).oninput = e => st.notes = e.target.value;
       $('#manualArea', host).oninput = e => st.manualArea = e.target.value;
       $('#manualArea', host).onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); addArea(st.manualArea, host); } };
@@ -9554,19 +9640,20 @@ App.sections.subscriptions = {
           const rec = await DAL.saveSubscription({
             ...(st.editId ? { id: st.editId } : {}),
             name: st.name, email: st.email, password: st.password, phone: st.phone,
-            car_type: st.carType, car_number: st.carNumber, notes: st.notes, area_ids: [...st.areaIds], status: 'active'
+            car_type: st.carType, car_number: st.carNumber, notes: st.notes, area_ids: [...st.areaIds], status: 'active',
+            max_students: st.maxStudents ? Math.max(1, parseInt(st.maxStudents, 10) || 0) : 0
           });
           await DAL.logAudit({
             action: st.editId ? 'تعديل حساب اشتراك' : 'إضافة حساب اشتراك',
             detail: `${rec.name} — ${rec.email} — ${(rec.area_ids || []).length} منطقة`
           });
           toast(st.editId ? 'تم حفظ التعديل' : `أُضيف حساب الاشتراك — كلمة المرور: ${rec.password}`, 'ok', 7000);
-          Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', areaIds: new Set(), editId: null });
+          Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', maxStudents: '', areaIds: new Set(), editId: null });
           draw();
         } catch (e) { toast(e.message, 'err', 5000); }
       };
       $('#cancelSub', host)?.addEventListener('click', () => {
-        Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', areaIds: new Set(), editId: null });
+        Object.assign(st, { name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', maxStudents: '', areaIds: new Set(), editId: null });
         draw();
       });
 
@@ -9576,7 +9663,7 @@ App.sections.subscriptions = {
         if (!x) return;
         Object.assign(st, {
           editId: x.id, name: x.name, email: x.email, password: x.password || '',
-          phone: x.phone || '', carType: x.car_type || '', carNumber: x.car_number || '', notes: x.notes || '', areaIds: new Set(x.area_ids || [])
+          phone: x.phone || '', carType: x.car_type || '', carNumber: x.car_number || '', notes: x.notes || '', maxStudents: x.max_students || '', areaIds: new Set(x.area_ids || [])
         });
         draw();
         host.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -9598,7 +9685,7 @@ App.sections.subscriptions = {
         })) return;
         await DAL.deleteSubscription(x.id);
         await DAL.logAudit({ action: 'حذف حساب اشتراك', detail: x.name });
-        if (st.editId === x.id) Object.assign(st, { editId: null, name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', areaIds: new Set() });
+        if (st.editId === x.id) Object.assign(st, { editId: null, name: '', email: '', password: '', phone: '', carType: '', carNumber: '', notes: '', maxStudents: '', areaIds: new Set() });
         toast('تم حذف الحساب', 'ok'); draw();
       });
 
@@ -9610,6 +9697,7 @@ App.sections.subscriptions = {
           ['الهاتف', x.phone || '—'],
           ['نوع السيارة', x.car_type || '—'],
           ['رقم السيارة', x.car_number || '—'],
+          ['عدد الطلاب المسموح', x.max_students ? String(x.max_students) : '—'],
           ['مناطق الاشتراك', (x.area_ids || []).map(areaName).join('، ')],
           ['الحالة', x.status === 'disabled' ? 'موقوف' : 'نشط']
         ]
