@@ -28,11 +28,28 @@ const CloudApp = (() => {
   const H = () => ({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' });
   const base = () => cfg.url.replace(/\/$/, '');
 
+  /* مهلة الشبكة: لا نترك التطبيق معلّقاً على شاشة فارغة إن تعذّر الوصول للسحابة */
+  const NET_TIMEOUT = 12000;
+
   async function rest(path, opts = {}) {
-    const res = await fetch(base() + path, { ...opts, headers: { ...H(), ...(opts.headers || {}) } });
-    if (!res.ok) throw new Error('cloud ' + res.status);
-    const t = await res.text();
-    return t ? JSON.parse(t) : null;
+    const ms = opts.timeout || NET_TIMEOUT;
+    let ctl = null, timer = null;
+    try {
+      if (typeof AbortController !== 'undefined' && ms > 0) {
+        ctl = new AbortController();
+        timer = setTimeout(function () { try { ctl.abort(); } catch (e) {} }, ms);
+      }
+    } catch (e) { ctl = null; }
+    try {
+      const res = await fetch(base() + path, {
+        ...opts,
+        signal: opts.signal || (ctl ? ctl.signal : undefined),
+        headers: { ...H(), ...(opts.headers || {}) }
+      });
+      if (!res.ok) throw new Error('cloud ' + res.status);
+      const t = await res.text();
+      return t ? JSON.parse(t) : null;
+    } finally { if (timer) clearTimeout(timer); }
   }
 
   /* ---------------- تحويل بيانات اللوحة ← شكل التطبيق ---------------- */
