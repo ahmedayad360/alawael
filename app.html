@@ -12,6 +12,73 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <title>تطبيق الأوائل</title>
+<script>
+/* ---------------------------------------------------------------------------
+   شبكة أمان المتصفح
+   1) بعض المتصفحات (Safari في التصفّح الخاص أو عند فتح الملف مباشرة)
+      تمنع الوصول إلى localStorage وتُطلِق خطأ SecurityError — فنوفّر بديلاً
+      في الذاكرة حتى لا يتعطّل التطبيق.
+   2) أي خطأ غير متوقع أثناء الإقلاع يعرض رسالة واضحة بدل صفحة فارغة.
+   --------------------------------------------------------------------------- */
+(function () {
+  var mem = {};
+  function memStore() {
+    return {
+      getItem: function (k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+      setItem: function (k, v) { mem[k] = String(v); },
+      removeItem: function (k) { delete mem[k]; },
+      clear: function () { mem = {}; },
+      key: function (i) { var ks = Object.keys(mem); return i < ks.length ? ks[i] : null; },
+      get length() { return Object.keys(mem).length; }
+    };
+  }
+  function usable(store) {
+    try { var t = '__ala__' + Date.now(); store.setItem(t, '1'); store.removeItem(t); return true; }
+    catch (e) { return false; }
+  }
+  try {
+    if (!usable(window.localStorage)) {
+      Object.defineProperty(window, 'localStorage', { configurable: true, get: memStore });
+    }
+  } catch (e) {
+    try { Object.defineProperty(window, 'localStorage', { configurable: true, get: memStore }); } catch (e2) {}
+  }
+  try {
+    if (!usable(window.sessionStorage)) {
+      Object.defineProperty(window, 'sessionStorage', { configurable: true, get: memStore });
+    }
+  } catch (e) {
+    try { Object.defineProperty(window, 'sessionStorage', { configurable: true, get: memStore }); } catch (e2) {}
+  }
+})();
+
+/* رسالة بديلة بدل الصفحة الفارغة */
+window.__fatal = function (msg) {
+  try {
+    if (window.__fatalShown) return; window.__fatalShown = 1;
+    var s = document.getElementById('splash'); if (s && s.parentNode) s.parentNode.removeChild(s);
+    var box = document.getElementById('fatalBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'fatalBox';
+      box.setAttribute('style', 'position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:99999;display:grid;place-items:center;background:#2A2066;color:#fff;padding:28px;text-align:center;font-family:inherit');
+      (document.body || document.documentElement).appendChild(box);
+    }
+    box.innerHTML = '<div style="max-width:340px">' +
+      '<div style="font-size:17px;font-weight:900;margin-bottom:10px">تعذّر تشغيل التطبيق</div>' +
+      '<div style="font-size:13px;opacity:.85;line-height:2;margin-bottom:20px">' +
+      (msg ? String(msg).slice(0, 180) : 'حدث خطأ غير متوقع.') + '</div>' +
+      '<button onclick="location.reload()" style="background:#fff;color:#2A2066;border:0;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer">إعادة المحاولة</button>' +
+      '</div>';
+  } catch (e) {}
+};
+window.addEventListener('error', function (e) {
+  try { window.__fatal((e && e.message) ? e.message : ''); } catch (x) {}
+});
+window.addEventListener('unhandledrejection', function (e) {
+  try { window.__fatal((e && e.reason && e.reason.message) ? e.reason.message : ''); } catch (x) {}
+});
+</script>
 <style>
 :root{
   --blue:#0A6BFF; --blue-2:#0053D6; --blue-soft:#E9F1FF; --blue-tint:#F4F8FF; --blue-line:#D7E5FF;
@@ -56,7 +123,7 @@ b,strong{font-weight:800}
 .statusbar .sb-r{display:flex; align-items:center; gap:5px}
 .statusbar svg{width:16px;height:11px}
 #app{flex:1; position:relative; overflow:hidden; display:flex; flex-direction:column; min-height:0}
-.screen{position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); animation:slidein .28s cubic-bezier(.32,.72,0,1)}
+.screen{position:absolute; top:0;right:0;bottom:0;left:0;inset:0; display:flex; flex-direction:column; background:var(--bg); animation:slidein .28s cubic-bezier(.32,.72,0,1)}
 @keyframes slidein{from{opacity:0; transform:translateX(-14px)}to{opacity:1; transform:none}}
 .scroll{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 16px calc(22px + var(--safe-b))}
 
@@ -74,7 +141,7 @@ b,strong{font-weight:800}
 .icon-btn svg{width:19px;height:19px}
 .icon-btn.plain{background:transparent; box-shadow:none}
 .badge-dot{
-  position:absolute; top:-3px; inset-inline-start:-3px; min-width:19px; height:19px; padding:0 5px;
+  position:absolute; top:-3px; right:-3px;inset-inline-start:-3px; min-width:19px; height:19px; padding:0 5px;
   border-radius:999px; background:var(--red); color:#fff; font-size:10.5px; font-weight:800;
   display:grid; place-items:center; border:2px solid var(--bg);
 }
@@ -111,9 +178,11 @@ b,strong{font-weight:800}
   box-shadow:0 14px 34px rgba(10,90,230,.26);
 }
 .hero::before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;
-  background:radial-gradient(circle, rgba(255,197,61,.55), rgba(255,197,61,0) 70%); top:-70px; inset-inline-start:-50px}
+  background:radial-gradient(circle, rgba(255,197,61,.55), rgba(255,197,61,0) 70%); top:-70px; right:-50px}
+.hero::after{content:"";inset-inline-start:-50px}
 .hero::after{content:"";position:absolute;width:120px;height:120px;border-radius:50%;
-  background:rgba(255,255,255,.10); bottom:-60px; inset-inline-end:-20px}
+  background:rgba(255,255,255,.10); bottom:-60px; left:-20px}
+.hero .h-top{display:flex;inset-inline-end:-20px}
 .hero .h-top{display:flex; align-items:center; gap:12px; position:relative; z-index:1}
 .hero .av{width:52px;height:52px;border-radius:17px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none;
   border:1px solid rgba(255,255,255,.25)}
@@ -216,7 +285,7 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 
 /* ---------- الواجبات ---------- */
 .hw{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:14px;margin-bottom:11px;position:relative;overflow:hidden;border:1px solid var(--sep)}
-.hw::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--blue)}
+.hw::before{content:"";position:absolute;right:0;inset-inline-start:0;top:0;bottom:0;width:4px;background:var(--blue)}
 .hw.y::before{background:var(--yellow)}
 .hw .hw-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
 .hw .hw-top .sub-j{font-size:13px;font-weight:800}
@@ -344,7 +413,7 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
   background:linear-gradient(180deg,#F4F8FF 0%, #FFFFFF 42%); overflow-y:auto}
 .entry .logo{width:76px;height:76px;border-radius:25px;margin:10px auto 16px;display:grid;place-items:center;
   background:linear-gradient(145deg,#2C86FF,#0053D6); color:#fff; box-shadow:0 18px 38px rgba(10,107,255,.32); position:relative}
-.entry .logo::after{content:"";position:absolute;inset:-7px;border-radius:31px;border:2.5px solid var(--yellow-line)}
+.entry .logo::after{content:"";position:absolute;top:-7px;right:-7px;bottom:-7px;left:-7px;inset:-7px;border-radius:31px;border:2.5px solid var(--yellow-line)}
 .entry .logo svg{width:36px;height:36px}
 .entry h1{text-align:center;margin:0 0 6px;font-size:23px;font-weight:800;letter-spacing:-.5px}
 .entry .lead{text-align:center;margin:0 0 20px;font-size:13px;color:var(--secondary);font-weight:700;line-height:1.7}
@@ -362,12 +431,19 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 .admin-link .chev{margin-inline-start:auto; background-color:#B98A2B}
 
 /* ---------- نافذة سفلية ---------- */
-.sheet-bg{position:absolute; inset:0; background:rgba(8,18,40,.42); z-index:80; opacity:0; transition:opacity .25s;
+/* البطاقة مرئية افتراضياً — الاعتماد على فئة 'show' كان يجعلها مخفية
+   إذا تأخّر requestAnimationFrame (تبويب خلفية في Safari) → شاشة فارغة. */
+.sheet-bg{position:absolute; top:0;right:0;bottom:0;left:0;inset:0; background:rgba(8,18,40,.42); z-index:80; opacity:1; transition:opacity .25s;
+  animation:sheetBgIn .25s ease both;
   display:flex; align-items:flex-end; backdrop-filter:blur(2px)}
 .sheet-bg.show{opacity:1}
 .sheet{width:100%; background:var(--card); border-radius:26px 26px 0 0; padding:8px 16px calc(18px + var(--safe-b));
   transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); max-height:88%; overflow-y:auto;
-  box-shadow:0 -10px 40px rgba(10,30,80,.22)}
+  box-shadow:0 -10px 40px rgba(10,30,80,.22);
+  animation:sheetIn .3s cubic-bezier(.32,.72,0,1) both;}
+@keyframes sheetIn{ from{ transform:translateY(100%) } to{ transform:none } }
+@keyframes sheetBgIn{ from{ opacity:0 } to{ opacity:1 } }
+.sheet-bg.closing{ opacity:0; animation:none; }
 .sheet-bg.show .sheet{transform:none}
 .sheet .handle{width:38px;height:5px;border-radius:3px;background:var(--sep-2);margin:4px auto 14px}
 .sheet h3{margin:0 0 4px;font-size:19px;font-weight:800;text-align:center}
@@ -386,7 +462,7 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 .notif{display:flex;gap:11px;padding:13px 14px;border-bottom:1px solid var(--sep);background:var(--card);position:relative}
 .notif:last-child{border-bottom:0}
 .notif.unread{background:var(--blue-tint)}
-.notif.unread::before{content:"";position:absolute;inset-inline-start:0;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--yellow)}
+.notif.unread::before{content:"";position:absolute;right:0;inset-inline-start:0;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--yellow)}
 .notif .ni{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--blue-soft);color:var(--blue)}
 .notif .ni svg{width:18px;height:18px}
 .notif .nt{flex:1;min-width:0}
@@ -396,7 +472,7 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 
 /* ---------- سبلاش ---------- */
 .splash{
-  position:fixed; inset:0; z-index:9999; display:grid; place-items:center;
+  position:fixed; top:0;right:0;bottom:0;left:0;inset:0; z-index:9999; display:grid; place-items:center;
   background:radial-gradient(120% 90% at 50% 10%, #0C55B4 0%, #0A2E6B 36%, #04122C 70%, #010A18 100%);
   animation:splashOut .55s 1.15s forwards;
 }
@@ -452,8 +528,9 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 .grow{flex:1}
 .switch{width:51px;height:31px;border-radius:999px;background:var(--sep-2);position:relative;flex:none;transition:background .2s}
 .switch.on{background:var(--green)}
-.switch i{position:absolute;top:2px;inset-inline-start:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:inset-inline-start .2s}
-.switch.on i{inset-inline-start:22px}
+.switch i{position:absolute;top:2px;right:2px;inset-inline-start:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:inset-inline-start .2s}
+.switch.on i{right:22px}
+.svg-i{width:18px;inset-inline-start:22px}
 .svg-i{width:18px;height:18px}
 .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .kpi div{background:var(--card);border:1px solid var(--sep);border-radius:15px;padding:11px 8px;text-align:center;box-shadow:var(--shadow-sm)}
@@ -513,7 +590,7 @@ body{background:#E9EEF7}
   color:#fff;
 }
 .hero::before{display:none}
-.hero::after{width:150px; height:150px; bottom:-70px; inset-inline-end:-40px;
+.hero::after{width:150px; height:150px; bottom:-70px; left:-40px;inset-inline-end:-40px;
   background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.10)}
 .hero .h-top{gap:13px}
 .hero .av{
@@ -688,7 +765,7 @@ body{background:#E9EEF7}
   box-shadow:inset 0 1px 0 #fff, 0 6px 14px rgba(10,107,255,.14); filter:none;
 }
 .tabbar button.on::after{
-  content:""; position:absolute; top:3px; inset-inline-start:50%; transform:translateX(-50%);
+  content:""; position:absolute; top:3px; right:50%;inset-inline-start:50%; transform:translateX(-50%);
   width:16px; height:3px; border-radius:99px; z-index:2;
   background:linear-gradient(90deg,var(--yellow-2),var(--yellow));
   box-shadow:0 2px 6px rgba(240,165,0,.45)
@@ -970,12 +1047,12 @@ html[data-theme="dark"] .badge-dot{ background:#FFC53D; color:#231A00; box-shado
 /* ---------- شارة حمراء بعدد غير المقروء (تبويب الدردشة / الأيقونات) ---------- */
 .tabbar button{position:relative}
 .tab-badge{
-  position:absolute; top:1px; inset-inline-start:calc(50% - 19px); min-width:17px; height:17px; padding:0 4px;
+  position:absolute; top:1px; right:calc(50% - 19px);inset-inline-start:calc(50% - 19px); min-width:17px; height:17px; padding:0 4px;
   border-radius:999px; background:#F1433D; color:#fff; font-size:10px; font-weight:800; line-height:1;
   display:grid; place-items:center; border:2px solid var(--bg); box-shadow:0 3px 8px rgba(241,67,61,.35);
 }
 .tile{position:relative}
-.tile .tab-badge{top:-5px; inset-inline-start:auto; inset-inline-end:-5px; min-width:19px; height:19px; font-size:10.5px}
+.tile .tab-badge{top:-5px; right:auto;inset-inline-start:auto; left:-5px;inset-inline-end:-5px; min-width:19px; height:19px; font-size:10.5px}
 html[data-theme="dark"] .tab-badge{ background:#F1433D; color:#fff; border-color:#0A1120 }
 
 /* ---------- واجب المدرس بلون مختلف عن واجب الإدارة ---------- */
@@ -1017,7 +1094,7 @@ html[data-theme="dark"] .tabbar button.on svg,
 html[data-theme="dark"] .tabbar button.on span{ color:#BFDBFF !important }
 html[data-theme="dark"] .tabbar button{ overflow:hidden }
 html[data-theme="dark"] .tabbar button.on::before{
-  content:""; position:absolute; inset:0; border-radius:20px;
+  content:""; position:absolute; top:0;right:0;bottom:0;left:0;inset:0; border-radius:20px;
   background:radial-gradient(60% 90% at 50% 20%, rgba(76,146,255,.20), transparent 70%);
   z-index:0;
 }
@@ -1622,7 +1699,7 @@ html[data-daypart="evening"]{
    • انتقال خروج: تكبير خفيف + تلاشٍ ناعم يكشف شاشة الدخول.
    --------------------------------------------------------------- */
 .splash{
-  position:fixed; inset:0; z-index:9999; display:grid; place-items:center;
+  position:fixed; top:0;right:0;bottom:0;left:0;inset:0; z-index:9999; display:grid; place-items:center;
   background:var(--lg-bg);
   background-size:cover; background-repeat:no-repeat;
   animation:splashOut .66s 1.30s cubic-bezier(.4,0,.2,1) forwards;
@@ -1630,12 +1707,12 @@ html[data-daypart="evening"]{
 }
 .splash .sp-glow{ position:absolute; border-radius:50%; pointer-events:none; z-index:0 }
 .splash .sp-glow-a{
-  width:430px; height:430px; top:-160px; inset-inline-start:-140px;
+  width:430px; height:430px; top:-160px; right:-140px;inset-inline-start:-140px;
   background:radial-gradient(circle, rgba(165,157,195,.42) 0%, rgba(165,157,195,0) 70%);
   animation:spDrift 9s ease-in-out infinite alternate;
 }
 .splash .sp-glow-b{
-  width:470px; height:470px; bottom:-180px; inset-inline-end:-150px;
+  width:470px; height:470px; bottom:-180px; left:-150px;inset-inline-end:-150px;
   background:radial-gradient(circle, rgba(224,174,82,.24) 0%, rgba(224,174,82,0) 68%);
   animation:spDrift 11s ease-in-out infinite alternate-reverse;
 }
@@ -1648,14 +1725,14 @@ html[data-daypart="evening"]{
   animation:spPop .8s cubic-bezier(.22,1,.3,1) .05s both;
 }
 .splash .sp-mark::after{
-  content:""; position:absolute; inset:-15px; border-radius:40px;
+  content:""; position:absolute; top:-15px;right:-15px;bottom:-15px;left:-15px;inset:-15px; border-radius:40px;
   border:1px solid rgba(255,255,255,.22);
   animation:spRing 2.9s cubic-bezier(.2,.6,.3,1) infinite;
 }
 .splash .sp-logo{
-  width:148px; height:148px;
+  width:148px; height:148px; border-radius:38px;
   background-image:var(--logo); background-size:contain; background-position:center; background-repeat:no-repeat;
-  filter:drop-shadow(0 24px 44px rgba(8,4,28,.52));
+  box-shadow:0 24px 46px rgba(8,4,28,.54);
 }
 .splash .sp-name{
   color:#FFFFFF; font-size:27px; font-weight:900; letter-spacing:-.4px; line-height:1.45;
@@ -1707,8 +1784,8 @@ html[data-daypart="evening"] #phone.entry-mode .statusbar svg{ color:#fff }
 .entry::before, .entry::after{
   content:""; position:absolute; top:0; bottom:0; width:13%; pointer-events:none; z-index:0;
 }
-.entry::before{ inset-inline-start:0; background:linear-gradient(90deg,rgba(255,255,255,.40),rgba(255,255,255,0)) }
-.entry::after{ inset-inline-end:0; background:linear-gradient(270deg,rgba(255,255,255,.40),rgba(255,255,255,0)) }
+.entry::before{ right:0;inset-inline-start:0; background:linear-gradient(90deg,rgba(255,255,255,.40),rgba(255,255,255,0)) }
+.entry::after{ left:0;inset-inline-end:0; background:linear-gradient(270deg,rgba(255,255,255,.40),rgba(255,255,255,0)) }
 html[data-daypart="evening"] .entry::before{ background:linear-gradient(90deg,rgba(165,157,195,.15),rgba(165,157,195,0)) }
 html[data-daypart="evening"] .entry::after{ background:linear-gradient(270deg,rgba(165,157,195,.15),rgba(165,157,195,0)) }
 .entry > *{ position:relative; z-index:1 }
@@ -1820,14 +1897,17 @@ html[data-theme="dark"] .sheet-bg.canvas{
 
 /* النموذج: بلا بطاقة خارجية — البطاقة البيضاء داخله
    (نلغي تأثير الزجاج حتى لا يظهر مستطيل مموّه حول النموذج) */
+/* بطاقة الدخول: مرئية افتراضياً ومتحرّكةً-entranceً عبر CSS فقط —
+   لا تعتمد على جافاسكربت إطلاقاً (حماية من تأخّر requestAnimationFrame في Safari). */
 html .sheet.login-sheet{
   background:transparent !important; border:0 !important; box-shadow:none !important;
   backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
   border-radius:0; width:100%; max-width:460px; margin:auto;
   padding:0; max-height:none; overflow:visible;
-  transform:translateY(18px); opacity:0;
-  transition:transform .38s cubic-bezier(.32,.72,0,1), opacity .3s ease;
+  transform:none; opacity:1;
+  animation:lgSheetIn .38s cubic-bezier(.32,.72,0,1) both;
 }
+@keyframes lgSheetIn{ from{ transform:translateY(18px); opacity:0 } to{ transform:none; opacity:1 } }
 html .sheet-bg.show .sheet.login-sheet{ transform:none; opacity:1 }
 html .sheet.login-sheet .handle{ display:none }
 
@@ -1836,7 +1916,7 @@ html .lg-brand{ text-align:center; margin-bottom:14px; animation:lgIn .62s cubic
 html .lg-logo{
   width:84px; height:84px; margin:0 auto 10px; display:block;
   background-image:var(--logo); background-size:contain; background-position:center; background-repeat:no-repeat;
-  filter:drop-shadow(0 16px 30px rgba(6,2,24,.48));
+  border-radius:27px; box-shadow:0 16px 30px rgba(6,2,24,.46);
 }
 html .lg-school{
   font-size:21px; font-weight:900; color:#FFFFFF; letter-spacing:-.3px; line-height:1.5;
@@ -1866,7 +1946,7 @@ html .lg-roles{
 }
 html .lg-role{
   position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:9px; aspect-ratio:1/1; width:100%; padding:12px 8px;
+  gap:9px; height:auto; min-height:104px; aspect-ratio:1/1; width:100%; padding:12px 8px;
   border:1.5px solid var(--lg-line); border-radius:20px; background:#FBFAFE;
   font-family:inherit; text-align:center; cursor:pointer; -webkit-tap-highlight-color:transparent;
   transition:border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .16s ease;
@@ -1903,17 +1983,24 @@ html .lg-in .input:focus{
 }
 html .lg-in .input::placeholder{ color:var(--lg-ph); font-weight:600; opacity:1 }
 html .lg-in .in-ic{
-  position:absolute; inset-inline-start:14px; inset-block-start:50%; transform:translateY(-50%);
+  position:absolute; right:14px;inset-inline-start:14px; top:50%;inset-block-start:50%; transform:translateY(-50%);
   color:var(--lg-icon); pointer-events:none; display:grid; place-items:center;
 }
 html .lg-in .in-ic svg{ width:19px; height:19px; stroke-width:1.9 }
 html .lg-in .eye{
-  position:absolute; inset-inline-end:8px; inset-block-start:50%; transform:translateY(-50%);
+  position:absolute; left:8px;inset-inline-end:8px; top:50%;inset-block-start:50%; transform:translateY(-50%);
   width:34px; height:34px; border-radius:11px; display:grid; place-items:center;
   color:var(--lg-icon); background:transparent; border:0;
 }
 html .lg-in .eye:active{ background:var(--lg-seg) }
 html .lg-in .eye svg{ width:18px; height:18px; stroke-width:1.8 }
+
+/* سطر المساعدة (بيانات الحساب التجريبي / توجيه واضح) */
+html .lg-hint{
+  margin-top:7px; font-size:11.5px; font-weight:700; color:var(--lg-muted);
+  line-height:1.7; text-align:start;
+}
+html .lg-hint:empty{ display:none }
 
 /* تذكّرني */
 html .lg-remember{
@@ -1953,6 +2040,7 @@ html[data-theme="dark"] .sheet.login-sheet .lg-in .input:focus{
 }
 html[data-theme="dark"] .sheet.login-sheet .lg-in .input::placeholder{ color:var(--lg-ph) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-field > label{ color:var(--lg-label) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-hint{ color:var(--lg-muted) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-remember{ color:var(--lg-label) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-in .in-ic,
 html[data-theme="dark"] .sheet.login-sheet .lg-in .eye{ color:var(--lg-icon) !important }
@@ -2095,7 +2183,7 @@ html[data-theme="dark"] .toast{ background:rgba(32,26,62,.96) }
 }
 .att-thumb img{ width:100%; height:100%; object-fit:cover; display:block }
 .att-thumb .att-x{
-  position:absolute; top:4px; inset-inline-end:4px; width:22px; height:22px; border-radius:50%;
+  position:absolute; top:4px; left:4px;inset-inline-end:4px; width:22px; height:22px; border-radius:50%;
   background:rgba(16,12,50,.72); color:#fff; display:grid; place-items:center;
 }
 .att-thumb .att-x svg{ width:12px; height:12px; stroke-width:2.4 }
@@ -2136,12 +2224,12 @@ html[data-theme="dark"] .attach-btn{ background:rgba(142,133,196,.20); color:#CF
 
 /* عارض الصور بملء الشاشة */
 .img-viewer{
-  position:absolute; inset:0; z-index:400; background:rgba(10,8,28,.95);
+  position:absolute; top:0;right:0;bottom:0;left:0;inset:0; z-index:400; background:rgba(10,8,28,.95);
   display:grid; place-items:center; padding:18px;
 }
 .img-viewer img{ max-width:100%; max-height:100%; border-radius:16px; object-fit:contain; display:block }
 .img-viewer .iv-x{
-  position:absolute; top:calc(14px + var(--safe-t)); inset-inline-end:14px;
+  position:absolute; top:calc(14px + var(--safe-t)); left:14px;inset-inline-end:14px;
   width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff;
   display:grid; place-items:center; border:1px solid rgba(255,255,255,.24);
 }
@@ -2186,7 +2274,7 @@ html[data-theme="dark"] .tab-badge{ background:#FFC53D; color:#231A00; border-co
 html[data-theme="dark"] .udot{ background:#FFC53D; box-shadow:0 0 0 3px rgba(255,197,61,.20) }
 /* الشارة تبقى فوق الأيقونة ولا تنزل إلى أسفل الشريط */
 html[data-theme="dark"] .tabbar button .tab-badge{
-  position:absolute; top:1px; inset-inline-start:calc(50% - 19px);
+  position:absolute; top:1px; right:calc(50% - 19px);inset-inline-start:calc(50% - 19px);
   margin:0; z-index:3;
 }
 /* ==== ICI-LAYER-END ==== */
@@ -2232,6 +2320,15 @@ html[data-theme="dark"] .tabbar button .tab-badge{
 <script>
 'use strict';
 window.__splashAt = Date.now();
+/* حارس الشاشة الأولى: إن لم يبدأ التطبيق خلال 14 ثانية نعرض رسالة بدل صفحة فارغة */
+setTimeout(function () {
+  try {
+    if (document.querySelector('.lg-card') || document.querySelector('.screen')) return;
+    var app = document.getElementById('app');
+    if (app && app.children.length) return;
+    window.__fatal('لم يتم تحميل التطبيق. تحقّق من الاتصال بالإنترنت ثم أعد المحاولة.');
+  } catch (e) {}
+}, 14000);
 /* النمط: تلقائي (نهاراً فاتح / ليلاً داكن) — ويمكن تثبيته من الإعدادات */
 try {
   var _m = localStorage.getItem('alawael.themeMode');
@@ -3014,13 +3111,16 @@ const Sheet = {
       ${actions ? `<div class="mt-16">${actions}</div>` : ''}
     </div>`;
     $('#phone').appendChild(bg);
-    requestAnimationFrame(() => bg.classList.add('show'));
+    /* عرض البطاقة: rAF أولاً، ومهلة احتياطية في حال تأخّره (تبويب خلفي في Safari) */
+    const reveal = () => bg.classList.add('show');
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reveal);
+    setTimeout(reveal, 120);
     if (dismissible) bg.addEventListener('click', e => { if (e.target === bg) Sheet.close(); });
     $$('[data-close]', bg).forEach(b => b.onclick = () => Sheet.close());
     onMount && onMount(bg, () => Sheet.close());
     return bg;
   },
-  close() { $$('.sheet-bg').forEach(b => { b.classList.remove('show'); setTimeout(() => b.remove(), 260); }); }
+  close() { $$('.sheet-bg').forEach(b => { b.classList.remove('show'); b.classList.add('closing'); setTimeout(() => b.remove(), 260); }); }
 };
 
 const Confirm = ({ title, message, confirmText = 'تأكيد', danger = false, onYes }) => {
@@ -3313,6 +3413,9 @@ function daypartRow() {
    موجود داخل شاشة الدخول نفسها (كما في المرجع)، وبنفس الألوان تماماً. */
 function showLogin(role) {
   try { document.getElementById('phone').classList.add('login-mode'); } catch (e) {}
+  /* إن كانت بطاقة الدخول ظاهرة أصلاً فلا نعيد بناؤها — حتى لا نمسح ما كتبه
+     المستخدم أثناء مزامنة السحابة (وإلا بدا وكأن التطبيق «يرفض» الإدخال). */
+  if (document.querySelector('.sheet.login-sheet')) return;
   openLogin(role || 'student');
 }
 
@@ -3324,18 +3427,56 @@ const DEMO = {
   admin: { code: 'admin', pw: '123456' }
 };
 
-/* أدوار الدخول — تُستعمل في بطاقة الدخول وفي مبدّل نوع الحساب */
+/* أدوار الدخول — تُستعمل في بطاقة الدخول وفي شبكة الأدوار */
 const LOGIN_ROLES = {
-  student:  { label: 'طالب',    ph: 'أدخل الكود (مثال: AL7QK2)', icon: 'student',  codeLabel: 'كود الطالب' },
-  guardian: { label: 'ولي أمر', ph: 'أدخل الكود (مثال: GU4421)', icon: 'guardian', codeLabel: 'كود ولي الأمر' },
-  teacher:  { label: 'مدرس',    ph: 'أدخل الكود (مثال: TCH100)', icon: 'teacher',  codeLabel: 'كود المدرس' },
-  driver:   { label: 'اشتراك',  ph: 'أدخل الكود (مثال: SUB77A)', icon: 'driver',   codeLabel: 'كود الاشتراك' },
-  admin:    { label: 'الإدارة', ph: 'أدخل اسم المستخدم',          icon: 'admin',    codeLabel: 'اسم المستخدم' }
+  student:  { label: 'طالب',    icon: 'student',  codeLabel: 'كود الطالب' },
+  guardian: { label: 'ولي أمر', icon: 'guardian', codeLabel: 'كود ولي الأمر' },
+  teacher:  { label: 'مدرس',    icon: 'teacher',  codeLabel: 'كود المدرس' },
+  driver:   { label: 'اشتراك',  icon: 'driver',   codeLabel: 'كود الاشتراك' },
+  admin:    { label: 'الإدارة', icon: 'admin',    codeLabel: 'اسم المستخدم' }
 };
 const REMEMBER_KEY = (role) => 'alawael.remember.' + role;
 
 /* ترتيب الأدوار في شبكة 2×2 (يمين←يسار في RTL): طالب، مدرس، ولي أمر، اشتراك */
 const LOGIN_ROLE_ORDER = ['student', 'teacher', 'guardian', 'driver'];
+
+/* هل قاعدة البيانات مربوطة بالسحابة؟ */
+const cloudReady = () => !(typeof CloudApp === 'undefined' || !CloudApp.enabled);
+
+/* الحسابات المتاحة فعلياً لهذا النوع في القاعدة الحالية */
+function roleAccounts(r) {
+  const db = (typeof DB === 'undefined') ? null : DB;
+  if (!db) return [];
+  if (r === 'student') return db.students || [];
+  if (r === 'guardian') { try { return Q.guardians() || []; } catch (e) { return db.guardians || []; } }
+  if (r === 'teacher') return db.teachers || [];
+  if (r === 'driver') return db.drivers || [];
+  return [];
+}
+
+/* هل الحساب التجريبي موجود فعلاً في القاعدة الحالية؟
+   (عند الربط بالسحابة الحقيقية لا وجود لـ AL7QK2 — وعرضه هو سبب
+    رسالة «الباسورد غلط» المضلّلة التي كان يظنّها المستخدم.) */
+function demoExists(r) {
+  const d = DEMO[r];
+  if (!d) return false;
+  return roleAccounts(r).some(a => a && String(a.code || '').toUpperCase() === d.code.toUpperCase());
+}
+
+/* نص حقل الكود: لا نعرض إلا مثالاً يعمل فعلاً، وإلا توجيه واضح */
+function rolePlaceholder(r) {
+  if (demoExists(r)) return 'أدخل الكود (مثال: ' + DEMO[r].code + ')';
+  if (roleAccounts(r).length) {
+    return (r === 'driver') ? 'أدخل البريد أو كود الاشتراك' : 'أدخل الكود الذي يصلك من إدارة المدرسة';
+  }
+  return (r === 'driver') ? 'أدخل البريد أو كود الاشتراك' : 'أدخل الكود';
+}
+
+/* سطر مساعدة: بيانات الحساب التجريبي — يظهر فقط حين يكون الحساب موجوداً */
+function roleHint(r) {
+  if (!demoExists(r)) return '';
+  return 'حساب تجريبي: ' + DEMO[r].code + ' / ' + DEMO[r].pw;
+}
 
 function openLogin(role) {
   let cur = (role === 'admin') ? 'student' : role;
@@ -3361,9 +3502,10 @@ function openLogin(role) {
         <div class="lg-field">
           <label for="lgCode">كود المستخدم</label>
           <div class="lg-in">
-            <input class="input" id="lgCode" placeholder="${LOGIN_ROLES[cur].ph}" autocomplete="off" inputmode="text">
+            <input class="input" id="lgCode" placeholder="${rolePlaceholder(cur)}" autocomplete="off" inputmode="text">
             <span class="in-ic">${ic(LOGIN_ROLES[cur].icon)}</span>
           </div>
+          <div class="lg-hint" id="lgHint">${roleHint(cur)}</div>
         </div>
         <div class="lg-field">
           <label for="lgPw">كلمة المرور</label>
@@ -3386,7 +3528,9 @@ function openLogin(role) {
           b.classList.toggle('on', on);
           b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
-        if (codeEl) codeEl.placeholder = LOGIN_ROLES[r].ph;
+        if (codeEl) codeEl.placeholder = rolePlaceholder(r);
+        const hintEl = $('#lgHint', ov);
+        if (hintEl) { hintEl.textContent = roleHint(r); hintEl.style.display = roleHint(r) ? '' : 'none'; }
         const icEl = ov.querySelector('.lg-field .in-ic');
         if (icEl) icEl.innerHTML = ic(LOGIN_ROLES[r].icon);
         const lbl = ov.querySelector('.lg-field label');
@@ -3440,22 +3584,30 @@ function openLogin(role) {
           App.role = 'admin'; App.user = { role: 'admin', name: adminCfg.name || 'مدير النظام' };
           return enterAsAdmin();
         }
+        /* نفصل بين خطأ «الكود» وخطأ «كلمة المرور» — حتى لا يظن المستخدم
+           أن كلمة مروره خاطئة بينما الكود هو الذي لا يوجد. */
+        const noCode = () => loginFail('لا يوجد حساب بهذا الكود — تأكّد منه لدى إدارة المدرسة');
+        const badPw = () => loginFail('كلمة المرور غير صحيحة');
         if (cur === 'student') {
-          const st = DB.students.find(s => s.code === code.toUpperCase() && (s.password || '1234') === pw);
-          if (!st) return loginFail('الكود أو كلمة المرور غير صحيحة');
+          const st = DB.students.find(s => s.code === code.toUpperCase());
+          if (!st) return noCode();
+          if ((st.password || '1234') !== pw) return badPw();
           App.user = { role: cur, studentId: st.id };
         } else if (cur === 'guardian') {
-          const gu = Q.guardians().find(g => g.code === code.toUpperCase() && (g.password || '1234') === pw);
-          if (!gu) return loginFail('الكود أو كلمة المرور غير صحيحة');
+          const gu = Q.guardians().find(g => g.code === code.toUpperCase());
+          if (!gu) return noCode();
+          if ((gu.password || '1234') !== pw) return badPw();
           App.user = { role: cur, guardianId: gu.id };
         } else if (cur === 'teacher') {
-          const t = DB.teachers.find(x => x.code === code.toUpperCase() && (x.password || '1234') === pw);
-          if (!t) return loginFail('كود المدرس أو كلمة المرور غير صحيحة');
+          const t = DB.teachers.find(x => x.code === code.toUpperCase());
+          if (!t) return noCode();
+          if ((t.password || '1234') !== pw) return badPw();
           App.user = { role: cur, teacherId: t.id };
         } else {
           /* كود السائق قد يكون بريداً إلكترونياً — المقارنة غير حساسة لحالة الأحرف */
-          const dr = DB.drivers.find(x => String(x.code || '').toLowerCase() === code.toLowerCase() && (x.password || '1234') === pw);
-          if (!dr) return loginFail('كود الاشتراك أو كلمة المرور غير صحيحة');
+          const dr = DB.drivers.find(x => String(x.code || '').toLowerCase() === code.toLowerCase());
+          if (!dr) return noCode();
+          if ((dr.password || '1234') !== pw) return badPw();
           App.user = { role: cur, driverId: dr.id };
         }
         /* تذكّر الكود إن طلب المستخدم */
@@ -5938,8 +6090,16 @@ const PushSetup = (() => {
   /* نمط العرض أولاً (قبل أول رسم) — تلقائي نهاراً/ليلاً */
   try { applyTheme(); startThemeWatcher(); } catch (e) {}
   Store.load();
-  /* إن كانت المزامنة السحابية مفعّلة: اسحب بيانات اللوحة قبل أول رسم */
-  try { if (typeof CloudApp !== 'undefined' && CloudApp.enabled) await CloudApp.boot(); } catch (e) { console.warn('[cloud]', e); }
+  /* إن كانت المزامنة السحابية مفعّلة: اسحب بيانات اللوحة قبل أول رسم —
+     لكن بمهلة قصوى حتى لا يبقى التطبيق على شاشة فارغة إن تعذّر الوصول للسحابة */
+  try {
+    if (typeof CloudApp !== 'undefined' && CloudApp.enabled) {
+      await Promise.race([
+        Promise.resolve(CloudApp.boot()).catch(e => { console.warn('[cloud]', e); }),
+        new Promise(r => setTimeout(r, 9000))
+      ]);
+    }
+  } catch (e) { console.warn('[cloud]', e); }
   if (!DB.guardians) DB.guardians = DB.guardian ? [DB.guardian] : [];
   /* استعادة الجلسة: لا نطلب الدخول من جديد بعد إغلاق التطبيق */
   try { if (App.restoreSession) App.restoreSession(); } catch (e) {}

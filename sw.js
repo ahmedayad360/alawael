@@ -1,5 +1,5 @@
 /* عامل الخدمة — يعمل والتطبيق مغلق، ويستقبل الإشعارات الفورية */
-const VERSION = 'alawael-v12';
+const VERSION = 'alawael-v13';
 const SHELL = [
   './app.html',
   './manifest.webmanifest',
@@ -17,8 +17,12 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
+  /* نحذف الكاش القديم فقط بعد التأكد من جاهزية نسخة التطبيق في الكاش الجديد
+     — وإلا قد يبقى المتصفح بلا نسخة صالحة فيظهر له خطأ/صفحة فارغة. */
   e.waitUntil(
-    caches.keys()
+    caches.open(VERSION)
+      .then((c) => c.match('./app.html').then((hit) => hit || c.add('./app.html').catch(() => {})))
+      .then(() => caches.keys())
       .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
@@ -74,6 +78,8 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  /* ملف عامل الخدمة نفسه: لا نخزّنه أبداً — وإلا بقي المتصفح على نسخة قديمة */
+  if (/(^|\/)sw\.js(\?|$)/.test(url.pathname)) return;
   /* إعدادات السحابة يجب أن تُقرأ من الشبكة دائماً (حتى لا تبقى نسخة قديمة فارغة) */
   if (/cloud-config\.js$/.test(url.pathname)) return;
 
@@ -86,7 +92,8 @@ self.addEventListener('fetch', (e) => {
           caches.open(VERSION).then((c) => c.put(req, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match(req).then((hit) => hit || caches.match('./app.html')))
+        .catch(() => caches.match(req).then((hit) => hit || caches.match('./app.html')
+          .then((shell) => shell || caches.match(/\.html$/).then((any) => any))))
     );
     return;
   }
