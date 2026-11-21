@@ -25,7 +25,13 @@ const CloudApp = (() => {
   const PUSH_KEYS = ['threads', 'messages', 'homeworks', 'subLinks', 'students', 'blockedStudents'];
   const KV_KEYS = ['threads', 'messages', 'subLinks', 'homeworks', 'weekly', 'notifications', 'settings', 'blockedStudents'];
 
-  const H = () => ({ apikey: cfg.key, Authorization: 'Bearer ' + cfg.key, 'Content-Type': 'application/json' });
+  /* نرسل Content-Type فقط عند وجود جسم — بدونه لا يحدث طلب CORS مسبق (preflight)
+     وهذا يقلّل احتمال رفض المتصفح للطلب على شبكات الجوال. */
+  const H = (hasBody) => {
+    const h = { apikey: cfg.key, Authorization: 'Bearer ' + cfg.key };
+    if (hasBody) h['Content-Type'] = 'application/json';
+    return h;
+  };
   const base = () => cfg.url.replace(/\/$/, '');
 
   /* مهلة الشبكة: لا نترك التطبيق معلّقاً على شاشة فارغة إن تعذّر الوصول للسحابة */
@@ -41,10 +47,11 @@ const CloudApp = (() => {
       }
     } catch (e) { ctl = null; }
     try {
+      const hasBody = !!(opts.body || (opts.method && opts.method !== 'GET'));
       const res = await fetch(base() + path, {
         ...opts,
         signal: opts.signal || (ctl ? ctl.signal : undefined),
-        headers: { ...H(), ...(opts.headers || {}) }
+        headers: { ...H(hasBody), ...(opts.headers || {}) }
       });
       if (!res.ok) throw new Error('cloud ' + res.status);
       const t = await res.text();
@@ -390,7 +397,8 @@ const CloudApp = (() => {
   async function pull(first = false) {
     if (!enabled) return false;
     try {
-      const rows = await rest('/rest/v1/kv?select=key,value,rev');
+      /* السحب الأولي أثناء الإقلاع: مهلة أقصر حتى لا ننتظر طويلاً على شبكة بطيئة */
+      const rows = await rest('/rest/v1/kv?select=key,value,rev', first ? { timeout: 7000 } : {});
       if (!rows || !rows.length) return false;
       const kv = {};
       rows.forEach(r => { kv[r.key] = r.value; });
@@ -479,6 +487,17 @@ const CloudApp = (() => {
   async function boot() {
     if (!enabled) return false;
     const ok = await pull(true);
+    /* إشعار واضح: السحابة ما وصلت — التطبيق يشتغل بالبيانات المحفوظة */
+    if (!ok) {
+      try {
+        if (typeof window !== 'undefined' && window.__cloudWarned !== 1) {
+          window.__cloudWarned = 1;
+          if (typeof Toast === 'function') {
+            Toast('تعذّر الوصول للسحابة — سيُحدَّث تلقائياً عند توفّر الاتصال', 'err', 5000);
+          }
+        }
+      } catch (e) {}
+    }
     /* اعتراض الحفظ: أي تعديل محلي يُرفع للوحة */
     if (typeof Store !== 'undefined' && Store.save) {
       const orig = Store.save.bind(Store);

@@ -52,9 +52,19 @@
   }
 })();
 
-/* رسالة بديلة بدل الصفحة الفارغة */
-window.__fatal = function (msg) {
+/* رسالة بديلة بدل الصفحة الفارغة.
+   مهم: لا تُعرض إلا إذا فشل الإقلاع فعلاً — لأن أي خطأ متأخر
+   (صورة لم تُحمَّل، إذن مرفوض…) كان يغطي الشاشة ويمنع كل الأزرار. */
+window.__appBooted = false;
+window.__fatal = function (msg, detail) {
   try {
+    /* إذا كان التطبيق قد عرض شيئاً فعلاً فلا نغطي الشاشة أبداً —
+       نكتفي بتسجيل الخطأ. (كان الخطأ يغطي التطبيق كله على آيفون) */
+    var rendered = document.querySelector('.lg-card, .screen, .tabbar, .sheet.login-sheet');
+    if (window.__appBooted || rendered) {
+      try { console.error('[alawael]', msg, detail || ''); } catch (e) {}
+      return;
+    }
     if (window.__fatalShown) return; window.__fatalShown = 1;
     var s = document.getElementById('splash'); if (s && s.parentNode) s.parentNode.removeChild(s);
     var box = document.getElementById('fatalBox');
@@ -64,19 +74,43 @@ window.__fatal = function (msg) {
       box.setAttribute('style', 'position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:99999;display:grid;place-items:center;background:#2A2066;color:#fff;padding:28px;text-align:center;font-family:inherit');
       (document.body || document.documentElement).appendChild(box);
     }
+    var detailTxt = detail ? ('<div style="font-size:11px;opacity:.6;direction:ltr;text-align:left;margin-top:8px;word-break:break-all">' + String(detail).slice(0, 200) + '</div>') : '';
     box.innerHTML = '<div style="max-width:340px">' +
       '<div style="font-size:17px;font-weight:900;margin-bottom:10px">تعذّر تشغيل التطبيق</div>' +
-      '<div style="font-size:13px;opacity:.85;line-height:2;margin-bottom:20px">' +
-      (msg ? String(msg).slice(0, 180) : 'حدث خطأ غير متوقع.') + '</div>' +
-      '<button onclick="location.reload()" style="background:#fff;color:#2A2066;border:0;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer">إعادة المحاولة</button>' +
+      '<div style="font-size:13px;opacity:.85;line-height:2;margin-bottom:16px">' +
+      (msg ? String(msg).slice(0, 220) : 'حدث خطأ غير متوقع.') + '</div>' + detailTxt +
+      '<button onclick="location.reload()" style="background:#fff;color:#2A2066;border:0;border-radius:999px;padding:13px 26px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer">إعادة المحاولة</button>' +
+      '<button onclick="this.closest(\'#fatalBox\').remove()" style="display:block;margin:10px auto 0;background:transparent;color:#fff;border:0;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;opacity:.75">متابعة بدونه</button>' +
       '</div>';
   } catch (e) {}
 };
 window.addEventListener('error', function (e) {
-  try { window.__fatal((e && e.message) ? e.message : ''); } catch (x) {}
+  try {
+    /* أخطاء تحميل الموارد (صورة/خط/نص) ليست أخطاء تشغيل — لا نعرض شيئاً */
+    if (e && e.target && e.target !== window && e.target.nodeType === 1) return;
+    var fn = (e && e.filename) ? String(e.filename) : '';
+    /* أخطاء الشبكة من نطاق آخر (Supabase مثلاً) يبلّغ عنها Safari
+       بالرسالة «Script error.» — وهي ليست خطأ تشغيل، فلا نغطي التطبيق. */
+    if (/^https?:\/\//i.test(fn) && fn.indexOf(location.origin) !== 0) {
+      try { console.warn('[alawael] تعذّر الاتصال بالخادم (تجاهل):', fn, e.message || ''); } catch (x) {}
+      return;
+    }
+    var where = fn ? (fn + ':' + (e.lineno || 0) + ':' + (e.colno || 0)) : '';
+    window.__fatal((e && e.message) ? e.message : '', where);
+  } catch (x) {}
 });
 window.addEventListener('unhandledrejection', function (e) {
-  try { window.__fatal((e && e.reason && e.reason.message) ? e.reason.message : ''); } catch (x) {}
+  try {
+    var r = e && e.reason;
+    var msg = (r && r.message) ? r.message : (r ? String(r) : '');
+    /* فشل الاتصال بالشبكة ليس خطأ تشغيل — نتجاهله */
+    if (/load failed|failed to fetch|networkerror|network request failed|script error/i.test(msg)) {
+      try { console.warn('[alawael] طلب شبكة مرفوض (تجاهل):', msg); } catch (x) {}
+      return;
+    }
+    var where = (r && r.stack) ? String(r.stack).split('\n')[1] || '' : '';
+    window.__fatal(msg || 'تعذّر الاتصال', where);
+  } catch (x) {}
 });
 </script>
 <style>
@@ -473,6 +507,7 @@ select.input{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xm
 /* ---------- سبلاش ---------- */
 .splash{
   position:fixed; top:0;right:0;bottom:0;left:0;inset:0; z-index:9999; display:grid; place-items:center;
+  pointer-events:none;   /* لا يحجب أي لمسة مهما حدث للأنيميشن */
   background:radial-gradient(120% 90% at 50% 10%, #0C55B4 0%, #0A2E6B 36%, #04122C 70%, #010A18 100%);
   animation:splashOut .55s 1.15s forwards;
 }
@@ -1700,7 +1735,9 @@ html[data-daypart="evening"]{
    --------------------------------------------------------------- */
 .splash{
   position:fixed; top:0;right:0;bottom:0;left:0;inset:0; z-index:9999; display:grid; place-items:center;
-  background:var(--lg-bg);
+  pointer-events:none;   /* لا يحجب أي لمسة مهما حدث للأنيميشن */
+  background-color:#2A2066;   /* لون صلب احتياطي إن فشل المتغيّر --lg-bg */
+  background-image:var(--lg-bg);
   background-size:cover; background-repeat:no-repeat;
   animation:splashOut .66s 1.30s cubic-bezier(.4,0,.2,1) forwards;
   overflow:hidden;
@@ -2277,6 +2314,117 @@ html[data-theme="dark"] .tabbar button .tab-badge{
   position:absolute; top:1px; right:calc(50% - 19px);inset-inline-start:calc(50% - 19px);
   margin:0; z-index:3;
 }
+
+/* ==================================================================
+   11) ملاءمة شاشة الدخول لأحجام الهواتف (iPhone SE ← iPhone Pro Max)
+   --------------------------------------------------------------
+   المشكلة: على شاشة 390×844 كان زر «تسجيل الدخول» يقع أسفل حدّ
+   الشاشة → لا يمكن الوصول إليه ولا الضغط عليه.
+   الحل: ضغط تدريجي للمسافات والعناصر حسب ارتفاع الشاشة، مع الحفاظ
+   على التصميم نفسه على الشاشات الطويلة.
+   ================================================================== */
+
+/* شاشات متوسطة الارتفاع (iPhone 14/15/16/17 — 844px) */
+@media (max-height: 900px){
+  html .sheet-bg.canvas{ padding:calc(14px + var(--safe-t)) 14px calc(14px + var(--safe-b)) }
+  html .lg-brand{ margin-bottom:8px }
+  html .lg-logo{ width:64px; height:64px; margin-bottom:6px; border-radius:21px; box-shadow:0 12px 24px rgba(6,2,24,.42) }
+  html .lg-school{ font-size:18px; line-height:1.4 }
+  html .lg-tag{ font-size:11.5px; margin-top:2px }
+  html .lg-card{ padding:12px 14px 14px; border-radius:22px }
+  html .lg-head{ margin-bottom:9px }
+  html .lg-head .lg-t{ font-size:17px }
+  html .lg-head .lg-s{ font-size:11.5px; margin-top:2px; line-height:1.55 }
+  html .lg-roles{ gap:7px; margin-bottom:10px; max-width:210px }
+  html .lg-role{ min-height:76px; padding:8px 6px; gap:6px; border-radius:17px }
+  html .lg-role .lg-ri{ width:38px; height:38px; border-radius:13px }
+  html .lg-role .lg-ri svg{ width:21px; height:21px }
+  html .lg-role .lg-rl{ font-size:12.5px }
+  html .lg-field{ margin-bottom:9px }
+  html .lg-field > label{ font-size:12.5px; margin-bottom:5px }
+  html .lg-in .input{ padding:12px 42px; font-size:14px }
+  html .lg-in .eye{ width:30px; height:30px }
+  html .lg-hint{ margin-top:5px; font-size:11px; line-height:1.6 }
+  html .lg-remember{ margin-bottom:10px; font-size:12.5px }
+  html .lg-go{ padding:13px 20px; font-size:14.5px }
+}
+
+/* شاشات قصيرة (iPhone SE / 8 — 667px) */
+@media (max-height: 740px){
+  html .sheet-bg.canvas{ padding:calc(8px + var(--safe-t)) 12px calc(10px + var(--safe-b)) }
+  html .lg-brand{ margin-bottom:6px }
+  html .lg-logo{ width:50px; height:50px; margin-bottom:4px; border-radius:17px; box-shadow:0 10px 20px rgba(6,2,24,.40) }
+  html .lg-school{ font-size:16px }
+  html .lg-tag{ font-size:10.5px }
+  html .lg-card{ padding:10px 12px 12px; border-radius:20px }
+  html .lg-head{ margin-bottom:7px }
+  html .lg-head .lg-t{ font-size:15.5px }
+  html .lg-head .lg-s{ font-size:11px; line-height:1.5 }
+  html .lg-roles{ gap:6px; margin-bottom:8px; max-width:178px }
+  html .lg-role{ min-height:64px; padding:6px 4px; gap:4px; border-radius:15px }
+  html .lg-role .lg-ri{ width:32px; height:32px; border-radius:11px }
+  html .lg-role .lg-ri svg{ width:18px; height:18px }
+  html .lg-role .lg-rl{ font-size:11.5px }
+  html .lg-field{ margin-bottom:7px }
+  html .lg-field > label{ font-size:12px; margin-bottom:4px }
+  html .lg-in .input{ padding:10px 40px; font-size:14px }
+  html .lg-in .in-ic svg{ width:17px; height:17px }
+  html .lg-hint{ margin-top:4px; font-size:10.5px; line-height:1.5 }
+  html .lg-remember{ margin-bottom:8px; font-size:12px }
+  html .lg-remember input{ width:18px; height:18px }
+  html .lg-go{ padding:11px 18px; font-size:14px }
+}
+
+/* شاشات قصيرة جداً أو أفقية: نخفي كتلة الشعار ونُبقي النموذج قابلاً للتمرير */
+@media (max-height: 560px){
+  html .lg-brand{ display:none }
+  html .sheet-bg.canvas{ align-items:flex-start }
+}
+
+/* تمرير موثوق على iOS (نодуّر zone التمرير باللمس) */
+html .sheet-bg.canvas{ -webkit-overflow-scrolling:touch; overscroll-behavior:contain }
+
+/* الوضع الأفقي على الهاتف: نضع الأدوار في صف واحد حتى fits دخول كامل بلا تمرير */
+@media (max-height: 560px) and (orientation: landscape){
+  html .sheet-bg.canvas{ align-items:flex-start; padding:calc(8px + var(--safe-t)) 14px calc(10px + var(--safe-b)) }
+  html .lg-brand{ display:none }
+  html .lg-card{ padding:10px 14px 12px; border-radius:18px; max-width:520px; margin-inline:auto }
+  html .lg-head{ margin-bottom:6px }
+  html .lg-head .lg-t{ font-size:15px }
+  html .lg-head .lg-s{ font-size:10.5px; line-height:1.4 }
+  html .lg-roles{ grid-template-columns:repeat(4,1fr); max-width:none; gap:6px; margin-bottom:8px }
+  html .lg-role{ min-height:0; height:46px; aspect-ratio:auto; padding:4px 6px; gap:6px; flex-direction:row; border-radius:14px }
+  html .lg-role .lg-ri{ width:26px; height:26px; border-radius:9px }
+  html .lg-role .lg-ri svg{ width:15px; height:15px }
+  html .lg-role .lg-rl{ font-size:11.5px }
+  html .lg-field{ margin-bottom:6px }
+  html .lg-field > label{ font-size:11.5px; margin-bottom:3px }
+  html .lg-in .input{ padding:9px 38px; font-size:13.5px }
+  html .lg-hint{ margin-top:3px; font-size:10px; line-height:1.45 }
+  html .lg-remember{ margin-bottom:7px; font-size:11.5px }
+  html .lg-remember input{ width:17px; height:17px }
+  html .lg-go{ padding:10px 18px; font-size:13.5px }
+}
+
+/* الوضع الأفقي: ضغط إضافي حتى يظهر زر الدخول كاملاً بلا تمرير */
+@media (max-height: 560px) and (orientation: landscape){
+  html .lg-card{ padding:8px 14px 8px }
+  html .lg-head{ margin-bottom:4px }
+  html .lg-head .lg-t{ font-size:14px }
+  html .lg-head .lg-s{ display:none }
+  html .lg-roles{ margin-bottom:6px }
+  html .lg-role{ height:38px; padding:3px 6px }
+  html .lg-role .lg-ri{ width:24px; height:24px; border-radius:8px }
+  html .lg-role .lg-ri svg{ width:14px; height:14px }
+  html .lg-field{ margin-bottom:4px }
+  html .lg-in .input{ padding:7px 36px }
+  html .lg-hint{ margin-top:2px; line-height:1.35 }
+  html .lg-remember{ margin-bottom:4px }
+  html .lg-go{ padding:9px 18px }
+}
+
+/* حركة ظهور تنبيه تثبيت التطبيق على آيفون */
+@keyframes iosHintIn{ from{ opacity:0; transform:translateY(-14px) } to{ opacity:1; transform:none } }
 /* ==== ICI-LAYER-END ==== */
 
 </style>
@@ -3571,6 +3719,8 @@ function openLogin(role) {
         try { App.saveSession(); } catch (e) {}
         setTimeout(() => App.render(), 120);
         setTimeout(() => Toast('أهلاً بك', 'ok'), 420);
+        /* بعد الدخول: نعرض تنبيه تثبيت التطبيق على آيفون (لا يحجب أي زر) */
+        setTimeout(() => { try { if (typeof iosInstallHint === 'function') iosInstallHint(); } catch (e) {} }, 2000);
       };
       const cloudOff = () => (typeof CloudApp === 'undefined' || !CloudApp.enabled);
       const loginFail = (m) => Toast(cloudOff() ? m + ' — وقاعدة البيانات غير مربوطة بهذا الجهاز' : m, 'err');
@@ -5967,24 +6117,34 @@ function iosInstallHint() {
     if (!isIOS || standalone) return;
     if (localStorage.getItem('alawael.iosHint') === 'off') return;
     if (document.getElementById('iosHint')) return;
+    /* نعرضه بعد الدخول فقط — على شاشة الدخول كان يغطي شعار المدرسة */
+    try { if (!App || !App.role) return; } catch (e) { return; }
     const el = document.createElement('div');
     el.id = 'iosHint';
     el.dir = 'rtl';
-    el.style.cssText = 'position:fixed;inset-inline:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:9999;' +
+    /* مهم: pointer-events:none على الحاوية حتى لا يبتلع تنزيلات المستخدم
+       (كان يغطي زر «تسجيل الدخول» على الهاتف فلا يُضغط أي زر).
+       الزر × وحده قابل للضغط. ونضعه في الأعلى لا في الأسفل كي لا
+       يغطي الشريط السفلي بعد الدخول. */
+    el.style.cssText = 'position:fixed;inset-inline:12px;top:calc(10px + env(safe-area-inset-top));z-index:9999;' +
+      'pointer-events:none;' +
       'background:#0B1226;color:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 18px 40px rgba(8,20,50,.35);' +
-      'font-family:inherit;font-size:13px;font-weight:700;line-height:1.9;display:flex;gap:12px;align-items:flex-start';
+      'font-family:inherit;font-size:13px;font-weight:700;line-height:1.9;display:flex;gap:12px;align-items:flex-start;' +
+      'animation:iosHintIn .4s ease both';
     el.innerHTML = '<div style="flex:1">' +
       '<b style="display:block;font-size:13.5px;margin-bottom:4px">ثبّت التطبيق على جوالك</b>' +
       (isSafari
         ? 'اضغط زر المشاركة <span style="font-size:16px">⬆️</span> أسفل الشاشة ← مرّر ← <b>إضافة إلى الشاشة الرئيسية</b>.'
         : 'افتح هذا الرابط من <b>Safari</b> (لا من متصفح آخر) ثم: مشاركة ⬆️ ← <b>إضافة إلى الشاشة الرئيسية</b>.') +
-      '</div><button id="iosHintX" style="background:rgba(255,255,255,.14);border:0;color:#fff;width:28px;height:28px;' +
+      '</div><button id="iosHintX" style="pointer-events:auto;background:rgba(255,255,255,.14);border:0;color:#fff;width:28px;height:28px;' +
       'border-radius:10px;font-size:15px;font-weight:800;line-height:1;cursor:pointer;flex:none">×</button>';
     document.body.appendChild(el);
     el.querySelector('#iosHintX').onclick = () => {
       localStorage.setItem('alawael.iosHint', 'off');
       el.remove();
     };
+    /* إخفاء تلقائي بعد 9 ثوانٍ حتى لا يبقى يغطي شيء */
+    setTimeout(() => { try { el.remove(); } catch (e) {} }, 9000);
   } catch (e) {}
 }
 
@@ -6104,6 +6264,8 @@ const PushSetup = (() => {
   /* استعادة الجلسة: لا نطلب الدخول من جديد بعد إغلاق التطبيق */
   try { if (App.restoreSession) App.restoreSession(); } catch (e) {}
   App.render();
+  /* التطبيق أقلع بنجاح — من الآن فصاعداً لا نغطي الشاشة بأي خطأ */
+  window.__appBooted = true;
 
 
   setTimeout(iosInstallHint, 1600);

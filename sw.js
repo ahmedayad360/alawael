@@ -1,6 +1,8 @@
 /* عامل الخدمة — يعمل والتطبيق مغلق، ويستقبل الإشعارات الفورية */
-const VERSION = 'alawael-v13';
+const VERSION = 'alawael-v14';
 const SHELL = [
+  './',
+  './index.html',
   './app.html',
   './manifest.webmanifest',
   './icon-192.png',
@@ -21,7 +23,10 @@ self.addEventListener('activate', (e) => {
      — وإلا قد يبقى المتصفح بلا نسخة صالحة فيظهر له خطأ/صفحة فارغة. */
   e.waitUntil(
     caches.open(VERSION)
-      .then((c) => c.match('./app.html').then((hit) => hit || c.add('./app.html').catch(() => {})))
+      .then((c) => c.match('./app.html')
+        .then((hit) => hit || c.add('./app.html').catch(() => {}))
+        .then(() => c.match('./index.html').then((hit) => hit || c.add('./index.html').catch(() => {})))
+        .then(() => c.match('./').then((hit) => hit || c.add('./').catch(() => {}))))
       .then(() => caches.keys())
       .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
@@ -93,7 +98,7 @@ self.addEventListener('fetch', (e) => {
           return res;
         })
         .catch(() => caches.match(req).then((hit) => hit || caches.match('./app.html')
-          .then((shell) => shell || caches.match(/\.html$/).then((any) => any))))
+          .then((shell) => shell || caches.match('./index.html').then((idx) => idx || caches.match('./')))))
     );
     return;
   }
