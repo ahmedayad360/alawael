@@ -1751,44 +1751,50 @@ html[data-daypart="evening"] .entry::after{ background:linear-gradient(270deg,rg
 .entry .center.small.muted{ color:var(--canvas-muted) }
 
 /* ---------------------------------------------------------------
-   5) شاشة تسجيل الدخول — نهارية فقط (الوضع النهاري دائماً)
+   5) شاشة تسجيل الدخول — واجهة المرجع
    ---------------------------------------------------------------
-   • الخلفية: تدرّج لوني هادئ بنفس ألوان الهوية (كريمي ← لافندر).
-   • بلا بطاقة: الحقول مباشرة فوق الخلفية (نموذج بملء الشاشة).
-   • نفس الألوان والنصوص في الوضع الفاتح والداكن.
+   • الخلفية: تدرّج نهاري هادئ (نفس تدرّج شاشة البداية بالضبط).
+   • الأعلى: شعار المدرسة + الاسم + الوصف.
+   • الأسفل: بطاقة بيضاء فيها العنوان ومبدّل نوع الحساب والحقول والزر.
+   • نهارية دائماً: نفس الألوان في الوضع الفاتح والداكن.
    --------------------------------------------------------------- */
 :root{
-  --lg-bg-grad:linear-gradient(176deg,#FBF8F1 0%,#F6F1FB 24%,#EFEAF8 50%,#E4DDF2 76%,#D9D1EB 100%);
-  --lg-btn-grad:linear-gradient(135deg,#6E63A8 0%,#4C3D9E 48%,#2C2168 100%);
-  --lg-ink:#1B1440;
-  --lg-ink-2:#3E3570;
-  --lg-muted:#5B5480;
-  --lg-accent:#3F3197;
-  --lg-line:#DCD5EC;
-  --lg-field:#FFFFFF;
-  --lg-seg:#F1EDFA;
-  --lg-icon:#5B5290;
+  --lg-bg:
+    radial-gradient(120% 44% at 50% -8%, rgba(255,255,255,.82) 0%, rgba(255,255,255,0) 62%),
+    radial-gradient(100% 36% at 50% 110%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 58%),
+    linear-gradient(180deg,#D5D0E3 0%,#CBC6DD 46%,#C3BDD5 100%);
+  --lg-ink:#0E1629;
+  --lg-ink-2:#3A2483;
+  --lg-muted:#64738B;
+  --lg-label:#324055;
   --lg-ph:#6E6791;
+  --lg-accent:#3A2483;
+  --lg-icon:#6C5AA2;
+  --lg-card:#FFFFFF;
+  --lg-line:#EAE7F4;
+  --lg-seg:#F1EEF7;
+  --lg-btn:linear-gradient(90deg,#9E93C6 0%,#6B5BA8 46%,#3C2683 100%);
+  --lg-shadow:0 18px 40px rgba(40,28,86,.14);
 }
 
-/* الخلفية: تدرّج هادئ يملأ الشاشة بالكامل */
+/* الخلفية: تدرّج نهاري يملأ الشاشة */
 html .sheet-bg.canvas{
-  background-color:#F2EEF9;
-  background-image:var(--lg-bg-grad) !important;
+  background-color:#DCD7E8;
+  background-image:var(--lg-bg) !important;
   backdrop-filter:none; -webkit-backdrop-filter:none;
   align-items:flex-start; justify-content:center;
-  padding:24px 20px calc(24px + var(--safe-b));
+  padding:calc(22px + var(--safe-t)) 18px calc(24px + var(--safe-b));
   overflow-y:auto;
 }
 html[data-theme="dark"] .sheet-bg.canvas{
-  background-color:#F2EEF9 !important;
-  background-image:var(--lg-bg-grad) !important;
+  background-color:#DCD7E8 !important;
+  background-image:var(--lg-bg) !important;
 }
 
-/* النموذج: بلا بطاقة — حقول مباشرة فوق الخلفية */
+/* النموذج: بلا بطاقة خارجية — البطاقة البيضاء داخله */
 html .sheet.login-sheet{
   background:transparent !important; border:0 !important; box-shadow:none !important;
-  border-radius:0; width:100%; max-width:420px; margin:auto;
+  border-radius:0; width:100%; max-width:460px; margin:auto;
   padding:0; max-height:none; overflow:visible;
   transform:translateY(16px); opacity:0;
   transition:transform .34s cubic-bezier(.32,.72,0,1), opacity .28s ease;
@@ -1796,99 +1802,123 @@ html .sheet.login-sheet{
 html .sheet-bg.show .sheet.login-sheet{ transform:none; opacity:1 }
 html .sheet.login-sheet .handle{ display:none }
 
+/* الشعار والاسم */
+html .lg-brand{ text-align:center; margin-bottom:14px }
+html .lg-logo{
+  width:84px; height:84px; border-radius:27px; margin:0 auto 12px; display:block;
+  background-image:var(--logo); background-size:contain; background-position:center; background-repeat:no-repeat;
+  filter:drop-shadow(0 14px 26px rgba(46,36,105,.20));
+}
+html .lg-school{
+  font-size:21px; font-weight:900; color:var(--lg-ink); letter-spacing:-.3px; line-height:1.5;
+}
+html .lg-tag{
+  font-size:12.5px; font-weight:800; color:var(--lg-ink-2); margin-top:2px; letter-spacing:.2px;
+}
+
+/* البطاقة البيضاء */
+html .lg-card{
+  background:var(--lg-card); border:1px solid var(--lg-line); border-radius:26px;
+  padding:18px 16px 20px; box-shadow:var(--lg-shadow); text-align:start;
+}
+
 /* العنوان */
-html .lg-head{ text-align:center; margin-bottom:20px }
-html .lg-head .lg-t{
-  font-size:22px; font-weight:800; color:var(--lg-ink); letter-spacing:-.3px;
-}
-html .lg-head .lg-s{
-  font-size:13px; font-weight:700; color:var(--lg-muted); margin-top:6px; line-height:1.8;
-}
+html .lg-head{ text-align:center; margin-bottom:14px }
+html .lg-head .lg-t{ font-size:19px; font-weight:900; color:var(--lg-ink); letter-spacing:-.2px }
+html .lg-head .lg-s{ font-size:12.5px; font-weight:700; color:var(--lg-muted); margin-top:5px; line-height:1.7 }
 
 /* مبدّل نوع الحساب */
 html .lg-seg{
-  display:flex; gap:4px; background:var(--lg-seg); border:1px solid var(--lg-line);
-  border-radius:16px; padding:4px; margin-bottom:22px;
+  display:flex; gap:4px; background:var(--lg-seg); border-radius:15px; padding:4px; margin-bottom:18px;
 }
 html .lg-seg .sg{
-  flex:1; padding:10px 4px; border-radius:12px; font-size:12.5px; font-weight:800;
-  color:var(--lg-muted); transition:all .18s cubic-bezier(.3,.8,.4,1); white-space:nowrap;
+  flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
+  padding:9px 3px; border-radius:11px; font-size:11.5px; font-weight:800; color:var(--lg-muted);
+  transition:all .18s cubic-bezier(.3,.8,.4,1); white-space:nowrap;
 }
+html .lg-seg .sg svg{ width:15px; height:15px; stroke-width:1.9; flex:none }
 html .lg-seg .sg.on{
-  background:var(--lg-field); color:var(--lg-accent); font-weight:800;
-  box-shadow:0 4px 12px rgba(63,49,151,.14);
+  background:#FFFFFF; color:var(--lg-ink); box-shadow:0 3px 10px rgba(58,36,131,.14);
 }
+html .lg-seg .sg.on svg{ color:var(--lg-accent) }
 html .lg-seg .sg:active{ transform:scale(.97) }
 
 /* الحقول */
-html .lg-field{ margin-bottom:16px }
+html .lg-field{ margin-bottom:14px }
 html .lg-field > label{
-  display:block; font-size:13px; font-weight:800; color:var(--lg-ink-2); margin-bottom:8px; text-align:start;
+  display:block; font-size:13px; font-weight:800; color:var(--lg-label); margin-bottom:7px; text-align:start;
 }
 html .lg-in{ position:relative }
 html .lg-in .input{
-  width:100%; border-radius:16px; border:1px solid var(--lg-line); background:var(--lg-field); color:var(--lg-ink);
-  padding:14px 46px 14px 16px; font-size:15px; font-weight:700;
-  box-shadow:0 6px 16px rgba(63,49,151,.07);
+  width:100%; border-radius:14px; border:1px solid #E6E3F0; background:#FFFFFF; color:var(--lg-ink);
+  padding:15px 46px; font-size:14.5px; font-weight:700;
   transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
 html .lg-in .input:focus{
-  outline:none; background:var(--lg-field); border-color:var(--lg-accent);
-  box-shadow:0 0 0 4px color-mix(in srgb, var(--lg-accent) 16%, transparent), 0 6px 16px rgba(63,49,151,.10);
+  outline:none; background:#FFFFFF; border-color:var(--lg-accent);
+  box-shadow:0 0 0 4px rgba(58,36,131,.12);
 }
 html .lg-in .input::placeholder{ color:var(--lg-ph); font-weight:600; opacity:1 }
 html .lg-in .in-ic{
-  position:absolute; inset-inline-end:14px; inset-block-start:50%; transform:translateY(-50%);
+  position:absolute; inset-inline-start:14px; inset-block-start:50%; transform:translateY(-50%);
   color:var(--lg-icon); pointer-events:none; display:grid; place-items:center;
 }
-html .lg-in .in-ic svg{ width:19px; height:19px; stroke-width:1.8 }
+html .lg-in .in-ic svg{ width:19px; height:19px; stroke-width:1.9 }
 html .lg-in .eye{
-  position:absolute; inset-inline-start:8px; inset-block-start:50%; transform:translateY(-50%);
+  position:absolute; inset-inline-end:8px; inset-block-start:50%; transform:translateY(-50%);
   width:34px; height:34px; border-radius:11px; display:grid; place-items:center;
   color:var(--lg-icon); background:transparent; border:0;
 }
 html .lg-in .eye:active{ background:var(--lg-seg) }
 html .lg-in .eye svg{ width:18px; height:18px; stroke-width:1.8 }
+
+/* تذكّرني */
 html .lg-remember{
-  display:flex; align-items:center; gap:9px; margin:2px 0 20px; cursor:pointer;
-  font-size:13px; font-weight:700; color:var(--lg-ink-2);
+  display:flex; align-items:center; gap:9px; margin:2px 0 18px; cursor:pointer;
+  font-size:13px; font-weight:700; color:var(--lg-label);
 }
 html .lg-remember input{
-  width:19px; height:19px; accent-color:var(--lg-accent); flex:0 0 auto; cursor:pointer;
+  width:20px; height:20px; accent-color:var(--lg-accent); flex:0 0 auto; cursor:pointer;
 }
+
+/* زر الدخول */
 html .lg-go{
-  width:100%; border-radius:17px; padding:15px 18px; font-size:15.5px; font-weight:800;
-  background:var(--lg-btn-grad); color:#fff; box-shadow:0 14px 30px rgba(63,49,151,.28);
+  width:100%; border-radius:16px; padding:16px 18px; font-size:15.5px; font-weight:800;
+  background:var(--lg-btn); color:#fff; box-shadow:0 12px 26px rgba(58,36,131,.24);
+  text-shadow:0 1px 2px rgba(26,16,70,.28);
   display:flex; align-items:center; justify-content:center; gap:9px;
 }
 html .lg-go::before{ display:none }
 html .lg-go:active{ transform:scale(.98) }
 html .lg-go svg{ width:18px; height:18px }
 
+/* شريط الحالة فوق خلفية الدخول (كما في المرجع) وبألوان نهارية */
+html #phone.login-mode .statusbar{ z-index:120; color:#0B1226 }
+html #phone.login-mode .statusbar svg{ color:#0B1226 }
+html #phone.login-mode .sheet-bg.canvas{ padding-top:calc(54px + var(--safe-t)) }
+
 /* تسجيل الدخول نهاري دائماً: نتجاوز قواعد الوضع الداكن العامة */
 html[data-theme="dark"] .sheet.login-sheet .lg-in .input{
-  background:var(--lg-field) !important; border-color:var(--lg-line) !important; color:var(--lg-ink) !important;
+  background:#FFFFFF !important; border-color:#E6E3F0 !important; color:var(--lg-ink) !important;
 }
 html[data-theme="dark"] .sheet.login-sheet .lg-in .input:focus{
-  background:var(--lg-field) !important; border-color:var(--lg-accent) !important;
+  background:#FFFFFF !important; border-color:var(--lg-accent) !important;
 }
 html[data-theme="dark"] .sheet.login-sheet .lg-in .input::placeholder{ color:var(--lg-ph) !important }
-html[data-theme="dark"] .sheet.login-sheet .lg-field > label{ color:var(--lg-ink-2) !important }
-html[data-theme="dark"] .sheet.login-sheet .lg-remember{ color:var(--lg-ink-2) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-field > label{ color:var(--lg-label) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-remember{ color:var(--lg-label) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-in .in-ic,
 html[data-theme="dark"] .sheet.login-sheet .lg-in .eye{ color:var(--lg-icon) !important }
-html[data-theme="dark"] .sheet.login-sheet .lg-seg{
-  background:var(--lg-seg) !important; border-color:var(--lg-line) !important;
-}
+html[data-theme="dark"] .sheet.login-sheet .lg-seg{ background:var(--lg-seg) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-seg .sg{ color:var(--lg-muted) !important }
-html[data-theme="dark"] .sheet.login-sheet .lg-seg .sg.on{
-  background:var(--lg-field) !important; color:var(--lg-accent) !important;
-}
+html[data-theme="dark"] .sheet.login-sheet .lg-seg .sg.on{ background:#FFFFFF !important; color:var(--lg-ink) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-head .lg-t{ color:var(--lg-ink) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-head .lg-s{ color:var(--lg-muted) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-school{ color:var(--lg-ink) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-tag{ color:var(--lg-ink-2) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-go{
-  background:var(--lg-btn-grad) !important; color:#fff !important;
-  box-shadow:0 14px 30px rgba(63,49,151,.30) !important;
+  background:var(--lg-btn) !important; color:#fff !important;
+  box-shadow:0 12px 26px rgba(58,36,131,.26) !important;
 }
 
 /* ---------------------------------------------------------------
@@ -2202,6 +2232,10 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&lt;','>':'
    ========================================================================== */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+/* عناصر قابلة للربط بأحداث: نستثني <html> لأنه يحمل سمات الحالة العامة
+   (data-theme / data-mode / data-daypart / data-daypart-mode)، وربط onclick عليه
+   يوقف فقاعة النقر ويمنع التحميل الافتراضي للملفات. */
+const $$el = (s, r = document) => [...r.querySelectorAll(s)].filter(el => el !== document.documentElement && el.tagName !== 'HTML');
 const uid = (p='x') => p + Math.random().toString(36).slice(2, 9);
 const AR_DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 const AR_MONTHS = ['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
@@ -2892,7 +2926,7 @@ const Toast = (msg, kind = '') => {
 };
 
 const Sheet = {
-  open({ title, sub, body, actions = '', cls = '', bgCls = '', onMount }) {
+  open({ title, sub, body, actions = '', cls = '', bgCls = '', dismissible = true, onMount }) {
     this.close();
     const bg = document.createElement('div');
     bg.className = 'sheet-bg' + (bgCls ? ' ' + bgCls : '');
@@ -2904,7 +2938,7 @@ const Sheet = {
     </div>`;
     $('#phone').appendChild(bg);
     requestAnimationFrame(() => bg.classList.add('show'));
-    bg.addEventListener('click', e => { if (e.target === bg) Sheet.close(); });
+    if (dismissible) bg.addEventListener('click', e => { if (e.target === bg) Sheet.close(); });
     $$('[data-close]', bg).forEach(b => b.onclick = () => Sheet.close());
     onMount && onMount(bg, () => Sheet.close());
     return bg;
@@ -3033,8 +3067,9 @@ const App = {
         : this.role === 'teacher' ? (this.user && this.user.teacherId)
         : this.role === 'driver' ? (this.user && this.user.driverId) : null;
     } catch (e) {}
-    if (!this.role) { renderEntry(); return; }
+    if (!this.role) { showLogin(); return; }
     try { document.getElementById('phone').classList.remove('entry-mode'); } catch (e) {}
+    try { document.getElementById('phone').classList.remove('login-mode'); } catch (e) {}
     ({ student: renderStudentApp, guardian: renderGuardianApp, teacher: renderTeacherApp,
        driver: renderDriverApp, admin: renderAdminApp }[this.role] || renderStudentApp)();
     setTimeout(() => { try { App.checkNotifs(); } catch (e) {} }, 60);
@@ -3164,54 +3199,44 @@ function themeRow() {
   </div>`;
 }
 
+/* لوحة الوقت (صباحي/مسائي) — كانت في شاشة البداية، ونُقلت إلى الإعدادات بعد توحيد الشاشات */
+function daypartMode() {
+  try {
+    const v = localStorage.getItem('alawael.daypart') || 'auto';
+    return ['auto', 'morning', 'evening'].includes(v) ? v : 'auto';
+  } catch (e) { return 'auto'; }
+}
+function setDaypart(mode) {
+  const m = ['auto', 'morning', 'evening'].includes(mode) ? mode : 'auto';
+  const h = new Date().getHours();
+  const auto = (h >= 5 && h < 17) ? 'morning' : 'evening';
+  const now = m === 'auto' ? auto : m;
+  document.documentElement.setAttribute('data-daypart', now);
+  document.documentElement.setAttribute('data-daypart-mode', m);
+  try { localStorage.setItem('alawael.daypart', m); } catch (e) {}
+}
+function daypartRow() {
+  const mode = daypartMode();
+  const dp = document.documentElement.getAttribute('data-daypart') || 'morning';
+  const seg = (id, label, icon) => `<button class="seg-btn ${mode === id ? 'on' : ''}" data-daypart-mode="${id}">${ic(icon, 'svg-i')} ${label}</button>`;
+  return `<div class="theme-card">
+    <div class="row" style="gap:10px;padding:2px 2px 10px">
+      <div class="ri y">${ic('sunMoon')}</div>
+      <div class="rt"><b>لوحة الوقت</b><span>${mode === 'auto' ? `تلقائي — الآن ${dp === 'morning' ? 'صباحي' : 'مسائي'}` : (dp === 'morning' ? 'صباحي — ثابت' : 'مسائي — ثابت')}</span></div>
+    </div>
+    <div class="seg3">${seg('auto', 'تلقائي', 'sync')}${seg('morning', 'صباحي', 'sun')}${seg('evening', 'مسائي', 'moon')}</div>
+    <div class="hint" style="margin-top:8px">«تلقائي» يتبع الوقت: صباحاً نهارياً ومساءً ليلياً.</div>
+  </div>`;
+}
+
 /* ==========================================================================
    7) شاشة الدخول
    ========================================================================== */
-function renderEntry() {
-  try { document.getElementById('phone').classList.add('entry-mode'); } catch (e) {}
-  const roles = [
-    ['student', 'طالب', 'الدخول بكود الطالب', 'student'],
-    ['guardian', 'ولي أمر', 'الدخول بكود ولي الأمر', 'guardian'],
-    ['teacher', 'مدرس', 'الدخول بكود المدرس', 'teacher'],
-    ['driver', 'اشتراك', 'الدخول بكود الاشتراك', 'driver']
-  ];
-  const cloud = (typeof CloudApp !== 'undefined' && CloudApp.enabled);
-  const dp = document.documentElement.getAttribute('data-daypart') || 'morning';
-  $('#app').innerHTML = `<div class="screen"><div class="entry">
-    <div class="entry-top">
-      <div class="logo"></div>
-      <h1>مدارس الأوائل الأهلية</h1>
-      <p class="lead">المنظومة التعليمية الذكية</p>
-    </div>
-    <div class="entry-card">
-      <div class="entry-card-head">اختر نوع حسابك<span>ثم أدخل الكود وكلمة المرور للدخول</span></div>
-      <div class="roles">
-        ${roles.map(([id, label, sub, icon]) => `<button class="role" data-role="${id}">
-          <div class="ri">${ic(icon)}</div>
-          <b>${label}</b><span>${sub}</span></button>`).join('')}
-      </div>
-    </div>
-    <div class="entry-foot">
-      <button class="day-toggle" id="dayToggle" type="button">${ic('sunMoon')}<span id="dayLabel">${dp === 'morning' ? 'الوضع الصباحي' : 'الوضع المسائي'}</span></button>
-      ${cloud
-        ? `<div class="ver">الإصدار 5.0 · متصل بقاعدة بيانات المدرسة</div>`
-        : `<div class="ver">الإصدار التجريبي 5.0 · البيانات محفوظة على جهازك</div>
-           <button class="btn ghost" id="resetDemo" style="padding:10px;font-size:12.5px">إعادة ضبط البيانات التجريبية</button>`}
-    </div>
-  </div></div>`;
-  $$('[data-role]').forEach(b => b.onclick = () => openLogin(b.dataset.role));
-  /* مبدّل لوحة الوقت: صباح ↔ مساء (يُحفظ على الجهاز) */
-  const dt = $('#dayToggle');
-  if (dt) dt.onclick = () => {
-    const cur = document.documentElement.getAttribute('data-daypart') || 'morning';
-    const next = cur === 'morning' ? 'evening' : 'morning';
-    document.documentElement.setAttribute('data-daypart', next);
-    document.documentElement.setAttribute('data-daypart-mode', next);
-    try { localStorage.setItem('alawael.daypart', next); } catch (e) {}
-    const lb = $('#dayLabel');
-    if (lb) lb.textContent = next === 'morning' ? 'الوضع الصباحي' : 'الوضع المسائي';
-  };
-  if ($('#resetDemo')) $('#resetDemo').onclick = () => Confirm({ title: 'إعادة الضبط', message: 'ستُحذف كل التعديلات التجريبية وتعود البيانات الأصلية.', confirmText: 'إعادة الضبط', danger: true, onYes: () => Store.reset() });
+/* شاشة الدخول هي الشاشة الأولى: لا توجد شاشة «اختر نوع حسابك» — مبدّل نوع الحساب
+   موجود داخل شاشة الدخول نفسها (كما في المرجع)، وبنفس الألوان تماماً. */
+function showLogin(role) {
+  try { document.getElementById('phone').classList.add('login-mode'); } catch (e) {}
+  openLogin(role || 'student');
 }
 
 const DEMO = {
@@ -3224,43 +3249,50 @@ const DEMO = {
 
 /* أدوار الدخول — تُستعمل في بطاقة الدخول وفي مبدّل نوع الحساب */
 const LOGIN_ROLES = {
-  student:  { label: 'طالب',    ph: 'مثال: AL7QK2', icon: 'student',  codeLabel: 'كود الطالب' },
-  guardian: { label: 'ولي أمر', ph: 'مثال: GU4421', icon: 'guardian', codeLabel: 'كود ولي الأمر' },
-  teacher:  { label: 'مدرس',    ph: 'مثال: TCH100', icon: 'teacher',  codeLabel: 'كود المدرس' },
-  driver:   { label: 'اشتراك',  ph: 'مثال: SUB77A', icon: 'driver',   codeLabel: 'كود الاشتراك' },
-  admin:    { label: 'الإدارة', ph: 'admin',        icon: 'admin',    codeLabel: 'اسم المستخدم' }
+  student:  { label: 'طالب',    ph: 'أدخل الكود (مثال: AL7QK2)', icon: 'student',  codeLabel: 'كود الطالب' },
+  guardian: { label: 'ولي أمر', ph: 'أدخل الكود (مثال: GU4421)', icon: 'guardian', codeLabel: 'كود ولي الأمر' },
+  teacher:  { label: 'مدرس',    ph: 'أدخل الكود (مثال: TCH100)', icon: 'teacher',  codeLabel: 'كود المدرس' },
+  driver:   { label: 'اشتراك',  ph: 'أدخل الكود (مثال: SUB77A)', icon: 'driver',   codeLabel: 'كود الاشتراك' },
+  admin:    { label: 'الإدارة', ph: 'أدخل اسم المستخدم',          icon: 'admin',    codeLabel: 'اسم المستخدم' }
 };
 const REMEMBER_KEY = (role) => 'alawael.remember.' + role;
 
 function openLogin(role) {
   let cur = (role === 'admin') ? 'student' : role;
   const seg = Object.keys(LOGIN_ROLES).filter(r => r !== 'admin')
-    .map(r => `<button class="sg${r === cur ? ' on' : ''}" type="button" data-lrole="${r}">${LOGIN_ROLES[r].label}</button>`).join('');
+    .map(r => `<button class="sg${r === cur ? ' on' : ''}" type="button" data-lrole="${r}">${ic(LOGIN_ROLES[r].icon)}<span>${LOGIN_ROLES[r].label}</span></button>`).join('');
   Sheet.open({
-    cls: 'login-sheet', bgCls: 'canvas', title: '', sub: '',
+    cls: 'login-sheet', bgCls: 'canvas', title: '', sub: '', dismissible: false,
     body: `
-      <div class="lg-head">
-        <div class="lg-t">تسجيل الدخول</div>
-        <div class="lg-s">أدخل الكود وكلمة المرور للدخول إلى حسابك</div>
+      <div class="lg-brand">
+        <div class="lg-logo"></div>
+        <div class="lg-school">مدارس الأوائل الأهلية</div>
+        <div class="lg-tag">المنظومة التعليمية الذكية</div>
       </div>
-      <div class="lg-seg">${seg}</div>
-      <div class="lg-field">
-        <label for="lgCode">كود المستخدم</label>
-        <div class="lg-in">
-          <input class="input" id="lgCode" placeholder="${LOGIN_ROLES[cur].ph}" autocomplete="off" inputmode="text">
-          <span class="in-ic">${ic(LOGIN_ROLES[cur].icon)}</span>
+      <div class="lg-card">
+        <div class="lg-head">
+          <div class="lg-t">تسجيل الدخول</div>
+          <div class="lg-s">أدخل الكود وكلمة المرور للدخول إلى حسابك</div>
         </div>
-      </div>
-      <div class="lg-field">
-        <label for="lgPw">كلمة المرور</label>
-        <div class="lg-in">
-          <input class="input" id="lgPw" type="password" placeholder="••••" autocomplete="off">
-          <span class="in-ic">${ic('lock')}</span>
-          <button class="eye" id="lgEye" type="button" aria-label="إظهار كلمة المرور">${ic('eye')}</button>
+        <div class="lg-seg">${seg}</div>
+        <div class="lg-field">
+          <label for="lgCode">كود المستخدم</label>
+          <div class="lg-in">
+            <input class="input" id="lgCode" placeholder="${LOGIN_ROLES[cur].ph}" autocomplete="off" inputmode="text">
+            <span class="in-ic">${ic(LOGIN_ROLES[cur].icon)}</span>
+          </div>
         </div>
-      </div>
-      <label class="lg-remember"><input type="checkbox" id="lgRemember"><span>تذكّرني على هذا الجهاز</span></label>
-      <button class="btn lg-go" id="lgGo" type="button">${ic('back')} تسجيل الدخول</button>`,
+        <div class="lg-field">
+          <label for="lgPw">كلمة المرور</label>
+          <div class="lg-in">
+            <input class="input" id="lgPw" type="password" placeholder="أدخل كلمة المرور" autocomplete="off">
+            <span class="in-ic">${ic('lock')}</span>
+            <button class="eye" id="lgEye" type="button" aria-label="إظهار كلمة المرور">${ic('eye')}</button>
+          </div>
+        </div>
+        <label class="lg-remember"><input type="checkbox" id="lgRemember"><span>تذكّرني على هذا الجهاز</span></label>
+        <button class="btn lg-go" id="lgGo" type="button">تسجيل الدخول ${ic('back')}</button>
+      </div>`,
     onMount(ov, close) {
       const codeEl = $('#lgCode', ov), pwEl = $('#lgPw', ov);
       const segs = $$('[data-lrole]', ov);
@@ -3905,6 +3937,7 @@ function studentMore(st) {
           <div class="rt"><b>إشعارات الجوال</b><span>${PushSetup.state() === 'on' ? 'مفعّلة — تصلك حتى لو كان التطبيق مغلقاً' : 'اضغط للتفعيل'}</span></div>
           <span class="pill ${PushSetup.state() === 'on' ? 'green' : ''}">${PushSetup.state() === 'on' ? 'مفعّلة' : 'تفعيل'}</span></button>` : ''}
         ${themeRow()}
+        ${daypartRow()}
       </div>
       <div class="list mt-16">
         <button class="row" id="logoutBtn"><div class="ri" style="background:var(--red-soft);color:#C22B26">${ic('logout')}</div>
@@ -4019,15 +4052,15 @@ function addDriverRequest(st, driverId) {
    9) ربط عام (أزرار الرجوع والتنقل والإشعارات)
    ========================================================================== */
 function bindCommon(ctx) {
-  $$('[data-back]').forEach(b => b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); App.back(); });
-  $$('[data-act]').forEach(b => b.onclick = (e) => {
+  $$el('[data-back]').forEach(b => b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); App.back(); });
+  $$el('[data-act]').forEach(b => b.onclick = (e) => {
     e.preventDefault(); e.stopPropagation();
     const a = b.dataset.act;
     if (a === 'hw_new') return openNewHomework();
     App.go(a);
   });
   /* التبويب السفلي: يبقى داخل حساب الابن عند ولي الأمر، ويبدأ سلسلة جديدة دائماً */
-  $$('[data-tab]').forEach(b => b.onclick = (e) => {
+  $$el('[data-tab]').forEach(b => b.onclick = (e) => {
     e.preventDefault(); e.stopPropagation();
     App.tab(b.dataset.tab);
   });
@@ -4039,14 +4072,21 @@ function bindCommon(ctx) {
     App.render();
   };
   /* تبديل نمط العرض: تلقائي ← فاتح ← داكن */
-  $$('[data-theme-toggle]').forEach(b => b.onclick = (e) => {
+  $$el('[data-theme-toggle]').forEach(b => b.onclick = (e) => {
     e.preventDefault(); e.stopPropagation();
     cycleTheme();
   });
   /* اختيار النمط من صف الإعدادات */
-  $$('[data-theme-mode]').forEach(b => b.onclick = (e) => {
+  $$el('[data-theme-mode]').forEach(b => b.onclick = (e) => {
     e.preventDefault(); e.stopPropagation();
     setTheme(b.dataset.themeMode);
+  });
+  /* اختيار لوحة الوقت (صباحي/مسائي) من صف الإعدادات
+     ملاحظة: <html> يحمل خاصية data-daypart-mode للحالة العامة، لذلك نقصر الاختيار على الأزرار */
+  $$el('button[data-daypart-mode]').forEach(b => b.onclick = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    setDaypart(b.dataset.daypartMode);
+    App.render();
   });
   /* شاشات الإشعارات: تُعلَّم مقروءة فور فتحها */
   if (App.route === 'notifs') setTimeout(() => { try { markNotifsRead(); } catch (e) {} }, 120);
@@ -4326,7 +4366,7 @@ function teacherSettings(t) {
         <div class="field"><label>المدارس</label><input class="input" value="${esc(teacherSchoolIds(t).map(id => Q.label.school(id)).join(' · ') || '—')}" disabled></div>
         <div class="field"><label>كود الدخول</label><input class="input" value="${esc(t.code)}" disabled dir="ltr"></div>
       </div>
-      <div class="list">${themeRow()}</div>
+      <div class="list">${themeRow()}${daypartRow()}</div>
       <div class="sec-title">الشعب التي أدرّسها</div>
       <div class="list">
         ${secs.map(sec => `<div class="row">
@@ -5259,6 +5299,7 @@ function adminMore() {
         <button class="row" data-act="settings"><div class="ri y">${ic('gear')}</div>
           <div class="rt"><b>الإعدادات</b><span>قفل الواجبات والدردشة</span></div><span class="chev"></span></button>
         ${themeRow()}
+        ${daypartRow()}
         <button class="row" data-act="notifs"><div class="ri">${ic('bell')}</div>
           <div class="rt"><b>الإشعارات</b><span>${Q.unread('admin')} غير مقروء</span></div><span class="chev"></span></button>
       </div>
@@ -5825,10 +5866,13 @@ const PushSetup = (() => {
       (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
     if (stand) document.documentElement.classList.add('ios-standalone');
   } catch (e) {}
-  /* عند توفر نسخة جديدة من عامل الخدمة: حدّث تلقائياً */
+  /* عند توفر نسخة جديدة من عامل الخدمة: حدّث تلقائياً
+     (لا نعيد التحميل عند أول تحكّم — تفادياً لإعادة تحميل غير مرغوبة أثناء كتابة الكود) */
   try {
     if ('serviceWorker' in navigator) {
+      let hadControl = !!navigator.serviceWorker.controller;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!hadControl) { hadControl = true; return; }
         if (sessionStorage.getItem('alawael.reloaded')) return;
         sessionStorage.setItem('alawael.reloaded', '1');
         location.reload();
