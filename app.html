@@ -1751,123 +1751,144 @@ html[data-daypart="evening"] .entry::after{ background:linear-gradient(270deg,rg
 .entry .center.small.muted{ color:var(--canvas-muted) }
 
 /* ---------------------------------------------------------------
-   5) بطاقة تسجيل الدخول
+   5) شاشة تسجيل الدخول — نهارية فقط (الوضع النهاري دائماً)
    ---------------------------------------------------------------
-   • الخلفية: لون واحد فقط — فاتح في الوضع النهاري، داكن في الليلي.
-   • البطاقة وعناصرها: تتبع نمط التطبيق (فاتح/داكن) مع تباين واضح
-     للنصوص والأيقونات في الحالتين.
+   • الخلفية: تدرّج لوني هادئ بنفس ألوان الهوية (كريمي ← لافندر).
+   • بلا بطاقة: الحقول مباشرة فوق الخلفية (نموذج بملء الشاشة).
+   • نفس الألوان والنصوص في الوضع الفاتح والداكن.
    --------------------------------------------------------------- */
-:root, html[data-daypart="morning"]{ --lg-bg:#D2CDE1 }   /* لون واحد فاتح */
-html[data-daypart="evening"]{ --lg-bg:#1B1440 }        /* لون واحد داكن */
-
-html .sheet-bg.canvas{
-  background:var(--lg-bg); background-image:none;
-  backdrop-filter:none; -webkit-backdrop-filter:none;
-  align-items:center; justify-content:center; padding:22px 18px;
-}
-
-/* ---------- البطاقة: نصوص فاتحة ---------- */
-html .sheet.login-sheet{
-  --lg-card:#FFFFFF;
-  --lg-card-2:#FAF8FE;
-  --lg-line:#E6E1F3;
-  --lg-seg:#F2EFFA;
-  --lg-ink:#0B1226;
+:root{
+  --lg-bg-grad:linear-gradient(176deg,#FBF8F1 0%,#F6F1FB 24%,#EFEAF8 50%,#E4DDF2 76%,#D9D1EB 100%);
+  --lg-btn-grad:linear-gradient(135deg,#6E63A8 0%,#4C3D9E 48%,#2C2168 100%);
+  --lg-ink:#1B1440;
   --lg-ink-2:#3E3570;
-  --lg-muted:#6E6791;
+  --lg-muted:#5B5480;
   --lg-accent:#3F3197;
-  --lg-icon:#6C63A0;
-  --lg-shadow:0 26px 60px rgba(40,30,96,.22);
-  border-radius:30px; width:100%; max-width:430px; margin:0 auto;
-  padding:20px 20px calc(20px + var(--safe-b)); max-height:94%;
-  background:var(--lg-card); color:var(--lg-ink);
-  border:1px solid var(--lg-line); border-top:1px solid var(--lg-line);
-  box-shadow:var(--lg-shadow);
-  transform:translateY(18px) scale(.985); opacity:0;
-  transition:transform .34s cubic-bezier(.32,.72,0,1), opacity .28s ease;
+  --lg-line:#DCD5EC;
+  --lg-field:#FFFFFF;
+  --lg-seg:#F1EDFA;
+  --lg-icon:#5B5290;
+  --lg-ph:#6E6791;
 }
-/* ---------- البطاقة: نصوص داكنة (نمط داكن) ---------- */
-html[data-theme="dark"] .sheet.login-sheet{
-  --lg-card:#171236;
-  --lg-card-2:#201A45;
-  --lg-line:rgba(189,181,216,.26);
-  --lg-seg:rgba(189,181,216,.12);
-  --lg-ink:#F4F1FD;
-  --lg-ink-2:#D5CDEA;
-  --lg-muted:#ABA3C8;
-  --lg-accent:#C8BEEE;
-  --lg-icon:#A79EC9;
-  --lg-shadow:0 26px 60px rgba(0,0,0,.58);
+
+/* الخلفية: تدرّج هادئ يملأ الشاشة بالكامل */
+html .sheet-bg.canvas{
+  background-color:#F2EEF9;
+  background-image:var(--lg-bg-grad) !important;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  align-items:flex-start; justify-content:center;
+  padding:24px 20px calc(24px + var(--safe-b));
+  overflow-y:auto;
+}
+html[data-theme="dark"] .sheet-bg.canvas{
+  background-color:#F2EEF9 !important;
+  background-image:var(--lg-bg-grad) !important;
+}
+
+/* النموذج: بلا بطاقة — حقول مباشرة فوق الخلفية */
+html .sheet.login-sheet{
+  background:transparent !important; border:0 !important; box-shadow:none !important;
+  border-radius:0; width:100%; max-width:420px; margin:auto;
+  padding:0; max-height:none; overflow:visible;
+  transform:translateY(16px); opacity:0;
+  transition:transform .34s cubic-bezier(.32,.72,0,1), opacity .28s ease;
 }
 html .sheet-bg.show .sheet.login-sheet{ transform:none; opacity:1 }
 html .sheet.login-sheet .handle{ display:none }
-html .lg-head{ text-align:center; margin-bottom:16px }
-html .lg-head .lg-t{ font-size:21px; font-weight:800; color:var(--lg-ink); letter-spacing:-.2px }
-html .lg-head .lg-s{ font-size:12.5px; font-weight:700; color:var(--lg-muted); margin-top:4px; line-height:1.7 }
+
+/* العنوان */
+html .lg-head{ text-align:center; margin-bottom:20px }
+html .lg-head .lg-t{
+  font-size:22px; font-weight:800; color:var(--lg-ink); letter-spacing:-.3px;
+}
+html .lg-head .lg-s{
+  font-size:13px; font-weight:700; color:var(--lg-muted); margin-top:6px; line-height:1.8;
+}
+
+/* مبدّل نوع الحساب */
 html .lg-seg{
   display:flex; gap:4px; background:var(--lg-seg); border:1px solid var(--lg-line);
-  border-radius:16px; padding:4px; margin-bottom:18px;
+  border-radius:16px; padding:4px; margin-bottom:22px;
 }
 html .lg-seg .sg{
   flex:1; padding:10px 4px; border-radius:12px; font-size:12.5px; font-weight:800;
   color:var(--lg-muted); transition:all .18s cubic-bezier(.3,.8,.4,1); white-space:nowrap;
 }
-html .lg-seg .sg.on{ background:var(--lg-card); color:var(--lg-accent); box-shadow:0 5px 14px rgba(30,22,80,.10) }
-html[data-theme="dark"] .lg-seg .sg.on{ background:rgba(189,181,216,.22); color:#F2EEFC; box-shadow:none }
+html .lg-seg .sg.on{
+  background:var(--lg-field); color:var(--lg-accent); font-weight:800;
+  box-shadow:0 4px 12px rgba(63,49,151,.14);
+}
 html .lg-seg .sg:active{ transform:scale(.97) }
-html .lg-field{ margin-bottom:14px }
+
+/* الحقول */
+html .lg-field{ margin-bottom:16px }
 html .lg-field > label{
-  display:block; font-size:12.5px; font-weight:800; color:var(--lg-ink-2); margin-bottom:7px; text-align:start;
+  display:block; font-size:13px; font-weight:800; color:var(--lg-ink-2); margin-bottom:8px; text-align:start;
 }
 html .lg-in{ position:relative }
 html .lg-in .input{
-  width:100%; border-radius:15px; border:1px solid var(--lg-line); background:var(--lg-card-2); color:var(--lg-ink);
-  padding:14px 44px 14px 14px; font-size:15px; font-weight:600;
+  width:100%; border-radius:16px; border:1px solid var(--lg-line); background:var(--lg-field); color:var(--lg-ink);
+  padding:14px 46px 14px 16px; font-size:15px; font-weight:700;
+  box-shadow:0 6px 16px rgba(63,49,151,.07);
   transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
 html .lg-in .input:focus{
-  outline:none; background:var(--lg-card); border-color:var(--lg-accent);
-  box-shadow:0 0 0 4px color-mix(in srgb, var(--lg-accent) 18%, transparent);
+  outline:none; background:var(--lg-field); border-color:var(--lg-accent);
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--lg-accent) 16%, transparent), 0 6px 16px rgba(63,49,151,.10);
 }
-html .lg-in .input::placeholder{ color:var(--lg-muted); font-weight:600; opacity:.85 }
+html .lg-in .input::placeholder{ color:var(--lg-ph); font-weight:600; opacity:1 }
 html .lg-in .in-ic{
-  position:absolute; inset-inline-end:13px; inset-block-start:50%; transform:translateY(-50%);
+  position:absolute; inset-inline-end:14px; inset-block-start:50%; transform:translateY(-50%);
   color:var(--lg-icon); pointer-events:none; display:grid; place-items:center;
 }
 html .lg-in .in-ic svg{ width:19px; height:19px; stroke-width:1.8 }
 html .lg-in .eye{
   position:absolute; inset-inline-start:8px; inset-block-start:50%; transform:translateY(-50%);
   width:34px; height:34px; border-radius:11px; display:grid; place-items:center;
-  color:var(--lg-icon); background:transparent;
+  color:var(--lg-icon); background:transparent; border:0;
 }
 html .lg-in .eye:active{ background:var(--lg-seg) }
 html .lg-in .eye svg{ width:18px; height:18px; stroke-width:1.8 }
 html .lg-remember{
-  display:flex; align-items:center; gap:9px; margin:6px 0 18px; cursor:pointer;
-  font-size:12.5px; font-weight:700; color:var(--lg-ink-2);
+  display:flex; align-items:center; gap:9px; margin:2px 0 20px; cursor:pointer;
+  font-size:13px; font-weight:700; color:var(--lg-ink-2);
 }
 html .lg-remember input{
   width:19px; height:19px; accent-color:var(--lg-accent); flex:0 0 auto; cursor:pointer;
 }
 html .lg-go{
   width:100%; border-radius:17px; padding:15px 18px; font-size:15.5px; font-weight:800;
-  background:var(--grad-blue); color:#fff; box-shadow:0 14px 30px rgba(63,49,151,.30);
+  background:var(--lg-btn-grad); color:#fff; box-shadow:0 14px 30px rgba(63,49,151,.28);
   display:flex; align-items:center; justify-content:center; gap:9px;
 }
 html .lg-go::before{ display:none }
 html .lg-go:active{ transform:scale(.98) }
 html .lg-go svg{ width:18px; height:18px }
 
-/* في النمط الداكن: الحقول وزر الدخول يتبعان هوية التطبيق (نيلي) لا قواعد النمط العام */
+/* تسجيل الدخول نهاري دائماً: نتجاوز قواعد الوضع الداكن العامة */
 html[data-theme="dark"] .sheet.login-sheet .lg-in .input{
-  background:var(--lg-card-2) !important; border-color:var(--lg-line) !important; color:var(--lg-ink) !important;
+  background:var(--lg-field) !important; border-color:var(--lg-line) !important; color:var(--lg-ink) !important;
 }
 html[data-theme="dark"] .sheet.login-sheet .lg-in .input:focus{
-  background:var(--lg-card) !important; border-color:var(--lg-accent) !important;
+  background:var(--lg-field) !important; border-color:var(--lg-accent) !important;
 }
-html[data-theme="dark"] .sheet.login-sheet .lg-in .input::placeholder{ color:var(--lg-muted) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-in .input::placeholder{ color:var(--lg-ph) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-field > label{ color:var(--lg-ink-2) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-remember{ color:var(--lg-ink-2) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-in .in-ic,
+html[data-theme="dark"] .sheet.login-sheet .lg-in .eye{ color:var(--lg-icon) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-seg{
+  background:var(--lg-seg) !important; border-color:var(--lg-line) !important;
+}
+html[data-theme="dark"] .sheet.login-sheet .lg-seg .sg{ color:var(--lg-muted) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-seg .sg.on{
+  background:var(--lg-field) !important; color:var(--lg-accent) !important;
+}
+html[data-theme="dark"] .sheet.login-sheet .lg-head .lg-t{ color:var(--lg-ink) !important }
+html[data-theme="dark"] .sheet.login-sheet .lg-head .lg-s{ color:var(--lg-muted) !important }
 html[data-theme="dark"] .sheet.login-sheet .lg-go{
-  background:var(--grad-blue) !important; color:#fff !important; box-shadow:0 14px 30px rgba(63,49,151,.45) !important;
+  background:var(--lg-btn-grad) !important; color:#fff !important;
+  box-shadow:0 14px 30px rgba(63,49,151,.30) !important;
 }
 
 /* ---------------------------------------------------------------
