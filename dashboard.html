@@ -523,7 +523,7 @@ table.tbl tbody tr.clickable{cursor:pointer}
 /* ============================ الثيمات السبعة ============================ */
 [data-accent="red"]     { --accent:#E0384B; --accent-2:#9E1B2C; --accent-3:#FF8B96; --accent-soft:#FDECEE; --accent-soft-2:#F9D6DB; --accent-rgb:224,56,75 }
 [data-accent="orange"]  { --accent:#EF7C1A; --accent-2:#B4520A; --accent-3:#FFB765; --accent-soft:#FFF2E4; --accent-soft-2:#FFE1C4; --accent-rgb:239,124,26 }
-[data-accent="blue"]    { --accent:#344967; --accent-2:#2A3D57; --accent-3:#8FA7C5; --accent-soft:#EDF2F8; --accent-soft-2:#DCE5F0; --accent-rgb:52,73,103; --accent-grad:linear-gradient(140deg,#415978 0%,#344967 55%,#2C3F59 100%) }
+[data-accent="blue"]    { --accent:#1573E6; --accent-2:#0B54B0; --accent-3:#63A4FF; --accent-soft:#EAF2FF; --accent-soft-2:#D8E7FF; --accent-rgb:21,115,230 }
 [data-accent="purple"]  { --accent:#7B4DE0; --accent-2:#4E28A6; --accent-3:#B79BFF; --accent-soft:#F1ECFF; --accent-soft-2:#E3D9FF; --accent-rgb:123,77,224 }
 [data-accent="pink"]    { --accent:#DE479B; --accent-2:#A62070; --accent-3:#FF9DD0; --accent-soft:#FDECF5; --accent-soft-2:#FBD8E9; --accent-rgb:222,71,155 }
 [data-accent="green"]   { --accent:#129457; --accent-2:#0A683C; --accent-3:#5FD9A0; --accent-soft:#E8F8F0; --accent-soft-2:#D0F0E1; --accent-rgb:18,148,87 }
@@ -531,7 +531,7 @@ table.tbl tbody tr.clickable{cursor:pointer}
 
 [data-theme="dark"][data-accent="red"]    { --accent:#FF7181; --accent-2:#C02B3E; --accent-3:#FFA3AE; --accent-soft:#3A1620; --accent-soft-2:#4C1B28; --accent-rgb:255,113,129 }
 [data-theme="dark"][data-accent="orange"] { --accent:#FFA24D; --accent-2:#C25E0F; --accent-3:#FFC489; --accent-soft:#3A2412; --accent-soft-2:#4C2F18; --accent-rgb:255,162,77 }
-[data-theme="dark"][data-accent="blue"]   { --accent:#A9BDD6; --accent-2:#C2D2E5; --accent-3:#7D93AF; --accent-soft:rgba(143,167,197,.14); --accent-soft-2:rgba(143,167,197,.22); --accent-rgb:169,189,214; --accent-grad:linear-gradient(140deg,#5B7291 0%,#4A6180 55%,#3E5473 100%) }
+[data-theme="dark"][data-accent="blue"]   { --accent:#4C9AFF; --accent-2:#1E6BD0; --accent-3:#8CC0FF; --accent-soft:#14263F; --accent-soft-2:#1B3455; --accent-rgb:76,154,255 }
 [data-theme="dark"][data-accent="purple"] { --accent:#A98CFF; --accent-2:#6A48C7; --accent-3:#C9B8FF; --accent-soft:#231A3D; --accent-soft-2:#2E2350; --accent-rgb:169,140,255 }
 [data-theme="dark"][data-accent="pink"]   { --accent:#FF87C0; --accent-2:#B83A7C; --accent-3:#FFB6DA; --accent-soft:#38172A; --accent-soft-2:#481D36; --accent-rgb:255,135,192 }
 [data-theme="dark"][data-accent="green"]  { --accent:#4FD197; --accent-2:#16915B; --accent-3:#8FE6BE; --accent-soft:#0F2C21; --accent-soft-2:#143A2B; --accent-rgb:79,209,151 }
@@ -876,166 +876,6 @@ table.tbl tbody tr.clickable{cursor:pointer}
 /* v10: منع تمدد أيقونة SVG حين تقع خارج حاوية محددة الحجم */
 svg{width:1.1em;height:1.1em;flex:0 0 auto}
 .muted svg,.small svg{width:12px;height:12px;flex:none}
-
-/* ==================================================================
-   نظام التصميم الموحّد — PREMIUM SOFT BLUE (لوحة التحكم)
-   نفس لوحة ألوان التطبيق: هادئة، زرقاء ناعمة، ظلال خفيفة جداً.
-   طبقة تنسيقية بحتة — لا تغيّر أي وظيفة أو بنية بيانات.
-   ================================================================== */
-:root{
-  --accent:#344967; --accent-2:#2A3D57; --accent-3:#8FA7C5;
-  --accent-soft:#EDF2F8; --accent-soft-2:#DCE5F0; --accent-rgb:52,73,103;
-  --accent-grad:linear-gradient(140deg,#415978 0%,#344967 55%,#2C3F59 100%);
-  --blue:var(--accent); --blue-600:var(--accent-2); --blue-50:var(--accent-soft); --blue-100:var(--accent-soft-2);
-  --ink:#26354A; --ink-2:#3E4E67; --muted:#8793A5; --line:#E3E8EF;
-  --bg:#EEF1F6; --surface:#FFFFFF; --surface-2:#F5F7FA;
-  --ok:#3F9E77; --ok-bg:#E8F5F0; --warn:#C9963F; --warn-bg:#FBF3E6; --danger:#C6615C; --danger-bg:#FBEDEC;
-  --violet:#607C9F; --violet-bg:#EDF2F8;
-  --r-lg:20px; --r-md:14px; --r-sm:12px; --r-xs:9px;
-  --sh-1:0 1px 2px rgba(52,73,103,.04), 0 4px 14px rgba(52,73,103,.05);
-  --sh-2:0 10px 30px rgba(52,73,103,.09);
-  --sh-pop:0 22px 56px rgba(38,53,74,.16);
-}
-[data-theme="dark"]{
-  --ink:#E8EDF4; --ink-2:#C3CEDC; --muted:#8D9BAD; --line:rgba(255,255,255,.10);
-  --bg:#161E2B; --surface:#1E2836; --surface-2:#222D3C;
-  --accent:#A9BDD6; --accent-2:#C2D2E5; --accent-3:#7D93AF;
-  --accent-soft:rgba(143,167,197,.14); --accent-soft-2:rgba(143,167,197,.22); --accent-rgb:169,189,214;
-  --accent-grad:linear-gradient(140deg,#5B7291 0%,#4A6180 55%,#3E5473 100%);
-  --ok:#6FB79A; --ok-bg:rgba(111,183,154,.13); --warn:#D8B36A; --warn-bg:rgba(216,179,106,.13);
-  --danger:#CE8079; --danger-bg:rgba(206,128,121,.13); --violet:#8FA7C5; --violet-bg:rgba(143,167,197,.14);
-  --sh-1:0 1px 2px rgba(0,0,0,.24), 0 6px 18px rgba(0,0,0,.26);
-  --sh-2:0 12px 36px rgba(0,0,0,.34);
-  --sh-pop:0 24px 60px rgba(0,0,0,.44);
-}
-
-/* ---------- الخلفية العامة ---------- */
-body{
-  background:
-    radial-gradient(1100px 600px at 82% -12%, rgba(255,255,255,.92) 0%, rgba(255,255,255,0) 62%),
-    radial-gradient(760px 460px at 6% 104%, #E2EAF5 0%, rgba(226,234,245,0) 60%),
-    linear-gradient(168deg, #F5F7FA 0%, #E9EEF5 100%);
-}
-[data-theme="dark"] body{
-  background:
-    radial-gradient(1100px 600px at 82% -12%, rgba(143,167,197,.08) 0%, rgba(143,167,197,0) 60%),
-    linear-gradient(168deg, #1A2331 0%, #141B27 100%);
-}
-
-/* ---------- الشريط الجانبي ---------- */
-.sidebar{background:var(--surface); border-inline-end:1px solid var(--line); box-shadow:1px 0 0 rgba(255,255,255,.6)}
-.brand-logo{background:var(--accent-grad); box-shadow:0 6px 16px rgba(var(--accent-rgb),.26)}
-.brand-name{font-weight:700; letter-spacing:-.2px}
-.brand-sub{font-weight:500}
-.nav-group{color:var(--muted); font-weight:600; letter-spacing:.3px}
-.nav-item{color:var(--ink-2); font-weight:600; border-radius:var(--r-sm)}
-.nav-item:hover{background:var(--surface-2); color:var(--ink)}
-.nav-item.active{
-  background:var(--accent-grad); color:#fff; box-shadow:0 6px 16px rgba(var(--accent-rgb),.22);
-}
-.nav-item.active .nav-badge{background:rgba(255,255,255,.92); color:var(--accent)}
-.nav-item svg{stroke-width:1.7}
-
-/* ---------- الشريط العلوي ---------- */
-.topbar{background:rgba(255,255,255,.86); border-bottom:1px solid var(--line); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px)}
-[data-theme="dark"] .topbar{background:rgba(30,40,54,.84)}
-.topbar h1{font-weight:700; letter-spacing:-.3px}
-.topbar .crumb{font-weight:500}
-
-/* ---------- البطاقات ---------- */
-.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1)}
-.card-head{border-bottom:1px solid var(--line)}
-.card-head h3{font-weight:700; letter-spacing:-.2px}
-.card-head h3 svg{color:var(--accent)}
-.card-body{color:var(--ink-2)}
-
-/* ---------- الأزرار ---------- */
-.btn{
-  background:var(--accent-grad); color:#fff; border-radius:12px; font-weight:600;
-  box-shadow:0 4px 14px rgba(var(--accent-rgb),.20), 0 1px 2px rgba(var(--accent-rgb),.12);
-  transition:transform .16s var(--ease), box-shadow .2s var(--ease), filter .2s;
-}
-.btn:hover{transform:translateY(-1px); box-shadow:0 8px 20px rgba(var(--accent-rgb),.24); filter:brightness(1.04)}
-.btn:active{transform:scale(.985)}
-.btn.ghost{background:var(--surface); color:var(--ink-2); border-color:var(--line); box-shadow:var(--sh-1)}
-.btn.ghost:hover{color:var(--accent); border-color:var(--blue-100); background:var(--surface)}
-.btn.soft{background:var(--blue-50); color:var(--accent); box-shadow:none; border:1px solid transparent}
-.btn.soft:hover{background:var(--blue-100)}
-.btn.danger{background:var(--danger); box-shadow:0 4px 14px rgba(198,97,92,.20)}
-.btn.ok{background:var(--ok); box-shadow:0 4px 14px rgba(63,158,119,.20)}
-
-/* ---------- الحقول ---------- */
-.input,select.input,textarea.input{
-  background:var(--surface-2); border:1px solid var(--line); border-radius:11px; color:var(--ink); font-weight:500;
-  transition:border-color .18s, box-shadow .18s, background .18s;
-}
-.input:focus{border-color:var(--accent-3); background:var(--surface); box-shadow:0 0 0 3px rgba(143,167,197,.18)}
-.input::placeholder{color:var(--muted); opacity:.85}
-
-/* ---------- المؤشرات ---------- */
-.kpi{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1)}
-.kpi:hover{transform:translateY(-2px); box-shadow:var(--sh-2)}
-.kpi-ico{background:var(--blue-50); color:var(--accent); border-radius:14px}
-.kpi-val{font-weight:700}
-.kpi-lbl{font-weight:500}
-
-/* ---------- الجداول ---------- */
-.table-wrap{border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface)}
-table{width:100%; border-collapse:collapse}
-th{
-  background:var(--surface-2); color:var(--muted); font-weight:600; font-size:12px;
-  border-bottom:1px solid var(--line); position:sticky; top:0; backdrop-filter:blur(6px);
-}
-td{border-bottom:1px solid var(--line); color:var(--ink-2)}
-tbody tr:hover{background:var(--surface-2)}
-tbody tr:last-child td{border-bottom:0}
-
-/* ---------- الشرائح والشارات ---------- */
-.seg{background:var(--surface-2); border:1px solid var(--line); border-radius:12px}
-.seg button{color:var(--muted); font-weight:600}
-.seg button.on{background:var(--surface); color:var(--accent); box-shadow:var(--sh-1); font-weight:700}
-.pill{background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line); font-weight:600}
-.pill.ok{background:var(--ok-bg); color:var(--ok)}
-.pill.warn{background:var(--warn-bg); color:var(--warn)}
-.pill.danger{background:var(--danger-bg); color:var(--danger)}
-.pill.blue{background:var(--blue-50); color:var(--accent)}
-.pill.violet{background:var(--violet-bg); color:var(--violet)}
-.chip{background:var(--surface-2); border:1.5px solid var(--line); color:var(--ink-2); font-weight:600}
-.chip:hover{border-color:var(--accent-3); color:var(--accent)}
-.chip.on{background:var(--blue-50); border-color:var(--blue-100); color:var(--accent)}
-.year-badge{background:var(--blue-50); color:var(--accent); border:1px solid var(--blue-100); font-weight:700}
-
-/* ---------- الدردشة ---------- */
-.chat-pane{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1)}
-.chat-head{background:var(--surface-2); border-bottom:1px solid var(--line)}
-.chat-body{background:linear-gradient(180deg, #F7F9FC 0%, #EEF1F6 100%)}
-[data-theme="dark"] .chat-body{background:linear-gradient(180deg,#1A2331,#161E2B)}
-.chat-input{background:var(--surface); border-top:1px solid var(--line)}
-.chat-input textarea{background:var(--surface-2); border:1px solid var(--line); color:var(--ink); font-weight:500}
-.chat-input textarea:focus{border-color:var(--accent-3); background:var(--surface)}
-.bubble{box-shadow:0 2px 10px rgba(52,73,103,.07); font-weight:500}
-.bubble.in{background:var(--surface); color:var(--ink)}
-.bubble.out{background:var(--accent-grad); color:#fff; box-shadow:0 3px 12px rgba(var(--accent-rgb),.20)}
-.bubble.out .time{color:rgba(255,255,255,.7)}
-.bubble .msg-act{border-color:var(--line); background:var(--surface-2); color:var(--muted)}
-.bubble .msg-act:hover{color:var(--accent); border-color:var(--blue-100)}
-.thread-list{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-1)}
-.thread:hover{background:var(--surface-2)}
-.thread.on{background:var(--blue-50); box-shadow:inset 3px 0 0 var(--accent)}
-.thread .nm{font-weight:700}
-.thread .pv{color:var(--muted); font-weight:500}
-
-/* ---------- النوافذ والرسائل ---------- */
-.overlay{background:rgba(38,53,74,.26); backdrop-filter:blur(3px)}
-.modal{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-pop)}
-.toast{background:rgba(38,53,74,.96); border-radius:14px; box-shadow:0 12px 34px rgba(38,53,74,.22); font-weight:600}
-.toast.ok{background:rgba(47,114,87,.96)}
-.toast.err{background:rgba(158,71,65,.96)}
-.toast.warn{background:rgba(150,118,58,.96)}
-
-/* ---------- شريط التمرير ---------- */
-::-webkit-scrollbar-thumb{background:rgba(135,147,165,.34); border-radius:20px; border:3px solid transparent; background-clip:content-box}
-::-webkit-scrollbar-thumb:hover{background:rgba(135,147,165,.5); border:3px solid transparent; background-clip:content-box}
 
 </style>
 </head>
@@ -3235,7 +3075,7 @@ const App = {
   ACCENTS: [
     { id: 'red', label: 'أحمر', color: '#E0384B' },
     { id: 'orange', label: 'برتقالي', color: '#EF7C1A' },
-    { id: 'blue', label: 'أزرق', color: '#344967' },
+    { id: 'blue', label: 'أزرق', color: '#1573E6' },
     { id: 'purple', label: 'بنفسجي', color: '#7B4DE0' },
     { id: 'pink', label: 'وردي', color: '#DE479B' },
     { id: 'green', label: 'أخضر', color: '#129457' },
