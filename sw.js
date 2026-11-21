@@ -1,5 +1,5 @@
 /* عامل الخدمة — يعمل والتطبيق مغلق، ويستقبل الإشعارات الفورية */
-const VERSION = 'alawael-v11';
+const VERSION = 'alawael-v12';
 const SHELL = [
   './app.html',
   './manifest.webmanifest',
